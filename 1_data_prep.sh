@@ -56,7 +56,7 @@ echo "-----------------------"
     #takes LONG time
     plink --bcf samples.missing.bcf.gz --make-bed --allow-extra-chr --chr-set 16 no-xy -chr $chrsShort \
         --set-missing-var-ids @:# \
-        --mind 0.1 --geno 0.1 --maf 0.001 \
+        --mind 0.2 --geno 0.1 --maf 0.01 \
         --threads $SLURM_NTASKS --out plink/samples-filter --silent
         
     #output sites for ref filter, samples
@@ -67,7 +67,7 @@ echo "-----------------------"
 #PCA and GRM
     cd $CLUSTER_SCRATCH/queen-quality/plink
     echo "PCA..."
-    plink --bfile samples-filter --maf 0.01 --pca 500 \
+    plink --bfile samples-filter --maf 0.05 --pca 500 \
         --threads $SLURM_NTASKS --out samples-maf --silent
     
     echo "GRM..."
