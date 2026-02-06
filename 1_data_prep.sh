@@ -26,6 +26,8 @@ echo "-----------------------"
     mkdir -p outputs
     mkdir -p $CLUSTER_SCRATCH/queen-quality
     
+echo "-----------------------"
+    
 #filter and prepare vcf
     #vcf location
     vcf="/depot/bharpur/data/popgenomes/gencove/NCstate/NCstate_final.bcf.gz"
@@ -64,6 +66,8 @@ echo "-----------------------"
     cd plink
     awk '{print $2}' samples-filter.bim | tr ":" "\t" > samples-filter.sites
     awk '{print $1}' samples-filter.fam > samples-filter.names
+    
+echo "-----------------------"
     
 #PCA and GRM
     cd $CLUSTER_SCRATCH/queen-quality/plink
