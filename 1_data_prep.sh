@@ -1,23 +1,43 @@
 #!/bin/bash
 
-# FILENAME: GSprep.sh
+# FILENAME: 1_data_prep.sh
 
 #SBATCH -A bharpur
 #SBATCH --nodes=1 
 #SBATCH --ntasks=8
+#SBATCH --partition=cpu
 #SBATCH --time=1-00:00:00
-#SBATCH --job-name GSprep
+#SBATCH --job-name data_prep
 
-#SBATCH --output=/home/dryals/ryals/blup/prep.out
-#SBATCH --error=/home/dryals/ryals/blup/prep.out
+#SBATCH --output=/home/dryals/ryals/queen-quality/prep.out
+#SBATCH --error=/home/dryals/ryals/queen-quality/prep.out
 
-#Dylan Ryals 27 MAY 2025
-#last edit   
-    
-    #creating a GRM from vcf data...
-    
+#Dylan Ryals 06 FEB 2026
+#last edit
+
+echo "date"
+echo "-----------------------"
+
 #modules
-module load biocontainers bcftools plink
+    module load biocontainers bcftools plink
+
+#directory setup
+    mkdir -p outputs
+    mkdir -p $CLUSTER_SCRATCH/queen-quality
+    
+#filter and prepare vcf
+    cd $CLUSTER_SCRATCH/queen-quality
+    vcf="/depot/bharpur/data/popgenomes/gencove/NCstate/NCstate_merged.bcf.gz"
+    
+
+
+
+
+
+
+
+    
+
     
 #pull most recent plink file...
     cd $CLUSTER_SCRATCH/pipeline/plink
