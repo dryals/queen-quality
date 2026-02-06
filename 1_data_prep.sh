@@ -47,7 +47,7 @@ echo "-----------------------"
     
     #mark low propability as missing 
     echo "    mark missing..."
-    bcftools filter samples.bcf.gz -S . -i 'GP[:0] > 0.95 | GP[:1] > 0.95 | GP[:2] > 0.95' \
+    bcftools filter samples.bcf.gz -S . -i 'GP[:0] > 0.99 | GP[:1] > 0.99 | GP[:2] > 0.99' \
         --threads $SLURM_NTASKS -Ob -o samples.missing.bcf.gz
         
     #filter in plink
