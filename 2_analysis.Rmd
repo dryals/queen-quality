@@ -1,0 +1,396 @@
+---
+title: "tarpy_selection"
+author: "Dylan Ryals"
+date: "2026-02-06"
+output: html_document
+editor_options: 
+  chunk_output_type: console
+---
+
+Genomic Selection from skim-seq of queens and phenotypic records
+
+```{r setup, include=FALSE}
+library(tidyverse)
+library(Matrix)
+library(cowplot)
+library(readxl)
+library(corrplot)
+library(ggrepel)
+
+select = dplyr::select
+rename = dplyr::rename
+theme_set(theme_bw())
+
+setwd("/home/dylan/Documents/bees/harpurlab/project/gensel/tarpy")
+```
+
+
+read in data and manipulate
+```{r}
+#global variable for dataset name
+SET = 'tarpy'
+
+#TODO: calcualte G following van raiden ...
+G = read.delim(paste0("data/", SET, ".small.king"), header = F)
+  colnames(G) = rownames(G) =
+    read.delim(paste0("data/", SET, ".small.king.id"), header = T)[,1]
+
+  
+# #relatedness accounting for ancestry
+#   hook = "QC"
+#   
+#   #read and format relatedness 
+#   reladmix = read.delim(paste0("data/", hook, ".rel"), header = T)
+#   id = as.numeric(unique(c(reladmix$ind1, reladmix$ind2)))
+# 
+#   reladmix$r = reladmix$k2 + (reladmix$k1 / 2)
+#   
+#   rel = reladmix %>% select(id1 = ind1, id2 = ind2, r)
+#   
+#   relid = read.delim("data/tarpy.fam",
+#                      header = F, sep = "")[,1]
+#   
+#   relmat = matrix(NA, nrow = length(relid), ncol = length(relid))
+#   colnames(relmat) = rownames(relmat) = relid
+#   relmat[lower.tri(relmat,diag=F)] <- rel$r
+#   
+#   
+#   
+#   diag(relmat) = diag(as.matrix(G))
+#   relmat = forceSymmetric(relmat,uplo="L") %>% as.matrix
+#   
+#   all(colnames(relmat) == colnames(G))
+#   
+#   (relmat - G)[lower.tri(G, diag = F)] %>% hist()
+
+  
+#phenotypes
+  preblup = read_excel(paste0("data/", SET, "-data.xlsx")) %>% 
+    mutate(vcf_id = gsub(" ", "", QC))
+  
+  
+  #data exploration
+  colSums(is.na(preblup))
+  
+  #preblup[,5:12] %>% sapply(hist)
+  preblup[,5:12] %>% as.matrix() %>% apply(MARGIN = 2, FUN = as.numeric) %>% 
+    cor(use = 'complete.obs') %>% corrplot()
+
+  pca = preblup[rowSums(is.na(preblup)) == 0 , 5:12] %>% 
+    as.matrix() %>% apply(MARGIN = 2, FUN = as.numeric) %>% 
+    prcomp(center = T, scale = T) 
+  
+  biplot(pca)
+  title(main = "5. Phenotype PCA", line = 2)
+  
+```
+
+Quick figs
+```{r}
+#genetic PCA
+gpca = read.delim(paste0("data/", SET, ".eigenvec"),
+                  sep = "", header = F)[,c(1, 3:5)]
+  colnames(gpca) = c("vcf_id", "PC1", "PC2", "PC3")
+  
+  preblup = preblup %>% left_join(gpca)
+  
+  ggplot(preblup, aes(x = PC1, y = PC2, color = Location)) + 
+    geom_point()
+
+```
+
+
+
+format for blup
+```{r}
+  blup_rename = function(v){
+    u = unique(v[!is.na(v)])
+    out = v
+    for(i in 1:length(u)){
+      out[v == u[i]] = i
+    }
+    return(as.numeric(out))
+  }
+
+
+pheno = preblup %>% 
+  filter(vcf_id %in% colnames(G))
+
+#cluster small sources
+  pheno.cluster = pheno %>% group_by(Source) %>% 
+    summarise(n = n()) %>% filter(n<4)
+  
+  pheno$source2 = pheno$Source
+  pheno$source2[pheno$source2 %in% pheno.cluster$Source] = "Other"
+  
+  #summary(lm(weight ~ source, data = pheno))
+
+
+#TODO: consider standardizing...
+  
+pheno = pheno %>% 
+  select(vcf_id, source = source2, viability = `% Viability`, 
+         weight = Weight, PC1, PC2) %>% 
+  mutate(iid = 1:nrow(pheno),
+         sid = blup_rename(source),
+         viability = round(scale(as.numeric(viability))[,1], 4),
+         #viability = round(as.numeric(viability), 4),
+         weight = round(scale(weight)[,1], 4)
+         #weight = round(weight, 4)
+         )
+
+
+#output for pheno
+  pheno.out = pheno %>% 
+    select(iid, sid, weight, viability, PC1, PC2)
+  
+  write.table(pheno.out, "blup/pheno.txt", 
+              col.names = F, row.names = F, quote = F)
+  
+  #output matrix
+  
+  final.mat = G[pheno$vcf_id, pheno$vcf_id]
+  
+  N = dim(final.mat)[1]
+  covmat = matrix(ncol = 3, nrow = (N*N-N)/2 + N)
+  cmr = 0
+  for(i in 1:N){
+    for(j in 1:i){
+      cmr = cmr +1
+      covmat[cmr,] = c(i,j, final.mat[i,j])
+    }
+  }
+  
+  write.table(covmat, "blup/covmat.txt", row.names = F, col.names = F, sep = " ")
+    max(covmat[,2])
+  
+sapply(pheno.out, max)
+```
+
+
+read results: quantitative
+```{r}
+#pull solutions: 2-trait
+  sol = read.delim("blup/sol-1.txt", sep = "", header = F)[-1,]
+    colnames(sol) = c("trait", "effect", "level" ,"solution", "se")
+    sol = sol %>% mutate(se = as.numeric(se),
+                         solution = as.numeric(solution))  
+
+  sol.long = sol %>% 
+    filter(effect == 1) %>% select(-effect) %>% rename(bv = solution) %>% 
+    mutate(trait = recode(trait, `1` = "weight", `2` = "viability"))
+  
+  sol.long = sol.long %>% 
+    left_join(pheno %>% select(level = iid, vcf_id) %>% 
+                mutate(level = as.character(level)))
+  
+    sol.wide = sol.long %>%
+    pivot_wider(values_from = c(se, bv), names_from = trait)
+
+  sol.wide %>% select(starts_with("bv")) %>% pairs()
+
+#plot against raw pheno
+  
+  pbv = sol.wide%>% 
+    left_join(preblup %>% select(vcf_id, weight = Weight, viability = `% Viability`,
+              Location, Source)) %>% 
+    mutate(viability = as.numeric(viability))
+  
+#plotting BVs
+  p6a = ggplot(pbv, aes(x = weight, y = bv_weight, color = Location,
+                  ymax = bv_weight + se_weight, ymin = bv_weight - se_weight)) +
+    geom_pointrange(size = 1) + 
+    labs(title = "6a. Breeding Values")
+  
+  p6b = ggplot(pbv, aes(x = viability, y = bv_viability, color = Location,
+                  ymax = bv_viability + se_viability, ymin = bv_viability - se_viability)) +
+    geom_pointrange(size = 1) +
+    labs(title = "6b. Breeding Values")
+  
+  pbv$toplabs = pbv$vcf_id
+    pbv$toplabs[pbv$bv_viability < 0.25 | pbv$bv_weight < 0.18] = NA
+  
+  p6c = ggplot(pbv, aes(x = bv_weight, y = bv_viability, color = Location,
+                  label = toplabs)) +
+    geom_point(size = 3) + 
+    geom_label_repel()+
+    labs(title = "6c. Selection Candidates")
+  
+```
+
+
+Selection Index ...
+```{r}
+
+```
+
+
+Output for GWAS
+```{r}
+#adjust with lm
+gwas = pheno %>% 
+  left_join(preblup %>% select(PC1, PC2))
+
+  summary(lm(weight ~ source + PC1 + PC2, data = gwas))
+
+  gwas$adj.weight = lm(weight ~ source + PC1 + PC2, data = gwas)$residuals %>% 
+    round(4)
+  gwas$adj.viability = lm(viability ~ source + PC1 + PC2, data = gwas)$residuals %>% 
+    round(4)
+
+  #write out
+  gwas.out = data.frame(fid = gwas$vcf_id, 
+                        iid = gwas$vcf_id, 
+                        weight = gwas$adj.weight, 
+                        viability = gwas$adj.viability)
+  write.table(file = "data/tarpy_weight.pheno",
+              gwas.out %>% select(-viability),
+              col.names = F, row.names = F, quote = F,
+              sep = "\t")
+    write.table(file = "data/tarpy_viability.pheno",
+              gwas.out %>% select(-weight),
+              col.names = F, row.names = F, quote = F,
+              sep = "\t")
+    
+    
+#read results
+  #viability
+  v.mlma = read.delim("data/tarpy_viability.mlma", sep = "")
+  v.mlma$padj = p.adjust(v.mlma$p, method = "bonferroni", n = nrow(v.mlma))
+  v.mlma$logp = log(v.mlma$padj, base = 10)* -1
+  v.mlma$lograwp = log(v.mlma$p, base = 10) * -1
+  
+  hist(v.mlma$p)
+  
+  p7a = ggplot(v.mlma, aes(x = bp, y = lograwp)) + 
+    geom_point() + 
+    geom_hline(aes(yintercept = 
+                     (-1 * log(0.05 / nrow(v.mlma), base = 10))),
+                      #(-1 * log(0.05, base = 10))),
+           linetype = 2, col = 'red') +
+    facet_wrap(facets = vars(Chr), scales = "free") + 
+    labs(title = "7a. GWAS: Viability", y = "-log(p)") +
+    scale_x_continuous(labels = function(x) format(x, scientific = TRUE))
+    
+    
+  #weight
+  w.mlma = read.delim("data/tarpy_weight.mlma", sep = "")
+  w.mlma$padj = p.adjust(w.mlma$p, method = "bonferroni", n = nrow(w.mlma))
+  w.mlma$logp = log(w.mlma$padj, base = 10)* -1
+  w.mlma$lograwp = log(w.mlma$p, base = 10) * -1
+  
+  
+  p7b = ggplot(w.mlma, aes(x = bp, y = lograwp)) + 
+    geom_point() + 
+    geom_hline(aes(yintercept = 
+                     (-1 * log(0.05 / nrow(v.mlma), base = 10))),
+                      #(-1 * log(0.05, base = 10))),
+           linetype = 2, col = 'red') +
+    facet_wrap(facets = vars(Chr), scales = "free") + 
+    labs(title = "7a. GWAS: Weight", y = "-log(p)") +
+    scale_x_continuous(labels = function(x) format(x, scientific = TRUE))
+  
+
+qqPlot <- function(pval, truncate = FALSE, ylim=NULL, thinThreshold=NULL, ci=TRUE, ...) 
+{
+  # pvalue is a vector of p-values
+  # truncate is T/F whether to truncate the y-axis (observed) to the same limits as the x-axis (expected)
+  # thin is whether to thin insignificant p-values
+  
+  pval <- -log10(sort(pval)) # sort() removes NAs
+  n <- length(pval)
+  a <- 1:n
+  b <- a/n
+  x <- -log10(b)
+  
+  if (!is.null(thinThreshold)){
+    breaks <- seq(from=0, to=thinThreshold, length.out=11)
+    pval.cut <- cut(pval, breaks=breaks, right=FALSE)
+    #quant <- quantile(pval[pval < thinThreshold], probs=1:10/10)
+    #pval.cut <- cut(pval, breaks=c(0, quant), right=FALSE)
+    ind.list <- list()
+    for (level in levels(pval.cut)){
+      sel <- which(pval.cut == level)
+      ind.list[[level]] <- sel[sample.int(length(sel), min(1000, length(sel)))]
+    }
+    ind.list[["max"]] <- which(pval >= thinThreshold)
+    ind <- unlist(ind.list, use.names=FALSE)
+    ind <- sort(ind) # sorting necessary for polygon, below
+  } else {
+    ind <- 1:n
+  }
+  
+  
+  char <- rep(1,n)
+  if(!is.logical(truncate) | truncate){
+    if (is.logical(truncate)){
+      maxx <- max(x)+2  
+    } else {
+      maxx <- min(truncate, max(pval))
+    }
+    
+    ylm <- c(0,maxx)
+    ylb <- expression(paste(-log[10], "(observed P) - truncated"))
+    nx <- length(which(pval > maxx))
+    if(nx > 0){
+      pval[1:nx] <- maxx
+      char[1:nx] <- 2
+    }
+    
+  } else {
+    ylm <- ylim
+    ylb <- expression(paste(-log[10], "(observed P)"))
+  }
+  plot(x[ind], pval[ind], type = "n", ylim = ylm, ylab = ylb,
+       xlab = expression(paste(-log[10], "(expected P)")), ...)
+  # upper and lower have already been subset
+  if (ci){
+    upper <- qbeta(0.05, a[ind], rev(a)[ind])
+    lower <- qbeta(0.95, a[ind], rev(a)[ind])
+
+    polygon(-log10(c(b[ind], rev(b[ind]))), -log10(c(upper, rev(lower))), density=NA, col="gray")
+  }
+  points(x[ind], pval[ind], pch = 19, ...)  
+  abline(0,1,col="red")  
+}
+    
+
+qqPlot(v.mlma$p)
+qqPlot(w.mlma$p)
+```
+
+
+Output all plots to PDF
+```{r}
+#save if everythign looks good
+setwd("/home/dylan/Documents/bees/harpurlab/project/popgen/beekreports")
+SUB = "Bradley Metz & David Tarpy"
+SUB.nospace = gsub(" |[.] |[|]|[&]", "_", SUB)
+system(paste0("mkdir -p ", SUB.nospace))
+
+
+  
+  pdf(paste0(SUB.nospace, "/combined2.pdf"),# File name
+    width = 11, height = 8.5, # Width and height in inches
+    bg = "white",
+    paper = "USr",
+    #paper = c(rep("US"))
+    title = "Purdue Honey Bee Genomics Report")  
+  
+  biplot(pca)
+  title(main = "5. Phenotype PCA", line = 2)
+  p6a
+  p6b
+  p6c
+  p7a
+  p7b
+
+  dev.off()  
+  
+  
+```
+
+
+
+
+
