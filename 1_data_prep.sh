@@ -5,7 +5,7 @@
 #SBATCH -A bharpur
 #SBATCH --nodes=1 
 #SBATCH --ntasks=8
-#SBATCH --partition=cpu
+#SBATCH --partition cpu
 #SBATCH --time=1-00:00:00
 #SBATCH --job-name data_prep
 
