@@ -27,12 +27,15 @@ echo "-----------------------"
     
 #filter and prepare vcf
     #vcf location
-    vcf="/depot/bharpur/data/popgenomes/gencove/NCstate/NCstate_merged.bcf.gz"
+    vcf="/depot/bharpur/data/popgenomes/gencove/NCstate/NCstate_final.bcf.gz"
     rename=chrsrename.txt
     chrs=$( awk '{print $1}' $rename | tr '\n' ',' )
     chrsShort=$( awk '{print $2}' $rename | tr '\n' ' ' )
     
     cd $CLUSTER_SCRATCH/queen-quality
+    
+    #TODO: investigate duplicated samples: QC2573, QC3371
+    #TODO: ensure all swamps and incorrect names are corrected!
     
     #keep no contigs, only bialleleci snps, remove duplicats (norm), rename chrs
     echo "filtering sample vcf..."
