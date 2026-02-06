@@ -1,5 +1,5 @@
 ---
-title: "tarpy_selection"
+title: "Queen Quality"
 author: "Dylan Ryals"
 date: "2026-02-06"
 output: html_document
@@ -21,67 +21,69 @@ select = dplyr::select
 rename = dplyr::rename
 theme_set(theme_bw())
 
-setwd("/home/dylan/Documents/bees/harpurlab/project/gensel/tarpy")
+setwd("/home/dylan/Documents/bees/harpurlab/project/gensel/tarpy/queen-quality")
 ```
 
 
 read in data and manipulate
 ```{r}
-#global variable for dataset name
-SET = 'tarpy'
+#TODO: adjust phenotypes, perform GWAS with GRM and PCA?
 
 #TODO: calcualte G following van raiden ...
-G = read.delim(paste0("data/", SET, ".small.king"), header = F)
+#TODO: account for admixture components? ancestry?
+#TODO: enaure all samples are accounted for!
+
+
+#read phenotypic data
+pheno = read_excel("data/phenotypes.xlsx") %>% 
+  mutate(id = gsub(" ", "", QC))
+  #standardize locations
+  loc.trans = data.frame(Location = c("Hawaii", "Georgia", "Southern California", "Minnesota",
+                                      "Northern California", "Washington", "West Virginia",
+                                      "Michigan", "Unknown", "NCA", "NC", "USA", "MN", 
+                                      "GA", "HI", "PA", "CA", "OH", "NY", "WA", "SCA",
+                                      "VA", "AL", "FL", "OR"), 
+    
+                         loc.fix = c("HI", "GA", "SCA", "MN",
+                                      "NCA", "WA", "WV",
+                                      "MI", NA, "NCA", "NC", NA, "MN", 
+                                      "GA", "HI", "PA", "CA", "OH", "NY", "WA", "SCA",
+                                      "VA", "AL", "FL", "OR"))
+  pheno = pheno %>% left_join(loc.trans)
+
+SET = "samples-filter"
+
+#PCA
+pca = read.delim("data/samples-maf.eigenvec", header = F, sep = "")[,c(1,3:5)]
+  colnames(pca) = c("id", "PC1", "PC2", "PC3")
+  
+  pca = pca %>% left_join(pheno %>% select(id, loc.fix))
+
+  ggplot(pca, aes(x = PC1, y = PC2, color = loc.fix)) + geom_point()
+
+
+
+
+G = read.delim(paste0("data/", SET, ".small.rel"), header = F)
   colnames(G) = rownames(G) =
-    read.delim(paste0("data/", SET, ".small.king.id"), header = T)[,1]
+    read.delim(paste0("data/", SET, ".small.rel.id"), header = T)[,1]
 
   
-# #relatedness accounting for ancestry
-#   hook = "QC"
-#   
-#   #read and format relatedness 
-#   reladmix = read.delim(paste0("data/", hook, ".rel"), header = T)
-#   id = as.numeric(unique(c(reladmix$ind1, reladmix$ind2)))
-# 
-#   reladmix$r = reladmix$k2 + (reladmix$k1 / 2)
-#   
-#   rel = reladmix %>% select(id1 = ind1, id2 = ind2, r)
-#   
-#   relid = read.delim("data/tarpy.fam",
-#                      header = F, sep = "")[,1]
-#   
-#   relmat = matrix(NA, nrow = length(relid), ncol = length(relid))
-#   colnames(relmat) = rownames(relmat) = relid
-#   relmat[lower.tri(relmat,diag=F)] <- rel$r
-#   
-#   
-#   
-#   diag(relmat) = diag(as.matrix(G))
-#   relmat = forceSymmetric(relmat,uplo="L") %>% as.matrix
-#   
-#   all(colnames(relmat) == colnames(G))
-#   
-#   (relmat - G)[lower.tri(G, diag = F)] %>% hist()
+#phenotype PCA
+  pheno.num = pheno %>% 
+    select(m.Body, v.Sperm, l.Sperm, t.Sperm, w.Head, w.Thorax, d.Spermatheca) %>% 
+    as.matrix() %>% apply(MARGIN = 2, FUN = as.numeric)
+  
+  pheno.num %>% cor(use = 'complete.obs') %>% corrplot()
+  
+  pheno.scale = pheno.num %>% apply(MARGIN = 2, FUN = scale)
+  pheno.scale[is.na(pheno.scale)] = 0
+  
 
-  
-#phenotypes
-  preblup = read_excel(paste0("data/", SET, "-data.xlsx")) %>% 
-    mutate(vcf_id = gsub(" ", "", QC))
-  
-  
-  #data exploration
-  colSums(is.na(preblup))
-  
-  #preblup[,5:12] %>% sapply(hist)
-  preblup[,5:12] %>% as.matrix() %>% apply(MARGIN = 2, FUN = as.numeric) %>% 
-    cor(use = 'complete.obs') %>% corrplot()
-
-  pca = preblup[rowSums(is.na(preblup)) == 0 , 5:12] %>% 
-    as.matrix() %>% apply(MARGIN = 2, FUN = as.numeric) %>% 
-    prcomp(center = T, scale = T) 
+  pca = pheno.scale %>% 
+    prcomp(center = F, scale = F) 
   
   biplot(pca)
-  title(main = "5. Phenotype PCA", line = 2)
   
 ```
 
