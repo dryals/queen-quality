@@ -9,8 +9,8 @@
 #SBATCH --time=1-00:00:00
 #SBATCH --job-name data_prep
 
-#SBATCH --output=/home/dryals/ryals/queen-quality/prep.out
-#SBATCH --error=/home/dryals/ryals/queen-quality/prep.out
+#SBATCH --output=/home/dryals/ryals/queen-quality/outputs/prep.out
+#SBATCH --error=/home/dryals/ryals/queen-quality/outputs/prep.out
 
 #Dylan Ryals 06 FEB 2026
 #last edit
@@ -19,6 +19,7 @@ echo "date"
 echo "-----------------------"
 
 #modules
+    module purge
     module load biocontainers bcftools plink
 
 #directory setup
