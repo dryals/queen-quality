@@ -13,7 +13,7 @@
 #SBATCH --error=/home/dryals/ryals/queen-quality/outputs/dump_mafprune.out
 
 #Dylan Ryals 21 JAN 2025
-#last edit   29 SEP 2025
+#last edit   09 FEB 2026
 
 #fixed partition
 

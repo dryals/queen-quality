@@ -13,7 +13,7 @@
 #SBATCH --error=/home/dryals/ryals/queen-quality/outputs/prep.out
 
 #Dylan Ryals 06 FEB 2026
-#last edit
+#last edit   09 FEB 2026
 
 echo "date"
 echo "-----------------------"
@@ -38,7 +38,7 @@ echo "-----------------------"
     cd $CLUSTER_SCRATCH/queen-quality
     
     #TODO: investigate duplicated samples: QC2573, QC3371
-    #TODO: ensure all swamps and incorrect names are corrected!
+    #TODO: ensure all swaps and incorrect names are corrected!
     
     #keep no contigs, only bialleleci snps, remove duplicats (norm), rename chrs
     echo "filtering sample vcf..."
@@ -106,7 +106,7 @@ echo "-----------------------"
         plink --bfile samples-filter --make-bed --exclude ../ld/allMAFremove.txt \
             --threads $SLURM_NTASKS --silent --out samples-pruned
     
-
+echo "-----------------------"
 #PCA and GRM
     cd $CLUSTER_SCRATCH/queen-quality/plink
     echo "PCA..."
