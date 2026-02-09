@@ -68,8 +68,6 @@ echo "-----------------------"
     awk '{print $1}' samples-filter.fam > samples-filter.names
     
 echo "-----------------------"
-
-#TODO: ld pruning and not MAF filtering
     echo "LD pruning..."
     echo "    calculating LD and af..."
     cd ${CLUSTER_SCRATCH}/queen-quality/plink
@@ -88,8 +86,8 @@ echo "-----------------------"
     #start
     sbatch --array=1-16 maf_prune_array.sh
     #wait
-    #WARNING: same collision problem, need to flock
-    echo "    waiting for pruning (see prune.out)..."
+    #WARNING: collision problem, need to flock?
+    echo "    waiting for pruning (see mafprune.out)..."
     while [ $(grep "FINISHED" outputs/mafprune.out| wc -l | awk '{print $1}') -lt 16 ] #wait for all 16 to finish
     do
         sleep 20 #wait between each check
