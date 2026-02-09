@@ -33,42 +33,24 @@ read in data and manipulate
 #TODO: account for admixture components? ancestry?
 #TODO: enaure all samples are accounted for!
 
-
-#read phenotypic data
-pheno = read_excel("data/phenotypes.xlsx") %>% 
-  mutate(id = gsub(" ", "", QC))
-  #standardize locations
-  loc.trans = data.frame(Location = c("Hawaii", "Georgia", "Southern California", "Minnesota",
-                                      "Northern California", "Washington", "West Virginia",
-                                      "Michigan", "Unknown", "NCA", "NC", "USA", "MN", 
-                                      "GA", "HI", "PA", "CA", "OH", "NY", "WA", "SCA",
-                                      "VA", "AL", "FL", "OR"), 
-    
-                         loc.fix = c("HI", "GA", "SCA", "MN",
-                                      "NCA", "WA", "WV",
-                                      "MI", NA, "NCA", "NC", NA, "MN", 
-                                      "GA", "HI", "PA", "CA", "OH", "NY", "WA", "SCA",
-                                      "VA", "AL", "FL", "OR"))
-  pheno = pheno %>% left_join(loc.trans)
-
 SET = "samples-filter"
 
-#PCA
-pca = read.delim("data/samples-maf.eigenvec", header = F, sep = "")[,c(1,3:5)]
-  colnames(pca) = c("id", "PC1", "PC2", "PC3")
+#genotype PCA
+  eig = read.delim("data/samples-maf.eigenval", header = F)
+    eig$perc = eig$V1 / sum(eig$V1)
+    eig$x = 1:nrow(eig)
+    
+    eig %>% filter(x < 25) %>% 
+    ggplot(aes(y = perc, x = x)) + geom_col()
+
+  pca.geno = read.delim("data/samples-maf.eigenvec", header = F, sep = "")[,c(1,3:5)]
+    colnames(pca.geno) = c("id", "PC1", "PC2", "PC3")
+    
+    pca.geno = pca.geno %>% left_join(pheno %>% select(id, loc.fix))
   
-  pca = pca %>% left_join(pheno %>% select(id, loc.fix))
+    ggplot(pca.geno, aes(x = PC1, y = PC2, color = loc.fix)) + geom_point()
+    
 
-  ggplot(pca, aes(x = PC1, y = PC2, color = loc.fix)) + geom_point()
-
-
-
-
-G = read.delim(paste0("data/", SET, ".small.rel"), header = F)
-  colnames(G) = rownames(G) =
-    read.delim(paste0("data/", SET, ".small.rel.id"), header = T)[,1]
-
-  
 #phenotype PCA
   pheno.num = pheno %>% 
     select(m.Body, v.Sperm, l.Sperm, t.Sperm, w.Head, w.Thorax, d.Spermatheca) %>% 
@@ -80,10 +62,54 @@ G = read.delim(paste0("data/", SET, ".small.rel"), header = F)
   pheno.scale[is.na(pheno.scale)] = 0
   
 
-  pca = pheno.scale %>% 
+  pca.pheno = pheno.scale %>% 
     prcomp(center = F, scale = F) 
   
-  biplot(pca)
+  biplot(pca.pheno)
+
+#GWAS  
+  #viability
+  v.mlma = read.delim("data/qq_viability.mlma", sep = "")
+  v.mlma$padj = p.adjust(v.mlma$p, method = "bonferroni", n = nrow(v.mlma))
+  v.mlma$logp = log(v.mlma$padj, base = 10)* -1
+  v.mlma$lograwp = log(v.mlma$p, base = 10) * -1
+
+  out = v.mlma %>% filter(padj < 0.05) %>% arrange(padj) %>% 
+    select(Chr, bp, A1, A2, p, padj)
+  
+  write.csv(out, file = "data/viability_gwashits.csv", 
+            row.names = F, quote = F)
+  
+  hist(v.mlma$p)
+  
+  p7a = ggplot(v.mlma, aes(x = bp, y = lograwp)) + 
+    geom_point() + 
+    geom_hline(aes(yintercept = 
+                     (-1 * log(0.05 / nrow(v.mlma), base = 10))),
+                      #(-1 * log(0.05, base = 10))),
+           linetype = 2, col = 'red') +
+    facet_wrap(facets = vars(Chr), scales = "free") + 
+    labs(title = "7a. GWAS: Viability", y = "-log(p)") +
+    scale_x_continuous(labels = function(x) format(x, scientific = TRUE))
+    
+    
+  #weight
+  w.mlma = read.delim("data/qq_weight.mlma", sep = "")
+  w.mlma$padj = p.adjust(w.mlma$p, method = "bonferroni", n = nrow(w.mlma))
+  w.mlma$logp = log(w.mlma$padj, base = 10)* -1
+  w.mlma$lograwp = log(w.mlma$p, base = 10) * -1
+  
+  
+  p7b = ggplot(w.mlma, aes(x = bp, y = lograwp)) + 
+    geom_point() + 
+    geom_hline(aes(yintercept = 
+                     (-1 * log(0.05 / nrow(v.mlma), base = 10))),
+                      #(-1 * log(0.05, base = 10))),
+           linetype = 2, col = 'red') +
+    facet_wrap(facets = vars(Chr), scales = "free") + 
+    labs(title = "7a. GWAS: Weight", y = "-log(p)") +
+    scale_x_continuous(labels = function(x) format(x, scientific = TRUE))
+  
   
 ```
 

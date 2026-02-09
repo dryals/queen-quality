@@ -68,11 +68,49 @@ echo "-----------------------"
     awk '{print $1}' samples-filter.fam > samples-filter.names
     
 echo "-----------------------"
+
+#TODO: ld pruning and not MAF filtering
+    echo "LD pruning..."
+    echo "    calculating LD and af..."
+    cd ${CLUSTER_SCRATCH}/queen-quality/plink
+        plink --bfile samples-filter \
+            -r2 --ld-window 1000 --ld-window-kb 50 --ld-window-r2 0.2 \
+            --make-bed --threads $SLURM_NTASKS --out samples-filter --silent
+            
+         plink --bfile samples-filter --freq --silent --out samples-filter
     
+    echo"    starting array pruning..."
+    cd $CLUSTER_SCRATCH/queen-quality/plink
+    mkdir -p ld
+    cd ~/ryals/queen-quality
+    echo -n "" > outputs/mafprune.out
+    #run R script to generate best set of sites maf
+    #start
+    sbatch --array=1-16 maf_prune_array.sh
+    #wait
+    #WARNING: same collision problem, need to flock
+    echo "    waiting for pruning (see prune.out)..."
+    while [ $(grep "FINISHED" outputs/mafprune.out| wc -l | awk '{print $1}') -lt 16 ] #wait for all 16 to finish
+    do
+        sleep 20 #wait between each check
+    done
+    #create full output
+    echo "    compiling results..."
+    cd ${CLUSTER_SCRATCH}/queen-quality/ld
+    #this will hold all the sites to remove
+    cat chr*/MAFremove.txt > allMAFremove.txt
+    count=$( wc -l allMAFremove.txt | awk '{print $1}')
+    echo "    marked $count sites"
+    echo "    removing sites..."
+        cd $CLUSTER_SCRATCH/queen-quality/plink
+        plink --bfile samples-filter --make-bed --exclude ../ld/allMAFremove.txt \
+            --threads $SLURM_NTASKS --silent --out samples-pruned
+    
+
 #PCA and GRM
     cd $CLUSTER_SCRATCH/queen-quality/plink
     echo "PCA..."
-    plink --bfile samples-filter --maf 0.05 --pca 500 \
+    plink --bfile samples-pruned --maf 0.05 --pca 500 \
         --threads $SLURM_NTASKS --out samples-maf --silent
     
     echo "GRM..."
@@ -80,9 +118,44 @@ echo "-----------------------"
     module purge
     module load biocontainers plink2
     
-    plink2 --bfile samples-filter -make-rel square \
-    --threads $SLURM_NTASKS --out samples-filter --silent
+    plink2 --bfile samples-pruned -make-rel square \
+    --threads $SLURM_NTASKS --out samples-pruned --silent
     
+    module purge
+    module load biocontainers r
+    
+echo "-----------------------"
+echo "preparing phenotypic data in R..."
+    cd ~/ryals/queen-quality
+    R --vanilla --no-save --no-echo --silent < pheno_adjust.R
+
+
+echo "-----------------------"
+echo "running GWAS..."
+    echo "    gcta..."
+    cd $CLUSTER_SCRATCH/queen-quality
+    mkdir -p gwas
+    cd gwas
+    gcta=/depot/bharpur/apps/gcta/gcta-1.94.1-linux-kernel-3-x86_64/gcta-1.94.1
+    
+        $gcta --bfile ../plink/samples-pruned --make-grm --thread-num $SLURM_NTASKS \
+            --autosome-num 16 --out qq
+            
+        #TODO: missing individuals here
+            
+        echo "    mlma..."
+        #adjusted phenotypes generated in R script...
+        $gcta --mlma --bfile ../plink/samples-pruned --grm qq \
+            --pheno ~/ryals/queen-quality/data/qq_viability.pheno \
+            --autosome-num 16 \
+            --out qq_viability --thread-num $SLURM_NTASKS
+            
+        $gcta --mlma --bfile ../plink/samples-pruned --grm qq \
+            --pheno ~/ryals/queen-quality/data/qq_weight.pheno \
+            --autosome-num 16 \
+            --out qq_weight --thread-num $SLURM_NTASKS
+
+
     
 #TODO: admixture components
 
