@@ -52,30 +52,31 @@ echo "-----------------------"
     
     #TODO:
     #remove non-QC samples
+    bcftools query samples.bcf.gz -l > samples.names
+    grep "QC" samples.names > keep.names
+        
+    #mark low propability as missing 
+    echo "    mark missing..."
+    bcftools view samples.bcf.gz -S keep.names -Ou | 
+        bcftools filter  -S . -i 'GP[:0] > 0.99 | GP[:1] > 0.99 | GP[:2] > 0.99' \
+        --threads $SLURM_NTASKS -Ob -o samples.missing.bcf.gz
+        
+    #filter in plink
+    echo "    mind, geno, and maf filters..."
+    cd $CLUSTER_SCRATCH/queen-quality
+    mkdir -p plink
+    #takes LONG time
+    plink --bcf samples.missing.bcf.gz --make-bed \
+        --allow-extra-chr --chr-set 16 no-xy -chr $chrsShort \
+        --set-missing-var-ids @:# \
+        --mind 0.2 --geno 0.1 --maf 0.01 \
+        --threads $SLURM_NTASKS --out plink/samples-filter --silent
+        
+    #output sites for ref filter, samples
+    cd plink
+    awk '{print $2}' samples-filter.bim | tr ":" "\t" > samples-filter.sites
+    awk '{print $1}' samples-filter.fam > samples-filter.names
     
-    
-#     
-#     #mark low propability as missing 
-#     echo "    mark missing..."
-#     bcftools filter samples.bcf.gz -S . -i 'GP[:0] > 0.99 | GP[:1] > 0.99 | GP[:2] > 0.99' \
-#         --threads $SLURM_NTASKS -Ob -o samples.missing.bcf.gz
-#         
-#     #filter in plink
-#     echo "    mind, geno, and maf filters..."
-#     cd $CLUSTER_SCRATCH/queen-quality
-#     mkdir -p plink
-#     #takes LONG time
-#     plink --bcf samples.missing.bcf.gz --make-bed \
-#         --allow-extra-chr --chr-set 16 no-xy -chr $chrsShort \
-#         --set-missing-var-ids @:# \
-#         --mind 0.2 --geno 0.1 --maf 0.01 \
-#         --threads $SLURM_NTASKS --out plink/samples-filter --silent
-#         
-#     #output sites for ref filter, samples
-#     cd plink
-#     awk '{print $2}' samples-filter.bim | tr ":" "\t" > samples-filter.sites
-#     awk '{print $1}' samples-filter.fam > samples-filter.names
-#     
 echo "-----------------------"
     echo "LD pruning..."
     echo "    calculating LD and af..."
@@ -177,16 +178,16 @@ echo "running GWAS..."
             --out qq_lsperm --thread-num $SLURM_NTASKS
 
 
-echo "-----------------------"  
-echo "running BLUP..."
-
-    cp blup.par0 blup
-    cd blup
-    #aireml
-    aireml=/depot/bharpur/apps/blupf90/airemlf90
-    $aireml blup.par0 #&> lastrun.log
-    
-
+# echo "-----------------------"  
+# echo "running BLUP..."
+# 
+#     cp blup.par0 blup
+#     cd blup
+#     #aireml
+#     aireml=/depot/bharpur/apps/blupf90/airemlf90
+#     $aireml blup.par0 #&> lastrun.log
+#     
+# 
 
 #TODO: admixture components
 
