@@ -56,17 +56,19 @@ echo "-----------------------"
 #     #filter in plink
 #     echo "    mind, geno, and maf filters..."
 #     mkdir -p plink
-#     #takes LONG time
-#     plink --bcf samples.missing.bcf.gz --make-bed --allow-extra-chr --chr-set 16 no-xy -chr $chrsShort \
-#         --set-missing-var-ids @:# \
-#         --mind 0.2 --geno 0.1 --maf 0.01 \
-#         --threads $SLURM_NTASKS --out plink/samples-filter --silent
-#         
-#     #output sites for ref filter, samples
-#     cd plink
-#     awk '{print $2}' samples-filter.bim | tr ":" "\t" > samples-filter.sites
-#     awk '{print $1}' samples-filter.fam > samples-filter.names
-#     
+    #takes LONG time
+    cd $CLUSTER_SCRATCH/queen-quality
+    plink --bcf samples.missing.bcf.gz --make-bed \
+        --allow-extra-chr --chr-set 16 no-xy -chr $chrsShort \
+        --set-missing-var-ids @:# \
+        --mind 0.2 --geno 0.1 --maf 0.01 \
+        --threads $SLURM_NTASKS --out plink/samples-filter --silent
+        
+    #output sites for ref filter, samples
+    cd plink
+    awk '{print $2}' samples-filter.bim | tr ":" "\t" > samples-filter.sites
+    awk '{print $1}' samples-filter.fam > samples-filter.names
+    
 echo "-----------------------"
     echo "LD pruning..."
     echo "    calculating LD and af..."
