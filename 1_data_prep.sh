@@ -186,7 +186,7 @@ echo "running GWAS..."
 echo "-----------------------"  
 echo "running BLUP..."
 
-    cp blup.par0 blup
+    cp blup.par1 blup
     cd blup
     #aireml
     aireml=/depot/bharpur/apps/blupf90/airemlf90
