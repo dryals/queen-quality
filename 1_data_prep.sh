@@ -22,51 +22,51 @@ echo "-----------------------"
     module purge
     module load biocontainers bcftools plink
 
-#directory setup
-    mkdir -p outputs
-    mkdir -p $CLUSTER_SCRATCH/queen-quality
-    
-echo "-----------------------"
-    
-#filter and prepare vcf
-    #vcf location
-    vcf="/depot/bharpur/data/popgenomes/gencove/NCstate/NCstate_final.bcf.gz"
-    rename=/home/dryals/ryals/queen-quality/chrsrename.txt
-    chrs=$( awk '{print $1}' $rename | tr '\n' ',' )
-    chrsShort=$( awk '{print $2}' $rename | tr '\n' ' ' )
-    
-    cd $CLUSTER_SCRATCH/queen-quality
-    
-    #TODO: investigate duplicated samples: QC2573, QC3371
-    #TODO: ensure all swaps and incorrect names are corrected!
-    
-    #keep no contigs, only bialleleci snps, remove duplicats (norm), rename chrs
-    echo "filtering sample vcf..."
-    bcftools view $vcf -v snps -r $chrs -Ou | bcftools norm -m +snps -Ou | \
-        bcftools view -m2 -M2 -Ou | \
-        bcftools annotate --rename-chrs $rename --threads $SLURM_NTASKS -Ob -o samples.bcf.gz
-    
-    bcftools index -c samples.bcf.gz
-    
-    #mark low propability as missing 
-    echo "    mark missing..."
-    bcftools filter samples.bcf.gz -S . -i 'GP[:0] > 0.99 | GP[:1] > 0.99 | GP[:2] > 0.99' \
-        --threads $SLURM_NTASKS -Ob -o samples.missing.bcf.gz
-        
-    #filter in plink
-    echo "    mind, geno, and maf filters..."
-    mkdir -p plink
-    #takes LONG time
-    plink --bcf samples.missing.bcf.gz --make-bed --allow-extra-chr --chr-set 16 no-xy -chr $chrsShort \
-        --set-missing-var-ids @:# \
-        --mind 0.2 --geno 0.1 --maf 0.01 \
-        --threads $SLURM_NTASKS --out plink/samples-filter --silent
-        
-    #output sites for ref filter, samples
-    cd plink
-    awk '{print $2}' samples-filter.bim | tr ":" "\t" > samples-filter.sites
-    awk '{print $1}' samples-filter.fam > samples-filter.names
-    
+#     
+# echo "-----------------------"
+# #directory setup
+#     mkdir -p outputs
+#     mkdir -p $CLUSTER_SCRATCH/queen-quality
+#     
+# #filter and prepare vcf
+#     #vcf location
+#     vcf="/depot/bharpur/data/popgenomes/gencove/NCstate/NCstate_final.bcf.gz"
+#     rename=/home/dryals/ryals/queen-quality/chrsrename.txt
+#     chrs=$( awk '{print $1}' $rename | tr '\n' ',' )
+#     chrsShort=$( awk '{print $2}' $rename | tr '\n' ' ' )
+#     
+#     cd $CLUSTER_SCRATCH/queen-quality
+#     
+#     #TODO: investigate duplicated samples: QC2573, QC3371
+#     #TODO: ensure all swaps and incorrect names are corrected!
+#     
+#     #keep no contigs, only bialleleci snps, remove duplicats (norm), rename chrs
+#     echo "filtering sample vcf..."
+#     bcftools view $vcf -v snps -r $chrs -Ou | bcftools norm -m +snps -Ou | \
+#         bcftools view -m2 -M2 -Ou | \
+#         bcftools annotate --rename-chrs $rename --threads $SLURM_NTASKS -Ob -o samples.bcf.gz
+#     
+#     bcftools index -c samples.bcf.gz
+#     
+#     #mark low propability as missing 
+#     echo "    mark missing..."
+#     bcftools filter samples.bcf.gz -S . -i 'GP[:0] > 0.99 | GP[:1] > 0.99 | GP[:2] > 0.99' \
+#         --threads $SLURM_NTASKS -Ob -o samples.missing.bcf.gz
+#         
+#     #filter in plink
+#     echo "    mind, geno, and maf filters..."
+#     mkdir -p plink
+#     #takes LONG time
+#     plink --bcf samples.missing.bcf.gz --make-bed --allow-extra-chr --chr-set 16 no-xy -chr $chrsShort \
+#         --set-missing-var-ids @:# \
+#         --mind 0.2 --geno 0.1 --maf 0.01 \
+#         --threads $SLURM_NTASKS --out plink/samples-filter --silent
+#         
+#     #output sites for ref filter, samples
+#     cd plink
+#     awk '{print $2}' samples-filter.bim | tr ":" "\t" > samples-filter.sites
+#     awk '{print $1}' samples-filter.fam > samples-filter.names
+#     
 echo "-----------------------"
     echo "LD pruning..."
     echo "    calculating LD and af..."
@@ -96,8 +96,17 @@ echo "-----------------------"
     echo "    compiling results..."
     cd ${CLUSTER_SCRATCH}/queen-quality/ld
     #this will hold all the sites to remove
+    rm allMAFremove.txt
     cat chr*/MAFremove.txt > allMAFremove.txt
     count=$( wc -l allMAFremove.txt | awk '{print $1}')
+    
+        #kill script if the above fails
+        if [ $count -eq 0  ]; then
+            echo -e "\e[30;41m Filters Failed! \e[0m"
+            exit 1
+        fi
+    
+    
     echo "    marked $count sites"
     echo "    removing sites..."
         cd $CLUSTER_SCRATCH/queen-quality/plink
