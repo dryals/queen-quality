@@ -24,6 +24,17 @@ pheno = pheno %>% left_join(loc.trans)
 #remove duplicate second entry
 pheno = pheno[-(which(pheno$id == "QC2573")[2]),]
 
+#collapse some small locs
+  #TODO: try to fix these???
+  small = pheno %>% group_by(loc.fix) %>% 
+    summarise(n = n()) %>% 
+    filter(n<5) %>% 
+    ungroup() %>% 
+    select(loc.fix)
+  
+  pheno$loc.fix[pheno$loc.fix %in% small$loc.fix] = "USA"
+  
+
 #read plink PCA
   pca.geno = read.delim("/scratch/negishi/dryals/queen-quality/plink/samples-pca.eigenvec",
                        header = F, sep = "")[,c(1, 3:5)]

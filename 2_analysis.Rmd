@@ -92,8 +92,8 @@ pheno = pheno[-(which(pheno$id == "QC2573")[2]),]
   v.mlma$logp = log(v.mlma$padj, base = 10)* -1
   v.mlma$lograwp = log(v.mlma$p, base = 10) * -1
 
-  out = v.mlma %>% filter(padj < 0.05) %>% arrange(padj) %>%
-    select(Chr, bp, A1, A2, p, padj)
+  # out = v.mlma %>% filter(padj < 0.05) %>% arrange(padj) %>%
+  #   select(Chr, bp, A1, A2, p, padj)
   # 
   # write.csv(out, file = "data/viability_gwashits.csv", 
   #           row.names = F, quote = F)
@@ -118,13 +118,13 @@ pheno = pheno[-(which(pheno$id == "QC2573")[2]),]
   w.mlma$lograwp = log(w.mlma$p, base = 10) * -1
   
   
-  p7b = ggplot(w.mlma, aes(x = bp, y = lograwp)) + 
+  ggplot(w.mlma, aes(x = bp, y = lograwp)) + 
     geom_point() + 
     geom_hline(aes(yintercept = 
                      (-1 * log(0.05 / nrow(v.mlma), base = 10))),
                       #(-1 * log(0.05, base = 10))),
            linetype = 2, col = 'red') +
-    facet_wrap(facets = vars(Chr), scales = "free") + 
+    facet_wrap(facets = vars(Chr), scales = "free_x") + 
     labs(title = "7a. GWAS: Weight", y = "-log(p)") +
     scale_x_continuous(labels = function(x) format(x, scientific = TRUE))
   
