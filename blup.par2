@@ -1,0 +1,29 @@
+DATAFILE
+pheno.txt
+NUMBER_OF_TRAITS
+2
+NUMBER_OF_EFFECTS
+2
+OBSERVATION(S)
+3 4 #lsperm weight
+WEIGHT(S)
+
+EFFECTS:
+1 1 911 cross #queen_id
+2 2 11 cross #location
+RANDOM_RESIDUAL VALUES
+  0.86578      0.36241E-01
+  0.36241E-01  0.28990   
+RANDOM_GROUP
+1 
+RANDOM_TYPE
+user_file_inv
+FILE
+covmat.txt
+(CO)VARIANCES
+  0.17209E-01  0.70920E-01
+  0.70920E-01  0.29228  
+OPTION missing -999
+#OPTION sol se
+#OPTION sol se
+#ulimit -s unlimited
