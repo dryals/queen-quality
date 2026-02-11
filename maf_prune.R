@@ -8,9 +8,9 @@ suppressMessages(library(tidyverse))
 
 #read data
 setwd('/scratch/negishi/dryals/queen-quality')
-ld = read.delim('plink/samples-filter.ld', sep = '', header = T) %>% 
+ld = read.delim('plink/samples-preprune.ld', sep = '', header = T) %>% 
   filter(CHR_A == chrno, CHR_B == chrno)
-maf = read.delim('plink/samples-filter.frq', sep = '', header = T) %>% 
+maf = read.delim('plink/samples-preprune.frq', sep = '', header = T) %>% 
   filter(CHR == chrno)
 
 #attach maf for A

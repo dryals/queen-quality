@@ -73,11 +73,11 @@ echo "-----------------------"
     cd ${CLUSTER_SCRATCH}/queen-quality/plink
         plink --bfile samples-filter \
             -r2 --ld-window 1000 --ld-window-kb 50 --ld-window-r2 0.2 \
-            --make-bed --threads $SLURM_NTASKS --out samples-filter --silent
+            --make-bed --threads $SLURM_NTASKS --out samples-preprune --silent
             
-         plink --bfile samples-filter --freq --silent --out samples-filter
+         plink --bfile samples-filter --freq --silent --out samples-preprune
     
-    echo"    starting array pruning..."
+    echo "    starting array pruning..."
     cd $CLUSTER_SCRATCH/queen-quality/plink
     mkdir -p ld
     cd ~/ryals/queen-quality
