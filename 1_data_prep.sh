@@ -21,6 +21,12 @@ echo "-----------------------"
 #modules
     module purge
     module load biocontainers bcftools plink
+    
+    #vcf location
+    vcf="/depot/bharpur/data/popgenomes/gencove/NCstate/NCstate_final.bcf.gz"
+    rename=/home/dryals/ryals/queen-quality/chrsrename.txt
+    chrs=$( awk '{print $1}' $rename | tr '\n' ',' )
+    chrsShort=$( awk '{print $2}' $rename | tr '\n' ' ' )
 
 #     
 # echo "-----------------------"
@@ -29,11 +35,6 @@ echo "-----------------------"
 #     mkdir -p $CLUSTER_SCRATCH/queen-quality
 #     
 # #filter and prepare vcf
-#     #vcf location
-#     vcf="/depot/bharpur/data/popgenomes/gencove/NCstate/NCstate_final.bcf.gz"
-#     rename=/home/dryals/ryals/queen-quality/chrsrename.txt
-#     chrs=$( awk '{print $1}' $rename | tr '\n' ',' )
-#     chrsShort=$( awk '{print $2}' $rename | tr '\n' ' ' )
 #     
 #     cd $CLUSTER_SCRATCH/queen-quality
 #     
