@@ -116,7 +116,7 @@ preblup = preblup %>%
 
 #output for pheno
   blup = preblup %>% 
-    select(iid, locid, lsperm, weight, vsperm)
+    select(iid, locid, lsperm, weight, vsperm, id)
   
   write.table(blup, "blup/pheno.txt", 
               col.names = F, row.names = F, quote = F)

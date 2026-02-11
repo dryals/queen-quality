@@ -186,22 +186,23 @@ echo "running GWAS..."
 echo "-----------------------"  
 echo "running BLUP..."
 
-    cp blup.par1 blup
+    cp blup.par2 blup
     cd blup
     #aireml
     aireml=/depot/bharpur/apps/blupf90/airemlf90
-    $aireml blup.par1 #&> lastrun.log
-    
-    #TODO
-    #read G and R matricies into blup.par2
-    cd ..
-    cp blup.par2 blup
-    cd blup
-    blup=/depot/bharpur/apps/blupf90/blupf90+
-    $blup blup.par2
-    
-    
-    
+    $aireml blup.par2 #&> lastrun.log
+#     
+#     #TODO
+#     #read G and R matricies into blup.par2
+#     cd ..
+#     cp blup.par2 blup
+#     cd blup
+#     blup=/depot/bharpur/apps/blupf90/blupf90+
+#     $blup blup.par2
+#     cp solutions ../data/sol.txt
+#     
+#     
+#     
 
 
 #TODO: admixture components
