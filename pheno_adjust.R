@@ -103,13 +103,15 @@ preblup = preblup %>%
   select(id, loc = loc.fix, lsperm = l.Sperm, weight = m.Body) %>% 
   mutate(iid = 1:nrow(preblup),
          locid = blup_rename(loc),
-         lsperm = round(as.numeric(lsperm),4),
-         weight = round(as.numeric(weight),4)
+         lsperm = round(scale(as.numeric(lsperm))[,1],4),
+         weight = round(scale(as.numeric(weight))[,1],4)
          )
 
-sum(is.na(preblup$weight))
-sum(is.na(preblup$lsperm))
-
+# sum(is.na(preblup$weight))
+# sum(is.na(preblup$lsperm))
+# 
+# var(preblup$lsperm)
+# var(preblup$weight)
 
 #output for pheno
   blup = preblup %>% 
