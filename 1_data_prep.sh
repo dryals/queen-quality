@@ -137,6 +137,7 @@ echo "-----------------------"
     
     echo "GRM..."
     #is plink the best? KING? going with basic make-rel for now
+        #TODO: try KING, compare AIC from aireml
     module purge
     module load biocontainers plink2
     
@@ -186,11 +187,11 @@ echo "running GWAS..."
 echo "-----------------------"  
 echo "running BLUP..."
 
-    cp blup.par2 blup
+    cp blup.par0 blup
     cd blup
     #aireml
     aireml=/depot/bharpur/apps/blupf90/airemlf90
-    $aireml blup.par2 #&> lastrun.log
+    $aireml blup.par0 #&> lastrun.log
 #     
 #     #TODO
 #     #read G and R matricies into blup.par2
