@@ -33,6 +33,7 @@ echo "-----------------------"
 # #directory setup
 #     mkdir -p outputs
 #     mkdir -p $CLUSTER_SCRATCH/queen-quality
+#     mkdir -p blup
 #     
 # #filter and prepare vcf
 #     
@@ -41,13 +42,18 @@ echo "-----------------------"
 #     #TODO: investigate duplicated samples: QC2573, QC3371
 #     #TODO: ensure all swaps and incorrect names are corrected!
 #     
-#     #keep no contigs, only bialleleci snps, remove duplicats (norm), rename chrs
-#     echo "filtering sample vcf..."
-#     bcftools view $vcf -v snps -r $chrs -Ou | bcftools norm -m +snps -Ou | \
-#         bcftools view -m2 -M2 -Ou | \
-#         bcftools annotate --rename-chrs $rename --threads $SLURM_NTASKS -Ob -o samples.bcf.gz
-#     
-#     bcftools index -c samples.bcf.gz
+    #keep no contigs, only bialleleci snps, remove duplicats (norm), rename chrs
+    echo "filtering sample vcf..."
+    bcftools view $vcf -v snps -r $chrs -Ou | bcftools norm -m +snps -Ou | \
+        bcftools view -m2 -M2 -Ou | \
+        bcftools annotate --rename-chrs $rename --threads $SLURM_NTASKS -Ob -o samples.bcf.gz
+    
+    bcftools index -c samples.bcf.gz
+    
+    #TODO:
+    #remove non-QC samples
+    
+    
 #     
 #     #mark low propability as missing 
 #     echo "    mark missing..."
@@ -75,7 +81,7 @@ echo "-----------------------"
     echo "    calculating LD and af..."
     cd ${CLUSTER_SCRATCH}/queen-quality/plink
         plink --bfile samples-filter \
-            -r2 --ld-window 1000 --ld-window-kb 20 --ld-window-r2 0.2 \
+            -r2 --ld-window 1000 --ld-window-kb 20 --ld-window-r2 0.5 \
             --make-bed --threads $SLURM_NTASKS --out samples-preprune --silent
             
          plink --bfile samples-filter --freq --silent --out samples-preprune
@@ -156,17 +162,28 @@ echo "running GWAS..."
         echo "    mlma..."
         #adjusted phenotypes generated in R script...
         $gcta --mlma --bfile ../plink/samples-pruned --grm qq \
-            --pheno ~/ryals/queen-quality/data/qq_viability.pheno \
+            --pheno ~/ryals/queen-quality/data/qq_vsperm.pheno \
             --autosome-num 16 \
-            --out qq_viability --thread-num $SLURM_NTASKS
+            --out qq_vsperm --thread-num $SLURM_NTASKS
             
         $gcta --mlma --bfile ../plink/samples-pruned --grm qq \
             --pheno ~/ryals/queen-quality/data/qq_weight.pheno \
             --autosome-num 16 \
             --out qq_weight --thread-num $SLURM_NTASKS
+            
+        $gcta --mlma --bfile ../plink/samples-pruned --grm qq \
+            --pheno ~/ryals/queen-quality/data/qq_lsperm.pheno \
+            --autosome-num 16 \
+            --out qq_lsperm --thread-num $SLURM_NTASKS
 
 
+echo "-----------------------"  
+echo "running BLUP..."
+
+    #aireml
     
+
+
 #TODO: admixture components
 
 

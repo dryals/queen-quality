@@ -47,24 +47,130 @@ gwas = pheno %>%
 
 sapply(gwas, function(x){sum(is.na(x))})
 
-summary(lm(m.Body ~ loc.fix + PC1 + PC2 + PC3, data = gwas))
-#PC3 is no longer significant
+#summary(lm(m.Body ~ loc.fix + PC1 + PC2 + PC3, data = gwas))
+#summary(lm(l.Sperm ~ loc.fix + PC1 + PC2 + PC3, data = gwas))
+#summary(lm(v.Spermatheca ~ loc.fix + PC1 + PC2 + PC3, data = gwas))
 
-gwas$adj.m.Body = lm(m.Body ~ loc.fix + PC1 + PC2, data = gwas)$residuals %>% 
+
+gwas$adj.m.Body = lm(m.Body ~ loc.fix + PC1, data = gwas)$residuals %>% 
   round(4)
-gwas$adj.v.Sperm = lm(v.Sperm ~ loc.fix + PC1 + PC2, data = gwas)$residuals %>% 
+  
+  #TODO: v sperm should be beta distributed (or something?)
+  
+gwas$adj.v.Sperm = lm(v.Sperm ~ loc.fix + PC1, data = gwas)$residuals %>% 
+  round(4)
+gwas$adj.l.Sperm = lm(l.Sperm ~ loc.fix + PC1 + PC3, data = gwas)$residuals %>% 
   round(4)
 
 #write out
 gwas.out = data.frame(fid = gwas$id, 
                       iid = gwas$id, 
                       weight = gwas$adj.m.Body, 
-                      viability = gwas$adj.v.Sperm)
+                      vsperm = gwas$adj.v.Sperm,
+                      lsperm = gwas$adj.l.Sperm)
+                      
 write.table(file = "data/qq_weight.pheno",
-            gwas.out %>% select(-viability),
+            gwas.out %>% select(fid, iid, weight),
             col.names = F, row.names = F, quote = F,
             sep = "\t")
-write.table(file = "data/qq_viability.pheno",
-            gwas.out %>% select(-weight),
+write.table(file = "data/qq_vsperm.pheno",
+            gwas.out %>% select(fid, iid, vsperm),
             col.names = F, row.names = F, quote = F,
             sep = "\t")
+write.table(file = "data/qq_lsperm.pheno",
+            gwas.out %>% select(fid, iid, lsperm),
+            col.names = F, row.names = F, quote = F,
+            sep = "\t")
+  
+  
+  
+  
+#prepare files for BLUP
+ blup_rename = function(v){
+    u = unique(v[!is.na(v)])
+    out = v
+    for(i in 1:length(u)){
+      out[v == u[i]] = i
+    }
+    return(as.numeric(out))
+  }
+
+
+preblup = pheno %>% 
+  filter(id %in% pca.geno$id) 
+
+preblup = preblup %>% 
+  select(id, loc = loc.fix, lsperm = l.Sperm, weight = m.Body) %>% 
+  mutate(iid = 1:nrow(preblup),
+         locid = blup_rename(loc),
+         lsperm = round(as.numeric(lsperm),4),
+         weight = round(as.numeric(weight),4)
+         )
+
+sum(is.na(preblup$weight))
+sum(is.na(preblup$lsperm))
+
+
+#output for pheno
+  blup = preblup %>% 
+    select(iid, locid, lsperm, weight)
+  
+  write.table(blup, "blup/pheno.txt", 
+              col.names = F, row.names = F, quote = F)
+              
+#read grm
+  
+  G = read.delim("/scratch/negishi/dryals/queen-quality/plink/samples-pruned.rel", 
+  sep = "", header = F) %>% as.matrix()
+  
+  Gid = read.delim("/scratch/negishi/dryals/queen-quality/plink/samples-pruned.rel.id", 
+  sep = "", header = T)
+  
+  colnames(G) = rownames(G) = Gid$IID
+  
+  #output relationship matrix
+  
+  final.mat = G[preblup$id, preblup$id]
+  
+  N = dim(final.mat)[1]
+  covmat = matrix(ncol = 3, nrow = (N*N-N)/2 + N)
+  cmr = 0
+  for(i in 1:N){
+    for(j in 1:i){
+      cmr = cmr +1
+      covmat[cmr,] = c(i,j, final.mat[i,j])
+    }
+  }
+  
+  write.table(covmat, "blup/covmat.txt", row.names = F, col.names = F, sep = " ")
+  
+max(covmat[,2])
+  
+sapply(blup, max)
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
