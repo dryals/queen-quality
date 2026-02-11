@@ -42,24 +42,28 @@ echo "-----------------------"
     #TODO: investigate duplicated samples: QC2573, QC3371
     #TODO: ensure all swaps and incorrect names are corrected!
     
-    #keep no contigs, only bialleleci snps, remove duplicats (norm), rename chrs
-    echo "filtering sample vcf..."
-    bcftools view $vcf -v snps -r $chrs -Ou | bcftools norm -m +snps -Ou | \
-        bcftools view -m2 -M2 -Ou | \
-        bcftools annotate --rename-chrs $rename --threads $SLURM_NTASKS -Ob -o samples.bcf.gz
-    
-    bcftools index -c samples.bcf.gz
-    
-    #TODO:
+#     #keep no contigs, only bialleleci snps, remove duplicats (norm), rename chrs
+#     echo "filtering sample vcf..."
+#     bcftools view $vcf -v snps -r $chrs -Ou | bcftools norm -m +snps -Ou | \
+#         bcftools view -m2 -M2 -Ou | \
+#         bcftools annotate --rename-chrs $rename --threads $SLURM_NTASKS -Ob -o samples.bcf.gz
+#     
+#     bcftools index -c samples.bcf.gz
+#     
+#     #remove non-QC samples
+#     bcftools query samples.bcf.gz -l > samples.names
+#     grep "QC" samples.names > keep.names
+#         
+#     #mark low propability as missing 
+#     echo "    mark missing..."
+#     bcftools view samples.bcf.gz -S keep.names -Ou | 
+#         bcftools filter  -S . -i 'GP[:0] > 0.99 | GP[:1] > 0.99 | GP[:2] > 0.99' \
+#         --threads $SLURM_NTASKS -Ob -o samples.missing.bcf.gz
+#     
     #remove non-QC samples
-    bcftools query samples.bcf.gz -l > samples.names
+    bcftools query samples.missing.bcf.gz -l > samples.names
     grep "QC" samples.names > keep.names
-        
-    #mark low propability as missing 
-    echo "    mark missing..."
-    bcftools view samples.bcf.gz -S keep.names -Ou | 
-        bcftools filter  -S . -i 'GP[:0] > 0.99 | GP[:1] > 0.99 | GP[:2] > 0.99' \
-        --threads $SLURM_NTASKS -Ob -o samples.missing.bcf.gz
+    paste  keep.names  keep.names >  keep.plink
         
     #filter in plink
     echo "    mind, geno, and maf filters..."
@@ -69,6 +73,7 @@ echo "-----------------------"
     plink --bcf samples.missing.bcf.gz --make-bed \
         --allow-extra-chr --chr-set 16 no-xy -chr $chrsShort \
         --set-missing-var-ids @:# \
+        -keep keep.plink \
         --mind 0.2 --geno 0.1 --maf 0.01 \
         --threads $SLURM_NTASKS --out plink/samples-filter --silent
         
@@ -178,16 +183,16 @@ echo "running GWAS..."
             --out qq_lsperm --thread-num $SLURM_NTASKS
 
 
-# echo "-----------------------"  
-# echo "running BLUP..."
-# 
-#     cp blup.par0 blup
-#     cd blup
-#     #aireml
-#     aireml=/depot/bharpur/apps/blupf90/airemlf90
-#     $aireml blup.par0 #&> lastrun.log
-#     
-# 
+echo "-----------------------"  
+echo "running BLUP..."
+
+    cp blup.par0 blup
+    cd blup
+    #aireml
+    aireml=/depot/bharpur/apps/blupf90/airemlf90
+    $aireml blup.par0 #&> lastrun.log
+    
+
 
 #TODO: admixture components
 
