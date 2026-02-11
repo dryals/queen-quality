@@ -25,7 +25,7 @@ pheno = pheno %>% left_join(loc.trans)
 pheno = pheno[-(which(pheno$id == "QC2573")[2]),]
 
 #read plink PCA
-  pca.geno = read.delim("/scratch/negishi/dryals/queen-quality/plink/samples-maf.eigenvec",
+  pca.geno = read.delim("/scratch/negishi/dryals/queen-quality/plink/samples-pca.eigenvec",
                        header = F, sep = "")[,c(1, 3:5)]
     colnames(pca.geno) = c("id", "PC1", "PC2", "PC3")
 
