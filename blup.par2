@@ -24,6 +24,6 @@ covmat.txt
   0.17209E-01  0.70920E-01
   0.70920E-01  0.29228  
 OPTION missing -999
-#OPTION sol se
+OPTION sol se
 #OPTION sol se
 #ulimit -s unlimited

@@ -192,6 +192,16 @@ echo "running BLUP..."
     aireml=/depot/bharpur/apps/blupf90/airemlf90
     $aireml blup.par1 #&> lastrun.log
     
+    #TODO
+    #read G and R matricies into blup.par2
+    cd ..
+    cp blup.par2 blup
+    cd blup
+    blup=/depot/bharpur/apps/blupf90/blupf90+
+    $blup blup.par2
+    
+    
+    
 
 
 #TODO: admixture components
