@@ -28,8 +28,8 @@ echo "-----------------------"
     chrs=$( awk '{print $1}' $rename | tr '\n' ',' )
     chrsShort=$( awk '{print $2}' $rename | tr '\n' ' ' )
 
-#     
-# echo "-----------------------"
+    
+echo "-----------------------"
 # #directory setup
 #     mkdir -p outputs
 #     mkdir -p $CLUSTER_SCRATCH/queen-quality
@@ -37,11 +37,11 @@ echo "-----------------------"
 #     
 # #filter and prepare vcf
 #     
-#     cd $CLUSTER_SCRATCH/queen-quality
-#     
-#     #TODO: investigate duplicated samples: QC2573, QC3371
-#     #TODO: ensure all swaps and incorrect names are corrected!
-#     
+    cd $CLUSTER_SCRATCH/queen-quality
+    
+    #TODO: investigate duplicated samples: QC2573, QC3371
+    #TODO: ensure all swaps and incorrect names are corrected!
+    
     #keep no contigs, only bialleleci snps, remove duplicats (norm), rename chrs
     echo "filtering sample vcf..."
     bcftools view $vcf -v snps -r $chrs -Ou | bcftools norm -m +snps -Ou | \
