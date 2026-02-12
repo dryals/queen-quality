@@ -73,7 +73,7 @@ echo "-----------------------"
     plink --bcf samples.missing.bcf.gz --make-bed \
         --allow-extra-chr --chr-set 16 no-xy -chr $chrsShort \
         --set-missing-var-ids @:# \
-        -keep keep.plink \
+        #-keep keep.plink \
         --mind 0.2 --geno 0.1 --maf 0.01 \
         --threads $SLURM_NTASKS --out plink/samples-filter --silent
         
@@ -185,6 +185,12 @@ echo "-----------------------"
 
 echo "-----------------------"  
 echo "creating GRM for BLUP..."
+    cd $CLUSTER_SCRATCH/queen-quality/plink
+    plink --bfile samples-filter -make-rel square \
+        --threads $SLURM_NTASKS --out samples-filter --silent
+        
+    plink --bfile samples-filter -make-rel square \
+        --out samples-filter
 
 
 
