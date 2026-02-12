@@ -209,7 +209,7 @@ echo "running BLUP..."
 
     #TODO: use MAF rather than ld pruning...
 
-    par=w.par
+    par=wvt.par
     cp params/${par}0 blup
     cd blup
     #aireml
