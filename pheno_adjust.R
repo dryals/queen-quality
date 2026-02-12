@@ -127,9 +127,11 @@ preblup = preblup %>%
   sep = "", header = F) %>% as.matrix()
   
   Gid = read.delim("/scratch/negishi/dryals/queen-quality/plink/samples-filter.rel.id", 
-  sep = "", header = T)
+  sep = "", header = F)
   
-  colnames(G) = rownames(G) = Gid$IID
+  colnames(G) = rownames(G) = Gid[,1]
+  
+  sum(blup$id %in% colnames(G))
   
   #output relationship matrix
   
