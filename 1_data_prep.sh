@@ -192,15 +192,15 @@ echo "running BLUP..."
     #aireml
     aireml=/depot/bharpur/apps/blupf90/airemlf90
     $aireml blup.par0 #&> lastrun.log
-#     
-#     #TODO
-#     #read G and R matricies into blup.par2
-#     cd ..
-#     cp blup.par2 blup
-#     cd blup
-#     blup=/depot/bharpur/apps/blupf90/blupf90+
-#     $blup blup.par2
-#     cp solutions ../data/sol.txt
+    
+    #TODO
+    #read G and R matricies into blup.par2
+    cd ..
+    cp blup.par2 blup
+    cd blup
+    blup=/depot/bharpur/apps/blupf90/blupf90+
+    $blup blup.par2
+    cp solutions ../data/sol.txt
 #     
 #     
 #     

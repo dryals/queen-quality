@@ -50,6 +50,7 @@ loc.trans = data.frame(Location = c("Hawaii", "Georgia", "Southern California", 
                                    "VA", "AL", "FL", "OR"))
 pheno = pheno %>% left_join(loc.trans)
 
+
 #remove duplicate second entry
 pheno = pheno[-(which(pheno$id == "QC2573")[2]),]
 
@@ -202,6 +203,12 @@ pheno.blup = read.delim("data/pheno.txt",
   
   ggplot(pbv, aes(x = m.Body, y = bv_weight)) + geom_point()
   ggplot(pbv, aes(x = l.Sperm, y = bv_lsperm)) + geom_point()
+  
+#investigate strange points
+  #attach locations
+  pbv %>% left_join(pheno %>% select(id, loc.fix)) %>% 
+    mutate(ga = (loc.fix == "NCA")) %>% 
+    ggplot(aes(x = l.Sperm, y = bv_lsperm, color = loc.fix)) + geom_point()
   
   
   
