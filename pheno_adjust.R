@@ -123,11 +123,11 @@ preblup = preblup %>%
               
 #read grm
   
-  G = read.delim("/scratch/negishi/dryals/queen-quality/plink/samples-filter.king", 
+  G = read.delim("/scratch/negishi/dryals/queen-quality/plink/samples-filter.rel", 
   sep = "", header = F) %>% as.matrix()
   
-  Gid = read.delim("/scratch/negishi/dryals/queen-quality/plink/samples-filter.king.id", 
-  sep = "", header = T)
+  Gid = read.delim("/scratch/negishi/dryals/queen-quality/plink/samples-filter.rel.id", 
+  sep = "", header = F)
   
   colnames(G) = rownames(G) = Gid[,1]
   
