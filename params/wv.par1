@@ -12,8 +12,8 @@ EFFECTS:
 1 1 911 cross #queen_id
 2 2 11 cross #location
 RANDOM_RESIDUAL VALUES
-  0.6     0.01
-  0.01  0.32581    
+   1.0025       0.0000    
+   0.0000      0.31992      
 RANDOM_GROUP
 1 
 RANDOM_TYPE
@@ -21,9 +21,11 @@ user_file_inv
 FILE
 covmat.txt
 (CO)VARIANCES
-  0.01  0.01
-  0.01  0.3     
+  0.10665E-01  0.52190E-01
+  0.52190E-01  0.25541 
 OPTION missing -999
 OPTION sol se
-#OPTION sol se
+#OPTION conv_crit 1e-10
+#OPTION EM-reml 10
 #ulimit -s unlimited
+#export LD_LIBRARY_PATH=~/anaconda3/lib

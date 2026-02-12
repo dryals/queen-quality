@@ -31,9 +31,9 @@ echo "-----------------------"
     
 echo "-----------------------"
 # #directory setup
-#     mkdir -p outputs
-#     mkdir -p $CLUSTER_SCRATCH/queen-quality
-#     mkdir -p blup
+    mkdir -p outputs
+    mkdir -p $CLUSTER_SCRATCH/queen-quality
+    mkdir -p blup
 #     
 # #filter and prepare vcf
 #     
@@ -42,28 +42,28 @@ echo "-----------------------"
     #TODO: investigate duplicated samples: QC2573, QC3371
     #TODO: ensure all swaps and incorrect names are corrected!
     
-#     #keep no contigs, only bialleleci snps, remove duplicats (norm), rename chrs
-#     echo "filtering sample vcf..."
-#     bcftools view $vcf -v snps -r $chrs -Ou | bcftools norm -m +snps -Ou | \
-#         bcftools view -m2 -M2 -Ou | \
-#         bcftools annotate --rename-chrs $rename --threads $SLURM_NTASKS -Ob -o samples.bcf.gz
-#     
-#     bcftools index -c samples.bcf.gz
-#     
-#     #remove non-QC samples
-#     bcftools query samples.bcf.gz -l > samples.names
-#     grep "QC" samples.names > keep.names
-#         
-#     #mark low propability as missing 
-#     echo "    mark missing..."
-#     bcftools view samples.bcf.gz -S keep.names -Ou | 
-#         bcftools filter  -S . -i 'GP[:0] > 0.99 | GP[:1] > 0.99 | GP[:2] > 0.99' \
-#         --threads $SLURM_NTASKS -Ob -o samples.missing.bcf.gz
-#     
+    #keep no contigs, only bialleleci snps, remove duplicats (norm), rename chrs
+    echo "filtering sample vcf..."
+    bcftools view $vcf -v snps -r $chrs -Ou | bcftools norm -m +snps -Ou | \
+        bcftools view -m2 -M2 -Ou | \
+        bcftools annotate --rename-chrs $rename --threads $SLURM_NTASKS -Ob -o samples.bcf.gz
+    
+    bcftools index -c samples.bcf.gz
+    
     #remove non-QC samples
-    bcftools query samples.missing.bcf.gz -l > samples.names
+    bcftools query samples.bcf.gz -l > samples.names
     grep "QC" samples.names > keep.names
-    paste  keep.names  keep.names >  keep.plink
+        
+    #mark low propability as missing 
+    echo "    mark missing..."
+    bcftools view samples.bcf.gz -S keep.names -Ou | 
+        bcftools filter  -S . -i 'GP[:0] > 0.99 | GP[:1] > 0.99 | GP[:2] > 0.99' \
+        --threads $SLURM_NTASKS -Ob -o samples.missing.bcf.gz
+    
+#     #remove non-QC samples
+#     bcftools query samples.missing.bcf.gz -l > samples.names
+#     grep "QC" samples.names > keep.names
+#     paste  keep.names  keep.names >  keep.plink
         
     #filter in plink
     echo "    mind, geno, and maf filters..."
@@ -82,116 +82,124 @@ echo "-----------------------"
     awk '{print $2}' samples-filter.bim | tr ":" "\t" > samples-filter.sites
     awk '{print $1}' samples-filter.fam > samples-filter.names
     
-echo "-----------------------"
-    echo "LD pruning..."
-    echo "    calculating LD and af..."
-    cd ${CLUSTER_SCRATCH}/queen-quality/plink
-        plink --bfile samples-filter \
-            -r2 --ld-window 1000 --ld-window-kb 20 --ld-window-r2 0.5 \
-            --make-bed --threads $SLURM_NTASKS --out samples-preprune --silent
-            
-         plink --bfile samples-filter --freq --silent --out samples-preprune
-    
-    echo "    starting array pruning..."
-    cd $CLUSTER_SCRATCH/queen-quality/plink
-    mkdir -p ld
-    cd ~/ryals/queen-quality
-    echo -n "" > outputs/mafprune.out
-    #run R script to generate best set of sites maf
-    #start
-    sbatch --array=1-16 maf_prune_array.sh
-    #wait
-    #WARNING: collision problem, need to flock?
-    echo "    waiting for pruning (see mafprune.out)..."
-    while [ $(grep "FINISHED" outputs/mafprune.out| wc -l | awk '{print $1}') -lt 16 ] #wait for all 16 to finish
-    do
-        sleep 20 #wait between each check
-    done
-    #create full output
-    echo "    compiling results..."
-    cd ${CLUSTER_SCRATCH}/queen-quality/ld
-    #this will hold all the sites to remove
-    rm allMAFremove.txt
-    cat chr*/MAFremove.txt > allMAFremove.txt
-    count=$( wc -l allMAFremove.txt | awk '{print $1}')
-    
-        #kill script if the above fails
-        if [ $count -eq 0  ]; then
-            echo -e "\e[30;41m Filters Failed! \e[0m"
-            exit 1
-        fi
-    
-    
-    echo "    marked $count sites"
-    echo "    removing sites..."
-        cd $CLUSTER_SCRATCH/queen-quality/plink
-        plink --bfile samples-filter --make-bed --exclude ../ld/allMAFremove.txt \
-            --threads $SLURM_NTASKS --silent --out samples-pruned
-    
-echo "-----------------------"
-#PCA and GRM
-    cd $CLUSTER_SCRATCH/queen-quality/plink
-    echo "PCA..."
-    plink --bfile samples-pruned --pca 500 \
-        --threads $SLURM_NTASKS --out samples-pca --silent
-    
-    echo "GRM..."
-    #is plink the best? KING? going with basic make-rel for now
-        #TODO: try KING, compare AIC from aireml
-    module purge
-    module load biocontainers plink2
-    
-    plink2 --bfile samples-pruned -make-rel square \
-    --threads $SLURM_NTASKS --out samples-pruned --silent
-    
-    module purge
-    module load biocontainers r
-    
-echo "-----------------------"
-echo "preparing phenotypic data in R..."
-    cd ~/ryals/queen-quality
-    R --vanilla --no-save --no-echo --silent < pheno_adjust.R
+# echo "-----------------------"
+#     echo "LD pruning..."
+#     echo "    calculating LD and af..."
+#     cd ${CLUSTER_SCRATCH}/queen-quality/plink
+#         plink --bfile samples-filter \
+#             -r2 --ld-window 1000 --ld-window-kb 20 --ld-window-r2 0.5 \
+#             --make-bed --threads $SLURM_NTASKS --out samples-preprune --silent
+#             
+#          plink --bfile samples-filter --freq --silent --out samples-preprune
+#     
+#     echo "    starting array pruning..."
+#     cd $CLUSTER_SCRATCH/queen-quality/plink
+#     mkdir -p ld
+#     cd ~/ryals/queen-quality
+#     echo -n "" > outputs/mafprune.out
+#     #run R script to generate best set of sites maf
+#     #start
+#     sbatch --array=1-16 maf_prune_array.sh
+#     #wait
+#     #WARNING: collision problem, need to flock?
+#     echo "    waiting for pruning (see mafprune.out)..."
+#     while [ $(grep "FINISHED" outputs/mafprune.out| wc -l | awk '{print $1}') -lt 16 ] #wait for all 16 to finish
+#     do
+#         sleep 20 #wait between each check
+#     done
+#     #create full output
+#     echo "    compiling results..."
+#     cd ${CLUSTER_SCRATCH}/queen-quality/ld
+#     #this will hold all the sites to remove
+#     rm allMAFremove.txt
+#     cat chr*/MAFremove.txt > allMAFremove.txt
+#     count=$( wc -l allMAFremove.txt | awk '{print $1}')
+#     
+#         #kill script if the above fails
+#         if [ $count -eq 0  ]; then
+#             echo -e "\e[30;41m Filters Failed! \e[0m"
+#             exit 1
+#         fi
+#     
+#     
+#     echo "    marked $count sites"
+#     echo "    removing sites..."
+#         cd $CLUSTER_SCRATCH/queen-quality/plink
+#         plink --bfile samples-filter --make-bed --exclude ../ld/allMAFremove.txt \
+#             --threads $SLURM_NTASKS --silent --out samples-pruned
+#     
+# echo "-----------------------"
+# #PCA and GRM
+#     cd $CLUSTER_SCRATCH/queen-quality/plink
+#     echo "PCA..."
+#     plink --bfile samples-pruned --pca 500 \
+#         --threads $SLURM_NTASKS --out samples-pca --silent
+#     
+#     echo "GRM..."
+#     #is plink the best? KING? going with basic make-rel for now
+#         #TODO: try KING, compare AIC from aireml
+#     module purge
+#     module load biocontainers plink2
+#     
+#     plink2 --bfile samples-pruned -make-rel square \
+#     --threads $SLURM_NTASKS --out samples-pruned --silent
+#     
+#     module purge
+#     module load biocontainers r
+#     
+# echo "-----------------------"
+# echo "preparing phenotypic data in R..."
+#     cd ~/ryals/queen-quality
+#     R --vanilla --no-save --no-echo --silent < pheno_adjust.R
+# 
+# 
+# echo "-----------------------"
+# echo "running GWAS..."
+#     echo "    gcta..."
+#     cd $CLUSTER_SCRATCH/queen-quality
+#     mkdir -p gwas
+#     cd gwas
+#     gcta=/depot/bharpur/apps/gcta/gcta-1.94.1-linux-kernel-3-x86_64/gcta-1.94.1
+#     
+#         $gcta --bfile ../plink/samples-pruned --make-grm --thread-num $SLURM_NTASKS \
+#             --autosome-num 16 --out qq
+#             
+#         #TODO: missing individuals here
+#             
+#         echo "    mlma..."
+#         #adjusted phenotypes generated in R script...
+#         $gcta --mlma --bfile ../plink/samples-pruned --grm qq \
+#             --pheno ~/ryals/queen-quality/data/qq_vsperm.pheno \
+#             --autosome-num 16 \
+#             --out qq_vsperm --thread-num $SLURM_NTASKS
+#             
+#         $gcta --mlma --bfile ../plink/samples-pruned --grm qq \
+#             --pheno ~/ryals/queen-quality/data/qq_weight.pheno \
+#             --autosome-num 16 \
+#             --out qq_weight --thread-num $SLURM_NTASKS
+#             
+#         $gcta --mlma --bfile ../plink/samples-pruned --grm qq \
+#             --pheno ~/ryals/queen-quality/data/qq_lsperm.pheno \
+#             --autosome-num 16 \
+#             --out qq_lsperm --thread-num $SLURM_NTASKS
 
+echo "-----------------------"  
+echo "creating GRM for BLUP..."
 
-echo "-----------------------"
-echo "running GWAS..."
-    echo "    gcta..."
-    cd $CLUSTER_SCRATCH/queen-quality
-    mkdir -p gwas
-    cd gwas
-    gcta=/depot/bharpur/apps/gcta/gcta-1.94.1-linux-kernel-3-x86_64/gcta-1.94.1
-    
-        $gcta --bfile ../plink/samples-pruned --make-grm --thread-num $SLURM_NTASKS \
-            --autosome-num 16 --out qq
-            
-        #TODO: missing individuals here
-            
-        echo "    mlma..."
-        #adjusted phenotypes generated in R script...
-        $gcta --mlma --bfile ../plink/samples-pruned --grm qq \
-            --pheno ~/ryals/queen-quality/data/qq_vsperm.pheno \
-            --autosome-num 16 \
-            --out qq_vsperm --thread-num $SLURM_NTASKS
-            
-        $gcta --mlma --bfile ../plink/samples-pruned --grm qq \
-            --pheno ~/ryals/queen-quality/data/qq_weight.pheno \
-            --autosome-num 16 \
-            --out qq_weight --thread-num $SLURM_NTASKS
-            
-        $gcta --mlma --bfile ../plink/samples-pruned --grm qq \
-            --pheno ~/ryals/queen-quality/data/qq_lsperm.pheno \
-            --autosome-num 16 \
-            --out qq_lsperm --thread-num $SLURM_NTASKS
 
 
 echo "-----------------------"  
 echo "running BLUP..."
 
-    cp blup.par0 blup
+    #TODO: use MAF rather than ld pruning...
+
+    par=wv.par0
+    cp $par blup
     cd blup
     #aireml
-    aireml=/depot/bharpur/apps/blupf90/airemlf90
-    $aireml blup.par0 #&> lastrun.log
+    #aireml=/depot/bharpur/apps/blupf90/airemlf90
+    #$aireml $par #&> lastrun.log
+    ./airemelf90 $par
     
     #TODO
     #read G and R matricies into blup.par2
@@ -200,7 +208,7 @@ echo "running BLUP..."
     cd blup
     blup=/depot/bharpur/apps/blupf90/blupf90+
     $blup blup.par2
-    cp solutions ../data/sol.txt
+    cp solutions ../data/sol-12feb26.txt
 #     
 #     
 #     
