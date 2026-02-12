@@ -215,7 +215,7 @@ echo "creating GRM for BLUP..."
 echo "-----------------------"  
 echo "running BLUP..."
 
-    #TODO: use MAF rather than ld pruning...
+    #TODO: single-trait blups
 
     par=wvt.par
     cp params/${par}0 blup
@@ -238,6 +238,8 @@ echo "running BLUP..."
 #     
 #     
 
+
+#TODO: estimate CV error: scripts/cv.R
 
 #TODO: admixture components
 
