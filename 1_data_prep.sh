@@ -186,11 +186,21 @@ echo "-----------------------"
 echo "-----------------------"  
 echo "creating GRM for BLUP..."
     cd $CLUSTER_SCRATCH/queen-quality/plink
-    plink --bfile samples-filter -make-rel square \
-        --threads $SLURM_NTASKS --out samples-filter --silent
-        
-    plink --bfile samples-filter -make-rel square \
+#     plink --bfile samples-filter -make-rel square \
+#         --threads $SLURM_NTASKS --out samples-filter --silent
+#         
+    module purge
+    module load biocontainers plink2
+    
+#     plink2 --bfile samples-filter -make-king square \
+#     --threads $SLURM_NTASKS --out samples-filter --silent
+    
+    plink2 --bfile samples-filter -make-king square \
         --out samples-filter
+    
+    module purge
+    module load biocontainers r
+
 
 
 
@@ -209,7 +219,10 @@ echo "running BLUP..."
     
     #TODO
     #read G and R matricies into blup.par2
-    cp params/${par}1 blup
+#     sed -n 16,80p file1>patch
+#     sed -i 18rpatch file2
+    
+    cp ../params/${par}1 .
     blup=/depot/bharpur/apps/blupf90/blupf90+
     $blup ${par}1
     cp solutions ../data/sol-12feb26.txt

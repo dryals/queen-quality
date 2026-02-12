@@ -174,7 +174,7 @@ pheno.blup = read.delim("data/pheno.txt",
 
 
 #pull solutions: 2-trait
-  sol = read.delim("data/sol.txt", sep = "", header = F)[-1,]
+  sol = read.delim("data/sol-12feb26.txt", sep = "", header = F)[-1,]
     colnames(sol) = c("trait", "effect", "level" ,"solution", "se")
     sol = sol %>% mutate(se = as.numeric(se),
                          solution = as.numeric(solution))  
@@ -202,13 +202,15 @@ pheno.blup = read.delim("data/pheno.txt",
   
   
   ggplot(pbv, aes(x = m.Body, y = bv_weight)) + geom_point()
-  ggplot(pbv, aes(x = l.Sperm, y = bv_lsperm)) + geom_point()
+  ggplot(pbv, aes(x = v.Sperm, y = bv_vsperm)) + geom_point()
   
 #investigate strange points
   #attach locations
   pbv %>% left_join(pheno %>% select(id, loc.fix)) %>% 
     mutate(ga = (loc.fix == "NCA")) %>% 
-    ggplot(aes(x = l.Sperm, y = bv_lsperm, color = loc.fix)) + geom_point()
+    ggplot(aes(x = v.Sperm, y = bv_vsperm, color = loc.fix)) + geom_point()
+  
+  View(pbv)
   
   
   
