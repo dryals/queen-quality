@@ -183,6 +183,14 @@ echo "-----------------------"
 #             --autosome-num 16 \
 #             --out qq_lsperm --thread-num $SLURM_NTASKS
 
+#TODO: do rest of traits, estimate variance explained by sig QTL
+    #hit = 3 6923973
+    cd $CLUSTER_SCRATCH/queen-quality/plink
+    grep -n "3:6923973" samples-pruned.bim
+    44939
+    plink --bfile samples-pruned --recode oxford --snp '3:6923973' --out test
+
+
 echo "-----------------------"  
 echo "creating GRM for BLUP..."
     cd $CLUSTER_SCRATCH/queen-quality/plink
