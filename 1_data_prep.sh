@@ -199,21 +199,19 @@ echo "running BLUP..."
 
     #TODO: use MAF rather than ld pruning...
 
-    par=wv.par0
-    cp $par blup
+    par=lw.par
+    cp params/${par}0 blup
     cd blup
     #aireml
-    #aireml=/depot/bharpur/apps/blupf90/airemlf90
-    #$aireml $par #&> lastrun.log
-    ./airemelf90 $par
+    aireml=/depot/bharpur/apps/blupf90/airemlf90
+    $aireml ${par}0 #&> lastrun.log
+    #./airemelf90 $par
     
     #TODO
     #read G and R matricies into blup.par2
-    cd ..
-    cp blup.par2 blup
-    cd blup
+    cp params/${par}1 blup
     blup=/depot/bharpur/apps/blupf90/blupf90+
-    $blup blup.par2
+    $blup ${par}1
     cp solutions ../data/sol-12feb26.txt
 #     
 #     
