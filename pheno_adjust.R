@@ -107,7 +107,7 @@ preblup = preblup %>%
          locid = blup_rename(loc),
          lsperm = round(scale(as.numeric(lsperm))[,1],4),
          weight = round(scale(as.numeric(weight))[,1],4),
-         vsperm = round(scale(as.numeric(vsperm))[,1],4)
+         vsperm = round(scale(as.numeric(vsperm))[,1],4),
          tsperm = round(scale(as.numeric(tsperm))[,1],4)
          )
 
