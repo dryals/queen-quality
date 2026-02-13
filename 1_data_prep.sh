@@ -217,13 +217,20 @@ echo "-----------------------"
 echo "running BLUP..."
 
     #TODO: single-trait blups
-    cd ~/ryals/queen-quality
+    cd ~/ryals/queen-quality/blup
+        #create links
+        if [ ! -f  blupf90+ ]; then
+            echo "    creating links..."
+            ln -S blupf90+ /depot/bharpur/apps/blupf90/blupf90+
+            ln -S airemlf90 /depot/bharpur/apps/blupf90/airemlf90 
+        fi
 
+    
+    cd ~/ryals/queen-quality/
     par=w
     cp params/${par}.par0 blup
     cd blup
     #aireml
-    aireml=/depot/bharpur/apps/blupf90/airemlf90
     $aireml ${par}.par0 #&> lastrun.log
     #./airemelf90 $par
     
