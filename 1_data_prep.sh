@@ -82,7 +82,56 @@ echo "-----------------------"
     cd plink
     awk '{print $2}' samples-filter.bim | tr ":" "\t" > samples-filter.sites
     awk '{print $1}' samples-filter.fam > samples-filter.names
+ 
+echo "-----------------------"
+#TODO: admixture components
+    echo "pulling references..."
+     cd ${CLUSTER_SCRATCH}/queen-quality
+#         #no multiallelic sites, only snps, keep subset of references, no contigs, rename chromosomes to "1,2,3...16"
+#         bcftools view $refs -S /home/dryals/ryals/ahb/references/pureRefs.txt \
+#             -r $chrsLong -M2 -v snps -Ou | \
+#             bcftools annotate --rename-chrs $rename --threads $SLURM_NTASKS \
+#             -Ob -o reference.bcf.gz
+#             
+#         bcftools index -c reference.bcf.gz
+
+    #copy from admix dir
+    cp ../pipeline/reference.bcf.* .
     
+    echo "    filtering references ..."
+        bcftools view reference.bcf.gz -T plink/samples-filter.sites --threads $SLURM_NTASKS \
+        -Ob -o reference-filter.bcf.gz
+
+    bcftools index -c reference-filter.bcf.gz
+    
+    echo "launching Ia script...."
+        #count number of samples in each population
+        cd /home/dryals/ryals/admixPipeline/references
+        wc -l ?.txt | awk '{print $1}' > refN.txt
+        cd ${CLUSTER_SCRATCH}/queen-quality
+        mkdir aim
+        cd aim
+        #specify reference file
+        echo "reference-filter.bcf.gz" > ref_filename.txt
+        #reset logifle
+        cd /home/dryals/ryals/queen-quality
+        echo -n "" > outputs/aim.out
+
+        #launch the Ia script array
+        sbatch --array=1-16 scripts/AIM_v3.sh
+    
+    echo "    filtering samples..."
+    bcftools view samples.bcf.gz \
+        -T plink/samples-filter.sites -S plink/samples-filter.names \
+        --threads $SLURM_NTASKS -Ob -o samples-filter.bcf.gz
+        
+    bcftools index -c samples-filter.bcf.gz
+    
+    echo "merging into references ..."
+        
+    
+ 
+ 
 # echo "-----------------------"
 #     echo "LD pruning..."
 #     echo "    calculating LD and af..."
@@ -256,7 +305,7 @@ echo "running BLUP..."
 
     
 
-#TODO: admixture components
+
 
 
         

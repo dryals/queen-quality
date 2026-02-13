@@ -324,28 +324,48 @@ pheno.blup = read.delim("data/pheno.txt",
   View(pbv)
   
   
+#estimate genetic gain per generation
+    #all in origional unit? no standardizing?
+  
+addvar = 0.2
+BVacc = 0.65
+  #create a range of reasonable values for i
+  pheno.num = pheno$m.Body %>% as.numeric()
+  pheno.scale = pheno.num %>% scale()
+  hist(pheno.scale)
+  max_i = max(pheno.scale, na.rm = T)
+  intensity = seq(0, max_i, 0.1)
+  
+  gain = data.frame(i = intensity,
+                    gain = addvar * BVacc * intensity) %>% 
+    mutate(gain_mg = gain * sd(pheno.num, na.rm = T) )
+  
+  plot(gain$i, gain$gain_mg)
+  max(gain$gain * sd(pheno.num, na.rm = T))
+  
+  mean(pheno.num, na.rm = T)
   
   
   
-#plotting BVs
-  p6a = ggplot(pbv, aes(x = weight, y = bv_weight, color = Location,
-                  ymax = bv_weight + se_weight, ymin = bv_weight - se_weight)) +
-    geom_pointrange(size = 1) + 
-    labs(title = "6a. Breeding Values")
-  
-  p6b = ggplot(pbv, aes(x = viability, y = bv_viability, color = Location,
-                  ymax = bv_viability + se_viability, ymin = bv_viability - se_viability)) +
-    geom_pointrange(size = 1) +
-    labs(title = "6b. Breeding Values")
-  
-  pbv$toplabs = pbv$vcf_id
-    pbv$toplabs[pbv$bv_viability < 0.25 | pbv$bv_weight < 0.18] = NA
-  
-  p6c = ggplot(pbv, aes(x = bv_weight, y = bv_viability, color = Location,
-                  label = toplabs)) +
-    geom_point(size = 3) + 
-    geom_label_repel()+
-    labs(title = "6c. Selection Candidates")
+# #plotting BVs
+#   p6a = ggplot(pbv, aes(x = weight, y = bv_weight, color = Location,
+#                   ymax = bv_weight + se_weight, ymin = bv_weight - se_weight)) +
+#     geom_pointrange(size = 1) + 
+#     labs(title = "6a. Breeding Values")
+#   
+#   p6b = ggplot(pbv, aes(x = viability, y = bv_viability, color = Location,
+#                   ymax = bv_viability + se_viability, ymin = bv_viability - se_viability)) +
+#     geom_pointrange(size = 1) +
+#     labs(title = "6b. Breeding Values")
+#   
+#   pbv$toplabs = pbv$vcf_id
+#     pbv$toplabs[pbv$bv_viability < 0.25 | pbv$bv_weight < 0.18] = NA
+#   
+#   p6c = ggplot(pbv, aes(x = bv_weight, y = bv_viability, color = Location,
+#                   label = toplabs)) +
+#     geom_point(size = 3) + 
+#     geom_label_repel()+
+#     labs(title = "6c. Selection Candidates")
   
 ```
 

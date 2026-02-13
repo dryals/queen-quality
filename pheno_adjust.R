@@ -24,6 +24,8 @@ pheno = pheno %>% left_join(loc.trans)
 #remove duplicate second entry
 pheno = pheno[-(which(pheno$id == "QC2573")[2]),]
 
+#TODO: check for phenotype outliers
+
 #collapse some small locs
   #TODO: try to fix these???
   small = pheno %>% group_by(loc.fix) %>% 
