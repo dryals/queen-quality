@@ -216,6 +216,8 @@ echo "creating GRM for BLUP..."
 echo "-----------------------"  
 echo "running BLUP..."
 
+    par=w
+
     #TODO: single-trait blups
     cd ~/ryals/queen-quality/blup
         #create links
@@ -225,9 +227,7 @@ echo "running BLUP..."
             ln -S airemlf90 /depot/bharpur/apps/blupf90/airemlf90 
         fi
 
-    
     cd ~/ryals/queen-quality/
-    par=w
     cp params/${par}.par0 blup
     cd blup
     #aireml
@@ -240,18 +240,18 @@ echo "running BLUP..."
 #     sed -i 18rpatch file2
     
     cp ../params/${par}.par1 .
-    blup=/depot/bharpur/apps/blupf90/blupf90+
-    $blup ${par}.par1
+    ./blupf90+ ${par}.par1
     cp solutions ../data/sol-${par}.txt
-#     
+
+    #     
 #     
 #     
 #TODO: estimate CV error: scripts/cv.R
 
     #create -cv version which uses pheno-cv.txt
     cd ~/ryals/queen-quality
-    cp params/${par}.par1 params/${par}-cv.par1
-    sed -i 's/pheno.txt/pheno-cv.txt/g' params/${par}-cv.par1
+    cp params/${par}.par1 blup/${par}-cv.par1
+    sed -i 's/pheno.txt/pheno-cv.txt/g' blup/${par}-cv.par1
     
     #run cv script
     Rscript --vanilla scripts/cv.R $par
