@@ -41,6 +41,7 @@ echo "-----------------------"
     
     #TODO: investigate duplicated samples: QC2573, QC3371
     #TODO: ensure all swaps and incorrect names are corrected!
+    #TODO: try removing missing data before calling bialleleic sites, might retain more that way!
     
     #keep no contigs, only bialleleci snps, remove duplicats (norm), rename chrs
     echo "filtering sample vcf..."
@@ -217,7 +218,7 @@ echo "running BLUP..."
 
     #TODO: single-trait blups
 
-    par=wvt.par
+    par=w.par
     cp params/${par}0 blup
     cd blup
     #aireml
@@ -237,9 +238,9 @@ echo "running BLUP..."
 #     
 #     
 #     
-
-
 #TODO: estimate CV error: scripts/cv.R
+
+    
 
 #TODO: admixture components
 
