@@ -108,7 +108,7 @@ echo "-----------------------"
         cd /home/dryals/ryals/admixPipeline/references
         wc -l ?.txt | awk '{print $1}' > refN.txt
         cd ${CLUSTER_SCRATCH}/queen-quality
-        mkdir aim
+        mkdir -p aim
         cd aim
         #specify reference file
         echo "reference-filter.bcf.gz" > ref_filename.txt
@@ -118,19 +118,26 @@ echo "-----------------------"
 
         #launch the Ia script array
         sbatch --array=1-16 scripts/AIM_v3.sh
-    
-    echo "    filtering samples..."
-    bcftools view samples.bcf.gz \
-        -T plink/samples-filter.sites -S plink/samples-filter.names \
-        --threads $SLURM_NTASKS -Ob -o samples-filter.bcf.gz
         
-    bcftools index -c samples-filter.bcf.gz
+    echo "waiting for Ia results (see aim.out)..."
+    cd /home/dryals/queen-quality/admixPipeline
+    while [ $(grep "FINISHED" outputs/aim.out | wc -l | awk '{print $1}') -lt 16 ] #wait for all 16 to finish
+    do
+        sleep 20 #wait between each check
+    done
     
-    echo "merging into references ..."
-        
-    
- 
- 
+#     echo "    filtering samples..."
+#     bcftools view samples.bcf.gz \
+#         -T plink/samples-filter.sites -S plink/samples-filter.names \
+#         --threads $SLURM_NTASKS -Ob -o samples-filter.bcf.gz
+#         
+#     bcftools index -c samples-filter.bcf.gz
+#     
+#     echo "merging into references ..."
+#         
+#     
+#  
+#  
 # echo "-----------------------"
 #     echo "LD pruning..."
 #     echo "    calculating LD and af..."
@@ -231,120 +238,77 @@ echo "-----------------------"
 #             --pheno ~/ryals/queen-quality/data/qq_lsperm.pheno \
 #             --autosome-num 16 \
 #             --out qq_lsperm --thread-num $SLURM_NTASKS
-
-#TODO: do rest of traits, estimate variance explained by sig QTL
-    #hit = 3 6923973
-    cd $CLUSTER_SCRATCH/queen-quality/plink
-    grep -n "3:6923973" samples-pruned.bim
-    44939
-    plink --bfile samples-pruned --recode oxford --snp '3:6923973' --out test
-
-
-echo "-----------------------"  
-echo "creating GRM for BLUP..."
-    cd $CLUSTER_SCRATCH/queen-quality/plink
-#     plink --bfile samples-filter -make-rel square \
-#         --threads $SLURM_NTASKS --out samples-filter --silent
-#         
-    module purge
-    module load biocontainers plink2
-    
+# 
+# #TODO: do rest of traits, estimate variance explained by sig QTL
+#     #hit = 3 6923973
+#     cd $CLUSTER_SCRATCH/queen-quality/plink
+#     grep -n "3:6923973" samples-pruned.bim
+#     44939
+#     plink --bfile samples-pruned --recode oxford --snp '3:6923973' --out test
+# 
+# 
+# echo "-----------------------"  
+# echo "creating GRM for BLUP..."
+#     cd $CLUSTER_SCRATCH/queen-quality/plink
+# #     plink --bfile samples-filter -make-rel square \
+# #         --threads $SLURM_NTASKS --out samples-filter --silent
+# #         
+#     module purge
+#     module load biocontainers plink2
+#     
+# #     plink2 --bfile samples-filter -make-king square \
+# #     --threads $SLURM_NTASKS --out samples-filter --silent
+#     
 #     plink2 --bfile samples-filter -make-king square \
-#     --threads $SLURM_NTASKS --out samples-filter --silent
-    
-    plink2 --bfile samples-filter -make-king square \
-        --out samples-filter
-    
-    module purge
-    module load biocontainers r
-
-
-
-
-echo "-----------------------"  
-echo "running BLUP..."
-
-    par=l
-
-    #TODO: single-trait blups
-    cd ~/ryals/queen-quality/blup
-        #create links
-        if [ ! -f  blupf90+ ]; then
-            echo "    creating links..."
-            ln -S blupf90+ /depot/bharpur/apps/blupf90/blupf90+
-            ln -S airemlf90 /depot/bharpur/apps/blupf90/airemlf90 
-        fi
-
-    cd ~/ryals/queen-quality
-    cp params/${par}.par0 blup
-    cd blup
-    ./airemlf90 ${par}.par0
-    
-    #TODO
-    #read G and R matricies into blup.par2
-#     sed -n 16,80p file1>patch
-#     sed -i 18rpatch file2
-    
-    cp ../params/${par}.par1 .
-    ./blupf90+ ${par}.par1
-    cp solutions ../data/sol-${par}.txt
-
-    #     
+#         --out samples-filter
 #     
-#     
-#TODO: estimate CV error: scripts/cv.R
-
-    #create -cv version which uses pheno-cv.txt
-    cd ~/ryals/queen-quality
-    cp params/${par}.par1 blup/${par}-cv.par1
-    sed -i 's/pheno.txt/pheno-cv.txt/g' blup/${par}-cv.par1
-    
-    #run cv script
-    Rscript --vanilla scripts/cv.R $par
-
-    
-
-
-
-
-        
-
-# #pull most recent plink file...
-#     cd $CLUSTER_SCRATCH/pipeline/plink
-#     cp US1pc.* $CLUSTER_SCRATCH/blup/plink
-#     
-#     #pull samples
-#     cd $CLUSTER_SCRATCH/blup/plink
-#     cat US1pc.fam | awk '{print $1, $2}' | grep 'QC' > tarpy.samps
-#     
-#     #TODO: consider filtering options, try to get more sites to start, try real LD pruning 
-#     
-#     plink2 --bfile US1pc --make-bed --keep tarpy.samps \
-#     --maf 0.01 --make-king square --out tarpy
-# 
-#     plink2 --bfile tarpy --make-bed \
-#     --bp-space 5000 --make-king square --pca 60 --out tarpy.small
-#     
-#     
-# #GWAS time
-#     #TODO: incorporate ancestry, ensure that order is the same in all files
-#     echo "gcta..."
-#     cd $CLUSTER_SCRATCH/blup
-#     mkdir -p gwas
-#     cd gwas
-#     gcta=/depot/bharpur/apps/gcta/gcta-1.94.1-linux-kernel-3-x86_64/gcta-1.94.1
-#     
-#         $gcta --bfile ../plink/tarpy.small --make-grm --thread-num $SLURM_NTASKS --autosome-num 16 --out tarpy
-#         echo "mlma..."
-#         #adjusted phenotypes generated in R script...
-#         $gcta --mlma --bfile ../plink/tarpy.small --grm tarpy --pheno tarpy_viability.pheno --autosome-num 16 \
-#             --out tarpy_viability --thread-num $SLURM_NTASKS
-#             
-#         $gcta --mlma --bfile ../plink/tarpy.small --grm tarpy --pheno tarpy_weight.pheno --autosome-num 16 \
-#             --out tarpy_weight --thread-num $SLURM_NTASKS
+#     module purge
+#     module load biocontainers r
 # 
 # 
-#         
+# 
+# 
+# echo "-----------------------"  
+# echo "running BLUP..."
+# 
+#     par=l
+# 
+#     #TODO: single-trait blups
+#     cd ~/ryals/queen-quality/blup
+#         #create links
+#         if [ ! -f  blupf90+ ]; then
+#             echo "    creating links..."
+#             ln -S blupf90+ /depot/bharpur/apps/blupf90/blupf90+
+#             ln -S airemlf90 /depot/bharpur/apps/blupf90/airemlf90 
+#         fi
+# 
+#     cd ~/ryals/queen-quality
+#     cp params/${par}.par0 blup
+#     cd blup
+#     ./airemlf90 ${par}.par0
+#     
+#     #TODO
+#     #read G and R matricies into blup.par2
+# #     sed -n 16,80p file1>patch
+# #     sed -i 18rpatch file2
+#     
+#     cp ../params/${par}.par1 .
+#     ./blupf90+ ${par}.par1
+#     cp solutions ../data/sol-${par}.txt
+# 
+#     #     
+# #     
+# #     
+# #TODO: estimate CV error: scripts/cv.R
+# 
+#     #create -cv version which uses pheno-cv.txt
+#     cd ~/ryals/queen-quality
+#     cp params/${par}.par1 blup/${par}-cv.par1
+#     sed -i 's/pheno.txt/pheno-cv.txt/g' blup/${par}-cv.par1
+#     
+#     #run cv script
+#     Rscript --vanilla scripts/cv.R $par
+
 echo "-----------------------"
 echo "DONE"
 echo "-----------------------"

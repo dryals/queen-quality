@@ -2,11 +2,11 @@
 args = commandArgs(trailingOnly=TRUE)
 
 #get N for each pop and total
-setwd("/depot/bharpur/data/projects/ryals/ahb/references")
+setwd("/depot/bharpur/data/projects/ryals/queen-quality/references")
 popN = read.delim("refN.txt", header = F)
 
 #read freqs for chr
-setwd(paste0("/scratch/bell/dryals/ahb/aim/chr", args[1]))
+setwd(paste0("/scratch/negishi/dryals/queen-quality/aim/chr", args[1]))
 #setwd("/home/dylan/Documents/bees/harpurlab/project/diversity/aim")
 
 print(paste(args[1], "loading..."))

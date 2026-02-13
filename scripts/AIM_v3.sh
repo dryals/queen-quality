@@ -9,7 +9,7 @@
 #SBATCH --job-name AIM_v3_array
 #SBATCH --partition cpu
 #SBATCH --output=/home/dryals/ryals/queen-quality/outputs/dump.out
-#SBATCH --error=/home/dryals/ryals/ahb/queen-quality/dump.out
+#SBATCH --error=/home/dryals/ryals/queen-quality/outputs/dump.out
 
 #Dylan Ryals 26 OCT 2023
 #last edit   13 FEB 2026
