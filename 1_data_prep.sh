@@ -243,8 +243,8 @@ echo "running BLUP..."
 
     #create -cv version which uses pheno-cv.txt
     cd ~/ryals/queen-quality
-    
-    sed -i 's/pheno.txt/pheno-vs.txt/g' params/${par}.par1 > params/${par}-cv.par1
+    params/${par}.par1
+    sed -i 's/pheno.txt/pheno-cv.txt/g' params/${par}.par1 > params/${par}-cv.par1
 
     
 
