@@ -1,0 +1,38 @@
+date
+-----------------------
+User guides for each biocontainer module can be found in
+https://www.rcac.purdue.edu/knowledge/biocontainers 
+Lmod has detected the following error: Cannot load module "plink/1.90b6.21"
+because these module(s) are loaded:
+   plink2
+
+While processing the following module(s):
+    Module fullname  Module Filename
+    ---------------  ---------------
+    plink/1.90b6.21  /opt/spack/biocontainers/plink/1.90b6.21.lua
+
+filtering sample vcf...
+/var/spool/slurm/job33613280/slurm_script: line 44: bcftools: command not found
+/var/spool/slurm/job33613280/slurm_script: line 43: bcftools: command not found
+/var/spool/slurm/job33613280/slurm_script: line 42: bcftools: command not found
+/var/spool/slurm/job33613280/slurm_script: line 42: bcftools: command not found
+/var/spool/slurm/job33613280/slurm_script: line 46: bcftools: command not found
+    mark missing...
+/var/spool/slurm/job33613280/slurm_script: line 50: bcftools: command not found
+    mind, geno, and maf filters...
+/var/spool/slurm/job33613280/slurm_script: line 57: plink: command not found
+awk: fatal: cannot open file `samples-filter.bim' for reading (No such file or directory)
+awk: fatal: cannot open file `samples-filter.fam' for reading (No such file or directory)
+PCA...
+/var/spool/slurm/job33613280/slurm_script: line 70: plink: command not found
+GRM...
+The following modules were not unloaded:
+  (Use "module --force purge" to unload all):
+
+  1) xalt/3.0.2
+User guides for each biocontainer module can be found in
+https://www.rcac.purdue.edu/knowledge/biocontainers 
+Error: Failed to open samples-filter.fam : No such file or directory.
+-----------------------
+DONE
+-----------------------
