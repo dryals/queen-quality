@@ -243,8 +243,11 @@ echo "running BLUP..."
 
     #create -cv version which uses pheno-cv.txt
     cd ~/ryals/queen-quality
-    params/${par}.par1
-    sed -i 's/pheno.txt/pheno-cv.txt/g' params/${par}.par1 > params/${par}-cv.par1
+    cp params/${par}.par1 params/${par}-cv.par1
+    sed -i 's/pheno.txt/pheno-cv.txt/g' params/${par}-cv.par1
+    
+    #run cv script
+    R --vanilla --no-save --no-echo --silent < scripts/cv.R $par
 
     
 
