@@ -1,5 +1,6 @@
 #take a command line argument
 args = commandArgs(trailingOnly=TRUE)
+#args = "w"
 
 #target script for CV runs
 targetParam = paste0(args[1], "-cv.par1")
@@ -25,14 +26,20 @@ colnames(fixed.eff) = c("trait", "effect", "level" ,"solution", "se")
 fixed.eff = fixed.eff %>% mutate(se = as.numeric(se),
                                  solution = as.numeric(solution)) %>% 
   filter(effect == 2)
+  
+#load sample info from pheno file
+pheno = read.delim("blup/pheno.txt", header = F, sep = " ")
+  #grab colnames of sampleids and locations
+  samp.col = colnames(pheno)[grepl("QC", pheno)]
+  loc.col = colnames(pheno)[grepl("HI", pheno)]
+  
 
 #create list for CV
-#try 10-fold
-set.seed(2026)
-#only mask individuals with full pheno data
-masked = pheno.f
-masked$CV = sample(c(1:5), nrow(pheno.f), replace = T)
-table(masked$CV)
+  #only mask individuals with full pheno data
+  masked = pheno
+  set.seed(2026)
+  masked$CV = sample(c(1:5), nrow(pheno), replace = T)
+  table(masked$CV)
 
 #create output object
 CVout = list()  
@@ -41,21 +48,19 @@ for(CVnum in 1:5){
   
   #mask
   pheno.cv = masked
-  pheno.cv[pheno.cv$CV == CVnum, trait.key$tn] = -999
-  
-  #check order for rows
-  sum(colnames(H.f) != pheno.cv$colony_id)
-  
+    #mask phenotype columns
+    N = dim(pheno.cv)[2]
+    pheno.cv[pheno.cv$CV == CVnum, c(3:(N-3))] = -999
+
   #output for pheno
   pheno.out = pheno.cv %>% 
-    select(qnumid, apnumid, ynumid, synumid, start, requeen, pattern, honey,
-           mites.adj, dwv.bin, bd.bin)
+    select(-CV)
   
-  write.table(pheno.out, "blup/cv-H-pheno.txt", 
+  write.table(pheno.out, "blup/pheno-cv.txt", 
               col.names = F, row.names = F, quote = F)
   
   #RUN BLUP script
-  cmd = paste("blup/cv-H-blup.sh", targetParam, CVnum)
+  cmd = paste("blup/cv.sh", targetParam, CVnum)
   system(cmd)
   
   
