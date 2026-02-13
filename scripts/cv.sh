@@ -1,10 +1,11 @@
 #!/bin/bash
-ulimit -s unlimited
+
+cd blup
 
 echo "starting blup cv run $2 / 5"
 
-./blupf90+ blup/${1} &> blup/cv-lastrun.log
+./blupf90+ ${1},par1 &> cv-lastrun.log
 
-mv solutions sol-cv${2}.txt
+mv solutions ../data/sol-cv${2}.txt
 
 echo "DONE"

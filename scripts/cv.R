@@ -46,6 +46,8 @@ CVout = list()
 
 for(CVnum in 1:5){
   
+  #CVnum=1
+  
   #mask
   pheno.cv = masked
     #mask phenotype columns
@@ -60,7 +62,7 @@ for(CVnum in 1:5){
               col.names = F, row.names = F, quote = F)
   
   #RUN BLUP script
-  cmd = paste("blup/cv.sh", targetParam, CVnum)
+  cmd = paste("scripts/cv.sh", targetParam, CVnum)
   system(cmd)
   
   
