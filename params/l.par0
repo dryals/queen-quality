@@ -5,7 +5,7 @@ NUMBER_OF_TRAITS
 NUMBER_OF_EFFECTS
 2
 OBSERVATION(S)
-5 #lsperm
+3 #lsperm
 WEIGHT(S)
 
 EFFECTS:
@@ -23,6 +23,5 @@ covmat.txt
 .1
 OPTION missing -999
 OPTION sol se
-OPTION conv_crit 1e-10
 #OPTION EM-reml 10
 #ulimit -s unlimited

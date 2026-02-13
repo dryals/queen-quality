@@ -216,7 +216,7 @@ echo "creating GRM for BLUP..."
 echo "-----------------------"  
 echo "running BLUP..."
 
-    par=t
+    par=l
 
     #TODO: single-trait blups
     cd ~/ryals/queen-quality/blup
