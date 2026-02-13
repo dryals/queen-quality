@@ -57,7 +57,7 @@ paste A.frq C.tmp M.tmp O.tmp > chr${NCHR}.popfrq
 rm *.tmp *.frq
 
 echo "calculating Ia for chr $NCHR" >> $log
-
+# 
 Rscript --vanilla --silent ~/ryals/queen-quality/scripts/aimIa_v2.R $NCHR
     #v2 runtime: ~3:40
     #v1 runtime: ~9:30

@@ -100,13 +100,11 @@ echo "-----------------------"
 #         bcftools view reference.bcf.gz -T plink/samples-filter.sites --threads $SLURM_NTASKS \
 #         -Ob -o reference-filter.bcf.gz
 # 
-     bcftools index -c reference-filter.bcf.gz
-     
-    
+#      bcftools index -c reference-filter.bcf.gz
+#      
+#     
     echo "launching Ia script...."
         #count number of samples in each population
-        cd /home/dryals/ryals/admixPipeline/references
-        wc -l ?.txt | awk '{print $1}' > refN.txt
         cd ${CLUSTER_SCRATCH}/queen-quality
         mkdir -p aim
         cd aim
@@ -120,7 +118,7 @@ echo "-----------------------"
         sbatch --array=1-16 scripts/AIM_v3.sh
         
     echo "waiting for Ia results (see aim.out)..."
-    cd /home/dryals/queen-quality/admixPipeline
+    cd ~/ryals/queen-quality
     while [ $(grep "FINISHED" outputs/aim.out | wc -l | awk '{print $1}') -lt 16 ] #wait for all 16 to finish
     do
         sleep 20 #wait between each check
