@@ -101,6 +101,7 @@ echo "-----------------------"
 #         -Ob -o reference-filter.bcf.gz
 # 
      bcftools index -c reference-filter.bcf.gz
+     
     
     echo "launching Ia script...."
         #count number of samples in each population
