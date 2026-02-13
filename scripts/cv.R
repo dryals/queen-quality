@@ -1,8 +1,8 @@
 #take a command line argument
-
+args = commandArgs(trailingOnly=TRUE)
 
 #target script for CV runs
-targetScript = "qH-HMP-cv.par1"
+targetParam = paste0(args[1], "-cv.par1")
 
 fixed.key = data.frame(effect = c(2:4) %>% as.character(),
                        name = c("apnumid", "start", "requeen"))
@@ -48,7 +48,7 @@ for(CVnum in 1:5){
               col.names = F, row.names = F, quote = F)
   
   #RUN BLUP script
-  cmd = paste("blup/cv-H-blup.sh", targetScript, CVnum)
+  cmd = paste("blup/cv-H-blup.sh", targetParam, CVnum)
   system(cmd)
   
   

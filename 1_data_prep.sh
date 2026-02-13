@@ -217,13 +217,14 @@ echo "-----------------------"
 echo "running BLUP..."
 
     #TODO: single-trait blups
+    cd ~/ryals/queen-quality
 
-    par=w.par
-    cp params/${par}0 blup
+    par=w
+    cp params/${par}.par0 blup
     cd blup
     #aireml
     aireml=/depot/bharpur/apps/blupf90/airemlf90
-    $aireml ${par}0 #&> lastrun.log
+    $aireml ${par}.par0 #&> lastrun.log
     #./airemelf90 $par
     
     #TODO
@@ -231,14 +232,19 @@ echo "running BLUP..."
 #     sed -n 16,80p file1>patch
 #     sed -i 18rpatch file2
     
-    cp ../params/${par}1 .
+    cp ../params/${par}.par1 .
     blup=/depot/bharpur/apps/blupf90/blupf90+
-    $blup ${par}1
-    cp solutions ../data/sol-12feb26.txt
+    $blup ${par}.par1
+    cp solutions ../data/sol-${par}.txt
 #     
 #     
 #     
 #TODO: estimate CV error: scripts/cv.R
+
+    #create -cv version which uses pheno-cv.txt
+    cd ~/ryals/queen-quality
+    
+    sed -i 's/pheno.txt/pheno-vs.txt/g' params/${par}.par1 > params/${par}-cv.par1
 
     
 
