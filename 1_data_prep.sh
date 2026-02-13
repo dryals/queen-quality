@@ -216,7 +216,7 @@ echo "creating GRM for BLUP..."
 echo "-----------------------"  
 echo "running BLUP..."
 
-    par=w
+    par=t
 
     #TODO: single-trait blups
     cd ~/ryals/queen-quality/blup
@@ -227,12 +227,10 @@ echo "running BLUP..."
             ln -S airemlf90 /depot/bharpur/apps/blupf90/airemlf90 
         fi
 
-    cd ~/ryals/queen-quality/
+    cd ~/ryals/queen-quality
     cp params/${par}.par0 blup
     cd blup
-    #aireml
-    $aireml ${par}.par0 #&> lastrun.log
-    #./airemelf90 $par
+    ./aireml ${par}.par0
     
     #TODO
     #read G and R matricies into blup.par2
