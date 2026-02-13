@@ -6,6 +6,9 @@ targetParam = paste0(args[1], "-cv.par1")
 
 print(targetParam)
 print(getwd())
+
+#wd is queen quality!
+
 # 
 # # fixed.key = data.frame(effect = c(2:4) %>% as.character(),
 # #                        name = c("apnumid", "start", "requeen"))

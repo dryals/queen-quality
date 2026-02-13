@@ -247,7 +247,7 @@ echo "running BLUP..."
     sed -i 's/pheno.txt/pheno-cv.txt/g' params/${par}-cv.par1
     
     #run cv script
-    R --vanilla --no-save --no-echo --silent < scripts/cv.R $par
+    Rscript --vanilla scripts/cv.R $par
 
     
 
