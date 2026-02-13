@@ -129,7 +129,7 @@ for(i in 2:5){
   CVdf = rbind(CVdf, x)
 }
 
-print(CVout)
+print(CVdf)
 
 # #plot cor
 # ggplot(CVdf, aes(x = tn, y = cor)) + 
