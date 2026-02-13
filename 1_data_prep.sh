@@ -32,14 +32,15 @@ echo "-----------------------"
 # echo "-----------------------"
 #     #directory setup
 #     mkdir -p outputs
+#     mkdir -p locks
 #     mkdir -p $CLUSTER_SCRATCH/queen-quality
 #     mkdir -p blup 
 #     #filter and prepare vcf  
 #     cd $CLUSTER_SCRATCH/queen-quality
 #     
-#     #TODO: investigate duplicated samples: QC2573, QC3371
-#     #TODO: ensure all swaps and incorrect names are corrected!
-#     #TODO: try removing missing data before calling bialleleic sites, might retain more that way!
+    #TODO: investigate duplicated samples: QC2573, QC3371
+    #TODO: ensure all swaps and incorrect names are corrected!
+    #TODO: try removing missing data before calling bialleleic sites, might retain more that way!
 #     
 #     #keep no contigs, only bialleleci snps, remove duplicats (norm), rename chrs
 #     echo "filtering sample vcf..."
@@ -63,7 +64,9 @@ echo "-----------------------"
 #     bcftools query samples.missing.bcf.gz -l > samples.names
 #     grep "QC" samples.names > keep.names
 #     paste  keep.names  keep.names >  keep.plink
-#         
+     
+     #TODO: try to retain more sites ... lower prop threshold, lower maf threshold?
+     
 #     #filter in plink
 #     echo "    mind, geno, and maf filters..."
 #     cd $CLUSTER_SCRATCH/queen-quality
@@ -103,26 +106,41 @@ echo "-----------------------"
 #      bcftools index -c reference-filter.bcf.gz
 #      
 #     
-    echo "launching Ia script...."
-        #count number of samples in each population
-        cd ${CLUSTER_SCRATCH}/queen-quality
-        mkdir -p aim
-        cd aim
-        #specify reference file
-        echo "reference-filter.bcf.gz" > ref_filename.txt
-        #reset logifle
-        cd /home/dryals/ryals/queen-quality
-        echo -n "" > outputs/aim.out
-
-        #launch the Ia script array
-        sbatch --array=1-16 scripts/AIM_v3.sh
-        
-    echo "waiting for Ia results (see aim.out)..."
-    cd ~/ryals/queen-quality
-    while [ $(grep "FINISHED" outputs/aim.out | wc -l | awk '{print $1}') -lt 16 ] #wait for all 16 to finish
-    do
-        sleep 20 #wait between each check
-    done
+#     echo "launching Ia script...."
+#         #count number of samples in each population
+#         cd ${CLUSTER_SCRATCH}/queen-quality
+#         mkdir -p aim
+#         cd aim
+#         #specify reference file
+#         echo "reference-filter.bcf.gz" > ref_filename.txt
+#         #reset logifle
+#         cd /home/dryals/ryals/queen-quality
+#         echo -n "" > outputs/aim.out
+# 
+#         #launch the Ia script array
+#         sbatch --array=1-16 scripts/AIM_v3.sh
+#         
+#     echo "waiting for Ia results (see aim.out)..."
+#     cd ~/ryals/queen-quality
+#     while [ $(grep "FINISHED" outputs/aim.out | wc -l | awk '{print $1}') -lt 16 ] #wait for all 16 to finish
+#     do
+#         sleep 20 #wait between each check
+#     done
+#     
+#     echo "compiling Ia results..."    
+#     cd ${CLUSTER_SCRATCH}/queen-quality/aim
+#     #this will hold all the aims
+#     cat chr*/chr*.ia | grep -v "chr" | sort -k3 -gr > aim.ia.txt
+#    
+#         grep -v "NA" aim.ia.txt | awk '$3>0' | awk 'OFS=":" {print$1, $2}' > plink_aim.ia.txt
+#         
+#     count=$( wc -l plink_aim.ia.txt | awk '{print $1}')
+#     echo "    Calculated Ia for $count sites"
+#     
+    #TODO: rest of admix pipeline ... 
+    
+    
+    
     
 #     echo "    filtering samples..."
 #     bcftools view samples.bcf.gz \
