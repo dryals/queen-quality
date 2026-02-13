@@ -29,60 +29,58 @@ echo "-----------------------"
     chrsShort=$( awk '{print $2}' $rename | tr '\n' ' ' )
 
     
-echo "-----------------------"
-# #directory setup
-    mkdir -p outputs
-    mkdir -p $CLUSTER_SCRATCH/queen-quality
-    mkdir -p blup
+# echo "-----------------------"
+#     #directory setup
+#     mkdir -p outputs
+#     mkdir -p $CLUSTER_SCRATCH/queen-quality
+#     mkdir -p blup 
+#     #filter and prepare vcf  
+#     cd $CLUSTER_SCRATCH/queen-quality
 #     
-# #filter and prepare vcf
+#     #TODO: investigate duplicated samples: QC2573, QC3371
+#     #TODO: ensure all swaps and incorrect names are corrected!
+#     #TODO: try removing missing data before calling bialleleic sites, might retain more that way!
 #     
-    cd $CLUSTER_SCRATCH/queen-quality
-    
-    #TODO: investigate duplicated samples: QC2573, QC3371
-    #TODO: ensure all swaps and incorrect names are corrected!
-    #TODO: try removing missing data before calling bialleleic sites, might retain more that way!
-    
-    #keep no contigs, only bialleleci snps, remove duplicats (norm), rename chrs
-    echo "filtering sample vcf..."
-    bcftools view $vcf -v snps -r $chrs -Ou | bcftools norm -m +snps -Ou | \
-        bcftools view -m2 -M2 -Ou | \
-        bcftools annotate --rename-chrs $rename --threads $SLURM_NTASKS -Ob -o samples.bcf.gz
-    
-    bcftools index -c samples.bcf.gz
-    
-    #remove non-QC samples
-    bcftools query samples.bcf.gz -l > samples.names
-    grep "QC" samples.names > keep.names
-        
-    #mark low propability as missing 
-    echo "    mark missing..."
-    bcftools view samples.bcf.gz -S keep.names -Ou | 
-        bcftools filter  -S . -i 'GP[:0] > 0.99 | GP[:1] > 0.99 | GP[:2] > 0.99' \
-        --threads $SLURM_NTASKS -Ob -o samples.missing.bcf.gz
-    
+#     #keep no contigs, only bialleleci snps, remove duplicats (norm), rename chrs
+#     echo "filtering sample vcf..."
+#     bcftools view $vcf -v snps -r $chrs -Ou | bcftools norm -m +snps -Ou | \
+#         bcftools view -m2 -M2 -Ou | \
+#         bcftools annotate --rename-chrs $rename --threads $SLURM_NTASKS -Ob -o samples.bcf.gz
+#     
+#     bcftools index -c samples.bcf.gz
+#     
+#     #remove non-QC samples
+#     bcftools query samples.bcf.gz -l > samples.names
+#     grep "QC" samples.names > keep.names
+#         
+#     #mark low propability as missing 
+#     echo "    mark missing..."
+#     bcftools view samples.bcf.gz -S keep.names -Ou | 
+#         bcftools filter  -S . -i 'GP[:0] > 0.99 | GP[:1] > 0.99 | GP[:2] > 0.99' \
+#         --threads $SLURM_NTASKS -Ob -o samples.missing.bcf.gz
+#     
 #     #remove non-QC samples
 #     bcftools query samples.missing.bcf.gz -l > samples.names
 #     grep "QC" samples.names > keep.names
 #     paste  keep.names  keep.names >  keep.plink
-        
-    #filter in plink
-    echo "    mind, geno, and maf filters..."
-    cd $CLUSTER_SCRATCH/queen-quality
-    mkdir -p plink
-    #takes LONG time
-    plink --bcf samples.missing.bcf.gz --make-bed \
-        --allow-extra-chr --chr-set 16 no-xy -chr $chrsShort \
-        --set-missing-var-ids @:# \
-        #-keep keep.plink \
-        --mind 0.2 --geno 0.1 --maf 0.01 \
-        --threads $SLURM_NTASKS --out plink/samples-filter --silent
-        
-    #output sites for ref filter, samples
-    cd plink
-    awk '{print $2}' samples-filter.bim | tr ":" "\t" > samples-filter.sites
-    awk '{print $1}' samples-filter.fam > samples-filter.names
- 
+#         
+#     #filter in plink
+#     echo "    mind, geno, and maf filters..."
+#     cd $CLUSTER_SCRATCH/queen-quality
+#     mkdir -p plink
+#     #takes LONG time
+#     plink --bcf samples.missing.bcf.gz --make-bed \
+#         --allow-extra-chr --chr-set 16 no-xy -chr $chrsShort \
+#         --set-missing-var-ids @:# \
+#         #-keep keep.plink \
+#         --mind 0.2 --geno 0.1 --maf 0.01 \
+#         --threads $SLURM_NTASKS --out plink/samples-filter --silent
+#         
+#     #output sites for ref filter, samples
+#     cd plink
+#     awk '{print $2}' samples-filter.bim | tr ":" "\t" > samples-filter.sites
+#     awk '{print $1}' samples-filter.fam > samples-filter.names
+#  
 echo "-----------------------"
 #TODO: admixture components
     echo "pulling references..."
@@ -94,15 +92,15 @@ echo "-----------------------"
 #             -Ob -o reference.bcf.gz
 #             
 #         bcftools index -c reference.bcf.gz
-
-    #copy from admix dir
-    cp ../pipeline/reference.bcf.* .
-    
-    echo "    filtering references ..."
-        bcftools view reference.bcf.gz -T plink/samples-filter.sites --threads $SLURM_NTASKS \
-        -Ob -o reference-filter.bcf.gz
-
-    bcftools index -c reference-filter.bcf.gz
+# 
+#     #copy from admix dir
+#     cp ../pipeline/reference.bcf.* .
+#     
+#     echo "    filtering references ..."
+#         bcftools view reference.bcf.gz -T plink/samples-filter.sites --threads $SLURM_NTASKS \
+#         -Ob -o reference-filter.bcf.gz
+# 
+     bcftools index -c reference-filter.bcf.gz
     
     echo "launching Ia script...."
         #count number of samples in each population
