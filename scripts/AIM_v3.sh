@@ -47,7 +47,7 @@ for pop in A C M O
 #for pop in A C L M O U Y
 do
     echo "starting $NCHR $pop ..."
-    bcftools view chr${NCHR}refs.bcf.gz -S ~/ryals/ahb/references/${pop}.txt -Ou | bcftools +fill-tags | bcftools query -f'%CHROM\t%POS\t%AF\n' -o ${pop}.frq
+    bcftools view chr${NCHR}refs.bcf.gz -S ~/ryals/queen-quality/references/${pop}.txt -Ou | bcftools +fill-tags | bcftools query -f'%CHROM\t%POS\t%AF\n' -o ${pop}.frq
     
     awk '{print $3}' ${pop}.frq > ${pop}.tmp
 done
@@ -58,15 +58,15 @@ rm *.tmp *.frq
 
 echo "calculating Ia for chr $NCHR" >> $log
 
-Rscript --vanilla --silent /depot/bharpur/data/projects/ryals/ahb/aimIa_v2.R $NCHR
+Rscript --vanilla --silent ~/ryals/queen-quality/scripts/aimIa_v2.R $NCHR
     #v2 runtime: ~3:40
     #v1 runtime: ~9:30
 
 #report to logs, using flock to avoid conflicts
 ( flock -x 9 
     echo "FINISHED CHR $NCHR" >> $log
-    echo "    FINISHED CHR $NCHR" >> /depot/bharpur/data/projects/ryals/ahb/outputs/pipeline.out
-) 9> ~/ryals/ahb/.AIMwritelock
+    echo "    FINISHED CHR $NCHR" >> ~/ryals/queen-quality/outputs/prep.out
+) 9> ~/ryals/queen-quality/locks/.AIMwritelock
 echo "done"
 date
 
