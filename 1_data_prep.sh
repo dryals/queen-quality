@@ -20,7 +20,7 @@ echo "-----------------------"
 
 #modules
     module purge
-    module load biocontainers bcftools plink
+    module load biocontainers bcftools plink r
     
     #vcf location
     vcf="/depot/bharpur/data/popgenomes/gencove/NCstate/NCstate_final.bcf.gz"
