@@ -84,10 +84,10 @@ echo "-----------------------"
 #     awk '{print $2}' samples-filter.bim | tr ":" "\t" > samples-filter.sites
 #     awk '{print $1}' samples-filter.fam > samples-filter.names
 #  
-echo "-----------------------"
-#TODO: admixture components
-    echo "pulling references..."
-     cd ${CLUSTER_SCRATCH}/queen-quality
+# echo "-----------------------"
+# #TODO: admixture components
+#     echo "pulling references..."
+#      cd ${CLUSTER_SCRATCH}/queen-quality
 #         #no multiallelic sites, only snps, keep subset of references, no contigs, rename chromosomes to "1,2,3...16"
 #         bcftools view $refs -S /home/dryals/ryals/ahb/references/pureRefs.txt \
 #             -r $chrsLong -M2 -v snps -Ou | \
@@ -133,14 +133,80 @@ echo "-----------------------"
 #     cat chr*/chr*.ia | grep -v "chr" | sort -k3 -gr > aim.ia.txt
 #    
 #         grep -v "NA" aim.ia.txt | awk '$3>0' | awk 'OFS=":" {print$1, $2}' > plink_aim.ia.txt
+#           cat plink_aim.ia.txt | tr ":" "\t" > bct_aim.ia.txt
+#           
 #         
 #     count=$( wc -l plink_aim.ia.txt | awk '{print $1}')
 #     echo "    Calculated Ia for $count sites"
+#    
+    echo "merging samples and references..."
+    cd ${CLUSTER_SCRATCH}/queen-quality
+    
+    bcftools view samples.missing.bcf.gz -T plink/samples-filter.sites -S plink/samples-filter.names \
+        --threads $SLURM_NTASKS -Ob -o samples-aim.bcf.gz
+        
+        bcftools index -c samples-aim.bcf.gz
+        
+    bcftools merge reference-filter.bcf.gz samples-aim.bcf.gz -m snps -Ou | \
+        bcftools norm -m +snps -Ou | bcftools view -M2 -m2 --threads $SLURM_NTASKS -Ob -o qq-admix.bcf.gz
+    echo "  indexing..."
+        bcftools index -c qq-admix.bcf.gz
+    
+    
+    
+#     echo "starting PLINK for supervised data" 
+#         #aims, maf, and geno
+#         cd ${CLUSTER_SCRATCH}/queen-quality
+#             echo "    pulling informative sites..."
+#             plink --bcf US1pcadmix.bcf.gz --make-bed --allow-extra-chr --chr-set 16 no-xy -chr $chrsShort \
+#                 --set-missing-var-ids @:# --silent \
+#                 --extract aim/plink_aim.ia.txt --threads $SLURM_NTASKS --out plink/topaim
+# 
+#             #extract ld data, removing references
+#             echo "    calculating ld..."
+#             cd plink
+#             #TODO: consider maf threshold
+#             plink --bfile topaim -r2 --ld-window 1000 --ld-window-kb 50 --ld-window-r2 0.2 \
+#                 --remove /home/dryals/ryals/admixPipeline/references/plink_pureRefs.txt \
+#                 --silent --threads $SLURM_NTASKS --out testprune2
+#                 
+#             #run R script to generate best set of sites by Ia
+#                 #reset logfile
+#                 cd /home/dryals/ryals/admixPipeline
+#                 echo -n "" > outputs/prune.out
+#                 #start
+#                 sbatch --array=1-16 prune_array.sh
+#                 #wait
+#                 echo "    waiting for pruning (see prune.out)..."
+#                 while [ $(grep "FINISHED" outputs/prune.out | wc -l | awk '{print $1}') -lt 16 ] #wait for all 16 to finish
+#                 do
+#                     sleep 20 #wait between each check
+#                 done
+#                 #create full output
+#                 echo "    compiling results..."
+#                 cd ${CLUSTER_SCRATCH}/pipeline/aim
+#                 #this will hold all the aims
+#                 cat chr*/LDremove.txt > allLDremove.txt
+#                 count=$( wc -l allLDremove.txt | awk '{print $1}')
+#                 echo "    marked $count sites"
+#                 
+#             echo "    removing pruned sites..."
+#             cd $CLUSTER_SCRATCH/pipeline/plink
+#             #create new admix file
+#             plink --bfile topaim --make-bed --exclude ../aim/allLDremove.txt --silent \
+#                 --threads $SLURM_NTASKS --out US1pcadmix
+#         
+#         #use this plink file basename for admix scripts
+#         echo "US1pcadmix" > plink_admix_filename.txt
+#         
+#         #kill script if the above fails
+#         if [ ! -f "US1pcadmix.bed" ]; then
+#             echo -e "\e[30;41m Plink Failed! \e[0m"
+#             exit 1
+#         fi
 #     
-    #TODO: rest of admix pipeline ... 
-    
-    
-    
+#     
+#     
     
 #     echo "    filtering samples..."
 #     bcftools view samples.bcf.gz \
