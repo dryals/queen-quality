@@ -54,6 +54,8 @@ pheno = pheno %>% left_join(loc.trans)
 #remove duplicate second entry
 pheno = pheno[-(which(pheno$id == "QC2573")[2]),]
 
+#TODO: collapse locations as in previous scripts!
+
 #genotype PCA
   eig = read.delim("data/samples-pca.eigenval", header = F)
     eig$perc = eig$V1 / sum(eig$V1)
@@ -68,6 +70,48 @@ pheno = pheno[-(which(pheno$id == "QC2573")[2]),]
     pca.geno = pca.geno %>% left_join(pheno %>% select(id, loc.fix))
   
     ggplot(pca.geno, aes(x = PC1, y = PC2, color = loc.fix)) + geom_point()
+    
+#admixture plotting
+    #read admix data
+    admix = cbind(read.delim("data/finaladmix.fam", header = F, sep = "")[,1],
+                  read.delim("data/finaladmix.4.Q", header = F, sep = "")
+                  )
+      colnames(admix)[1]="id"
+      
+    reffam = read.delim("references/refData.txt")
+    
+    #verify lineage identity
+    lins = admix %>% left_join(reffam %>% select(id = SRR, lineage)) %>% 
+      filter(grepl ("SRR", id)) %>%
+      pivot_longer(starts_with("V")) %>%
+      group_by(name, lineage) %>%
+      mutate(m = mean(value)) %>% ungroup %>% 
+      group_by(name) %>% arrange(desc(m)) %>% slice(1) %>% select(lineage, name)
+    
+    #rename
+    admix = admix %>% rename(A = V4, M = V1, C = V2, O = V3) %>% 
+      left_join(pheno %>% select(id, loc.fix))
+    
+    #admixture bar chart
+    admix.bar = admix 
+    
+      #add bar id
+      admix.bar = admix.bar %>% arrange(loc.fix, A)
+      admix.bar$barid = (1:nrow(admix.bar))
+      #melt --- long format
+      admix.long = admix.bar %>% 
+        pivot_longer(cols = c("A", "M", "C", "O"), values_to = "value",
+                     names_to = "fam") %>% 
+        mutate(fam = factor(fam, levels =c("A", "M", "C", "O")))
+      
+          #admixture bar chart
+   ggplot(data = admix.long %>% filter(!is.na(loc.fix))) +
+      geom_bar(aes(x = as.factor(barid), y = value, fill = fam), 
+               stat='identity', width = 1) +
+      facet_grid(cols = vars(loc.fix), scales = "free_x") +
+      scale_fill_brewer(palette = "PRGn") +
+      labs(x = "sample", y = "Proportion of Genome", fill = "Lineage") + 
+      theme_bw()
     
 
 #phenotype PCA
