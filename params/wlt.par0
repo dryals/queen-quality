@@ -12,9 +12,9 @@ EFFECTS:
 1 1 1 934 cross #queen_id
 2 2 2 11 cross #location
 RANDOM_RESIDUAL VALUES
-.8 .1 .1
-.1 .9 .1
-.1 .1 .9
+.8 0 0
+0 .9 0
+0 0 .9
 RANDOM_GROUP
 1 
 RANDOM_TYPE
