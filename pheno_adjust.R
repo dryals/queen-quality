@@ -106,7 +106,7 @@ gwas = pheno.num %>%
   filter(gc_id %in% pca.geno$gc_id) %>% 
   left_join(pca.geno %>% select(gc_id, PC1, PC2, PC3), by = 'gc_id')
 
-sapply(gwas, function(x){sum(is.na(x))})
+#sapply(gwas, function(x){sum(is.na(x))})
 
 #summary(lm(m.Body ~ loc.fix + PC1 + PC2 + PC3, data = gwas))
 #summary(lm(l.Sperm ~ loc.fix + PC1 + PC2 + PC3, data = gwas))
@@ -118,9 +118,9 @@ gwas$adj.m.Body = lm(m.Body ~ loc.fix + PC1, data = gwas)$residuals %>%
   
   #TODO: v sperm should be beta distributed (or something?)
   
-gwas$adj.v.Sperm = lm(v.Sperm ~ loc.fix + PC1, data = gwas)$residuals %>% 
+gwas$adj.v.Sperm = lm(v.Sperm ~ loc.fix + PC1 + PC2 + PC3, data = gwas)$residuals %>% 
   round(4)
-gwas$adj.l.Sperm = lm(l.Sperm ~ loc.fix + PC1 + PC3, data = gwas)$residuals %>% 
+gwas$adj.l.Sperm = lm(l.Sperm ~ loc.fix + PC1 + +PC2 + PC3, data = gwas)$residuals %>% 
   round(4)
 
 #write out
