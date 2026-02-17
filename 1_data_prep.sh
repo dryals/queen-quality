@@ -38,9 +38,9 @@ echo "-----------------------"
 #     #filter and prepare vcf  
 #     cd $CLUSTER_SCRATCH/queen-quality
 #     
-    #TODO: investigate duplicated samples: QC2573, QC3371
-    #TODO: ensure all swaps and incorrect names are corrected!
     #TODO: try removing missing data before calling bialleleic sites, might retain more that way!
+    #TODO: why are there two LDprune scripts?
+    
 #     
 #     #keep no contigs, only bialleleci snps, remove duplicats (norm), rename chrs
 #     echo "filtering sample vcf..."
@@ -202,34 +202,18 @@ echo "-----------------------"
 #             echo -e "\e[30;41m Plink Failed! \e[0m"
 #             exit 1
 #         fi
-        
-echo "starting supervised admix..."  
-    cd $CLUSTER_SCRATCH/queen-quality
-    mkdir -p admix
-    cd admix 
-    mkdir -p supervised
-    #supervised
-    cd /home/dryals/ryals/queen-quality
-    #create pop file
-    R --vanilla --no-save --no-echo --silent < scripts/makeAdmixPop.R
-    sbatch scripts/supervised_admix_v3.sh
-        
-#     
-#     
-#     
-    
-#     echo "    filtering samples..."
-#     bcftools view samples.bcf.gz \
-#         -T plink/samples-filter.sites -S plink/samples-filter.names \
-#         --threads $SLURM_NTASKS -Ob -o samples-filter.bcf.gz
 #         
-#     bcftools index -c samples-filter.bcf.gz
-#     
-#     echo "merging into references ..."
-#         
-#     
-#  
-#  
+# echo "starting supervised admix..."  
+#     cd $CLUSTER_SCRATCH/queen-quality
+#     mkdir -p admix
+#     cd admix 
+#     mkdir -p supervised
+#     #supervised
+#     cd /home/dryals/ryals/queen-quality
+#     #create pop file
+#     R --vanilla --no-save --no-echo --silent < scripts/makeAdmixPop.R
+#     sbatch scripts/supervised_admix_v3.sh
+
 # echo "-----------------------"
 #     echo "LD pruning..."
 #     echo "    calculating LD and af..."
@@ -298,7 +282,7 @@ echo "starting supervised admix..."
 # echo "-----------------------"
 # echo "preparing phenotypic data in R..."
 #     cd ~/ryals/queen-quality
-#     R --vanilla --no-save --no-echo --silent < pheno_adjust.R
+    R --vanilla --no-save --no-echo --silent < pheno_adjust.R
 # 
 # 
 # echo "-----------------------"

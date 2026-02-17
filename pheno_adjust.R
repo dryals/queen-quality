@@ -6,7 +6,7 @@ select=dplyr::select
 
 #read phenotypic data
 pheno = read_excel("data/phenotypes.xlsx") %>% 
-  mutate(id = gsub(" ", "", QC))
+  mutate(pheno_id = gsub(" ", "", QC))
 #standardize locations
 loc.trans = data.frame(Location = c("Hawaii", "Georgia", "Southern California", "Minnesota",
                                     "Northern California", "Washington", "West Virginia",
@@ -19,33 +19,92 @@ loc.trans = data.frame(Location = c("Hawaii", "Georgia", "Southern California", 
                                    "MI", "USA", "NCA", "NC", "USA", "MN", 
                                    "GA", "HI", "PA", "CA", "OH", "NY", "WA", "SCA",
                                    "VA", "AL", "FL", "OR"))
-pheno = pheno %>% left_join(loc.trans)
+pheno = pheno %>% left_join(loc.trans, by = "Location")
 
-#remove duplicate second entry
-pheno = pheno[-(which(pheno$id == "QC2573")[2]),]
+  #remove duplicate entries
+  pheno = pheno[-(which(pheno$pheno_id == "QC2573")[2]),]
+  pheno = pheno[-(which(pheno$pheno_id == "QC2422")[2]),]
 
-#TODO: check for phenotype outliers
+#data cleaning and prep
 
-#collapse some small locs
-  #TODO: try to fix these???
-  small = pheno %>% group_by(loc.fix) %>% 
-    summarise(n = n()) %>% 
-    filter(n<5) %>% 
-    ungroup() %>% 
-    select(loc.fix)
+    #pull all names from sequencer
+    allnames = read.delim("data/all.names", header = F) %>% 
+      rename(gc_id = V1) %>% 
+      filter(grepl("QC", gc_id))
+    
+    #attempt bradley fixes
+    bradley = read.csv("data/bradley_edits.csv")
+    
+    allnames = allnames %>% left_join(bradley %>% select(gc_id = manifest_id, new_id), by = 'gc_id')
+      allnames$new_id[is.na(allnames$new_id)] = allnames$gc_id[is.na(allnames$new_id)] 
+    
+    # #how many fail to match?
+    # allnames$gc_id[!allnames$gc_id %in% pheno$id]
+    # allnames$new_id[!allnames$new_id %in% pheno$id]
+      
+      
+    #manually drop duplicated genomic sample 
+      allnames = allnames[-which(allnames$new_id == "QC2573")[1],]
   
-  pheno$loc.fix[pheno$loc.fix %in% small$loc.fix] = "USA"
+      
+    #amend pheno with genetic ids
+      pheno = pheno %>% 
+        left_join(allnames %>% 
+                    select(pheno_id = new_id, gc_id), by = 'pheno_id')
+      
+      #sum(!is.na(pheno$gc_id))
+      #nrow(allnames)
+  
+  
+  #check for phenotype outliers
+      pheno.num = pheno %>% 
+        mutate(
+          m.Body = as.numeric(m.Body),
+          v.Sperm = as.numeric(v.Sperm),
+          l.Sperm = as.numeric(l.Sperm),
+          t.Sperm = as.numeric(t.Sperm),
+          w.Head = as.numeric(w.Head),
+          w.Thorax = as.numeric(w.Thorax),
+          d.Spermatheca = as.numeric(d.Spermatheca),
+          f.Spermatheca = as.numeric(f.Spermatheca)
+        )
+      
+      # for(trait in colnames(pheno.num)[5:12]){
+      #   
+      #   hist(pheno.num[,trait] %>% unlist(), main = trait)
+      #   
+      # }
+      
+      #remove outlier phenotypes
+      pheno.num = pheno.num[-(which.min(pheno.num$m.Body)),]
+      
+      #TODO: problems with thorax and head, ask bradley
+      
+  #collapse some small locs
+    #TODO: try to fix these???
+    small = pheno.num %>% group_by(loc.fix) %>% 
+      summarise(n = n()) %>% 
+      filter(n<5) %>% 
+      ungroup() %>% 
+      select(loc.fix)
+    
+    pheno.num$loc.fix[pheno.num$loc.fix %in% small$loc.fix] = "USA"
+    
+    #write cleaned phenotypes
+    write.csv(pheno.num, "data/cleaned_pheno.csv",
+              row.names = F, quote= F)
   
 
 #read plink PCA
   pca.geno = read.delim("/scratch/negishi/dryals/queen-quality/plink/samples-pca.eigenvec",
+  #pca.geno = read.delim("data/samples-pca.eigenvec",
                        header = F, sep = "")[,c(1, 3:5)]
-    colnames(pca.geno) = c("id", "PC1", "PC2", "PC3")
+    colnames(pca.geno) = c("gc_id", "PC1", "PC2", "PC3")
 
 #prepare gwas  
-gwas = pheno %>% 
-  filter(id %in% pca.geno$id) %>% 
-  left_join(pca.geno %>% select(id, PC1, PC2, PC3))
+gwas = pheno.num %>% 
+  filter(gc_id %in% pca.geno$gc_id) %>% 
+  left_join(pca.geno %>% select(gc_id, PC1, PC2, PC3), by = 'gc_id')
 
 sapply(gwas, function(x){sum(is.na(x))})
 
@@ -65,8 +124,8 @@ gwas$adj.l.Sperm = lm(l.Sperm ~ loc.fix + PC1 + PC3, data = gwas)$residuals %>%
   round(4)
 
 #write out
-gwas.out = data.frame(fid = gwas$id, 
-                      iid = gwas$id, 
+gwas.out = data.frame(fid = gwas$gc_id, 
+                      iid = gwas$gc_id, 
                       weight = gwas$adj.m.Body, 
                       vsperm = gwas$adj.v.Sperm,
                       lsperm = gwas$adj.l.Sperm)
@@ -98,19 +157,19 @@ write.table(file = "data/qq_lsperm.pheno",
   }
 
 
-preblup = pheno %>% 
-  filter(id %in% pca.geno$id) 
+preblup = pheno.num %>% 
+  filter(gc_id %in% pca.geno$gc_id) 
 
 preblup = preblup %>% 
-  select(id, loc = loc.fix, 
+  select(gc_id, loc = loc.fix, 
   lsperm = l.Sperm, weight = m.Body, vsperm = v.Sperm,
   tsperm = t.Sperm) %>% 
   mutate(iid = 1:nrow(preblup),
          locid = blup_rename(loc),
-         lsperm = round(scale(as.numeric(lsperm))[,1],4),
-         weight = round(scale(as.numeric(weight))[,1],4),
-         vsperm = round(scale(as.numeric(vsperm))[,1],4),
-         tsperm = round(scale(as.numeric(tsperm))[,1],4)
+         lsperm = round(scale(lsperm)[,1],4),
+         weight = round(scale(weight)[,1],4),
+         vsperm = round(scale(vsperm)[,1],4),
+         tsperm = round(scale(tsperm)[,1],4)
          )
 
 # sum(is.na(preblup$weight))
@@ -121,7 +180,7 @@ preblup = preblup %>%
 
 #output for pheno
   blup = preblup %>% 
-    select(iid, locid, lsperm, weight, vsperm, tsperm, id, loc)
+    select(iid, locid, lsperm, weight, vsperm, tsperm, gc_id, loc)
   
   write.table(blup, "blup/pheno.txt", 
               col.names = F, row.names = F, quote = F)
@@ -140,7 +199,7 @@ preblup = preblup %>%
   
   #output relationship matrix
   
-  final.mat = G[preblup$id, preblup$id]
+  final.mat = G[preblup$gc_id, preblup$gc_id]
   
   N = dim(final.mat)[1]
   covmat = matrix(ncol = 3, nrow = (N*N-N)/2 + N)

@@ -27,34 +27,8 @@ setwd("/home/dylan/Documents/bees/harpurlab/project/gensel/tarpy/queen-quality")
 
 read in data and manipulate
 ```{r}
-#TODO: adjust phenotypes, perform GWAS with GRM and PCA?
-#TODO: calcualte G following van raiden ...
-#TODO: account for admixture components? ancestry?
-#TODO: enaure all samples are accounted for!
-
-
 #read phenotypic data
-pheno = read_excel("data/phenotypes.xlsx") %>% 
-  mutate(id = gsub(" ", "", QC))
-#standardize locations
-loc.trans = data.frame(Location = c("Hawaii", "Georgia", "Southern California", "Minnesota",
-                                    "Northern California", "Washington", "West Virginia",
-                                    "Michigan", "Unknown", "NCA", "NC", "USA", "MN", 
-                                    "GA", "HI", "PA", "CA", "OH", "NY", "WA", "SCA",
-                                    "VA", "AL", "FL", "OR"), 
-                       
-                       loc.fix = c("HI", "GA", "SCA", "MN",
-                                   "NCA", "WA", "WV",
-                                   "MI", "USA", "NCA", "NC", "USA", "MN", 
-                                   "GA", "HI", "PA", "CA", "OH", "NY", "WA", "SCA",
-                                   "VA", "AL", "FL", "OR"))
-pheno = pheno %>% left_join(loc.trans)
-
-
-#remove duplicate second entry
-pheno = pheno[-(which(pheno$id == "QC2573")[2]),]
-
-#TODO: collapse locations as in previous scripts!
+pheno = read.csv("data/cleaned_pheno.csv") %>% 
 
 #genotype PCA
   eig = read.delim("data/samples-pca.eigenval", header = F)
