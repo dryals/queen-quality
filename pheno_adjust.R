@@ -195,7 +195,7 @@ preblup = preblup %>%
   
   colnames(G) = rownames(G) = Gid[,1]
   
-  sum(blup$id %in% colnames(G))
+  #sum(blup$id %in% colnames(G))
   
   #output relationship matrix
   
