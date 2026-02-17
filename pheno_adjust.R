@@ -143,7 +143,7 @@ write.table(file = "data/qq_lsperm.pheno",
             col.names = F, row.names = F, quote = F,
             sep = "\t")
   
-  
+#TODO: double check all this, formatting may be incorrect...
   
   
 #prepare files for BLUP
