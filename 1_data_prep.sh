@@ -282,38 +282,38 @@ echo "-----------------------"
 # echo "-----------------------"
 # echo "preparing phenotypic data in R..."
 #     cd ~/ryals/queen-quality
-    R --vanilla --no-save --no-echo --silent < pheno_adjust.R
+#     R --vanilla --no-save --no-echo --silent < pheno_adjust.R
 # 
 # 
-# echo "-----------------------"
-# echo "running GWAS..."
-#     echo "    gcta..."
-#     cd $CLUSTER_SCRATCH/queen-quality
-#     mkdir -p gwas
-#     cd gwas
-#     gcta=/depot/bharpur/apps/gcta/gcta-1.94.1-linux-kernel-3-x86_64/gcta-1.94.1
-#     
-#         $gcta --bfile ../plink/samples-pruned --make-grm --thread-num $SLURM_NTASKS \
-#             --autosome-num 16 --out qq
-#             
-#         #TODO: missing individuals here
-#             
-#         echo "    mlma..."
-#         #adjusted phenotypes generated in R script...
-#         $gcta --mlma --bfile ../plink/samples-pruned --grm qq \
-#             --pheno ~/ryals/queen-quality/data/qq_vsperm.pheno \
-#             --autosome-num 16 \
-#             --out qq_vsperm --thread-num $SLURM_NTASKS
-#             
-#         $gcta --mlma --bfile ../plink/samples-pruned --grm qq \
-#             --pheno ~/ryals/queen-quality/data/qq_weight.pheno \
-#             --autosome-num 16 \
-#             --out qq_weight --thread-num $SLURM_NTASKS
-#             
-#         $gcta --mlma --bfile ../plink/samples-pruned --grm qq \
-#             --pheno ~/ryals/queen-quality/data/qq_lsperm.pheno \
-#             --autosome-num 16 \
-#             --out qq_lsperm --thread-num $SLURM_NTASKS
+echo "-----------------------"
+echo "running GWAS..."
+    echo "    gcta..."
+    cd $CLUSTER_SCRATCH/queen-quality
+    mkdir -p gwas
+    cd gwas
+    gcta=/depot/bharpur/apps/gcta/gcta-1.94.1-linux-kernel-3-x86_64/gcta-1.94.1
+    
+        $gcta --bfile ../plink/samples-pruned --make-grm --thread-num $SLURM_NTASKS \
+            --autosome-num 16 --out qq
+            
+        #TODO: missing individuals here
+            
+        echo "    mlma..."
+        #adjusted phenotypes generated in R script...
+        $gcta --mlma --bfile ../plink/samples-pruned --grm qq \
+            --pheno ~/ryals/queen-quality/data/qq_vsperm.pheno \
+            --autosome-num 16 \
+            --out qq_vsperm --thread-num $SLURM_NTASKS
+            
+        $gcta --mlma --bfile ../plink/samples-pruned --grm qq \
+            --pheno ~/ryals/queen-quality/data/qq_weight.pheno \
+            --autosome-num 16 \
+            --out qq_weight --thread-num $SLURM_NTASKS
+            
+        $gcta --mlma --bfile ../plink/samples-pruned --grm qq \
+            --pheno ~/ryals/queen-quality/data/qq_lsperm.pheno \
+            --autosome-num 16 \
+            --out qq_lsperm --thread-num $SLURM_NTASKS
 # 
 # #TODO: do rest of traits, estimate variance explained by sig QTL
 #     #hit = 3 6923973
