@@ -362,6 +362,7 @@ echo "running BLUP..."
     cp params/${par}.par0 blup
     cd blup
     ./airemlf90 ${par}.par0
+    
 #     
 #     #TODO
 #     #read G and R matricies into blup.par2
