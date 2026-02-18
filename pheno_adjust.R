@@ -12,24 +12,26 @@ loc.trans = data.frame(Location = c("Hawaii", "Georgia", "Southern California", 
                                     "Northern California", "Washington", "West Virginia",
                                     "Michigan", "Unknown", "NCA", "NC", "USA", "MN", 
                                     "GA", "HI", "PA", "CA", "OH", "NY", "WA", "SCA",
-                                    "VA", "AL", "FL", "OR"), 
+                                    "VA", "AL", "FL", "OR", "Oregon"), 
                        
                        loc.fix = c("HI", "GA", "SCA", "MN",
                                    "NCA", "WA", "WV",
                                    "MI", "USA", "NCA", "NC", "USA", "MN", 
                                    "GA", "HI", "PA", "CA", "OH", "NY", "WA", "SCA",
-                                   "VA", "AL", "FL", "OR"))
+                                   "VA", "AL", "FL", "OR", "OR"))
 pheno = pheno %>% left_join(loc.trans, by = "Location")
 
   #remove duplicate entries
   pheno = pheno[-(which(pheno$pheno_id == "QC2573")[2]),]
   pheno = pheno[-(which(pheno$pheno_id == "QC2422")[2]),]
+  
+  #print(pheno[,c('Location', 'loc.fix')], n = 500)
 
 #data cleaning and prep
 
     #pull all names from sequencer
-    allnames = read.delim("data/all.names", header = F) %>% 
-      rename(gc_id = V1) %>% 
+    allnames = read.delim("data/samples-filter.fam", header = F, sep = "") %>% 
+      select(gc_id = V1) %>% 
       filter(grepl("QC", gc_id))
     
     #attempt bradley fixes
@@ -48,16 +50,24 @@ pheno = pheno %>% left_join(loc.trans, by = "Location")
   
       
     #amend pheno with genetic ids
-      pheno = pheno %>% 
+      pheno.fix = pheno %>% 
         left_join(allnames %>% 
                     select(pheno_id = new_id, gc_id), by = 'pheno_id')
       
       #sum(!is.na(pheno$gc_id))
       #nrow(allnames)
-  
+      
+    pheno.fix %>% group_by(gc_id) %>%
+      summarise(n = n()) %>%
+      filter(n > 1) 
+    
+    pheno.fix %>% group_by(pheno_id) %>%
+      summarise(n = n()) %>%
+      filter(n > 1) 
+    
   
   #check for phenotype outliers
-      pheno.num = pheno %>% 
+      pheno.num = pheno.fix %>% 
         mutate(
           m.Body = as.numeric(m.Body),
           v.Sperm = as.numeric(v.Sperm),
@@ -161,7 +171,7 @@ preblup = pheno.num %>%
   filter(gc_id %in% pca.geno$gc_id) 
 
 preblup = preblup %>% 
-  select(gc_id, loc = loc.fix, 
+  select(gc_id, pheno_id, loc = loc.fix, 
   lsperm = l.Sperm, weight = m.Body, vsperm = v.Sperm,
   tsperm = t.Sperm) %>% 
   mutate(iid = 1:nrow(preblup),
@@ -172,6 +182,23 @@ preblup = preblup %>%
          tsperm = round(scale(tsperm)[,1],4)
          )
 
+#error checking
+  sapply(preblup, function(x){sum(is.na(x))})
+
+  length(unique(preblup$gc_id))
+  length(unique(preblup$pheno_id))
+  nrow(preblup)
+
+  preblup %>% group_by(pheno_id) %>%
+    summarise(n = n()) %>%
+    filter(n > 1) 
+    
+    #dupes 
+    #gc QC3371
+    #pheno QC2422, QC3371, QC3473
+
+
+         
 # sum(is.na(preblup$weight))
 # sum(is.na(preblup$lsperm))
 # 
