@@ -30,7 +30,9 @@ pheno = pheno %>% left_join(loc.trans, by = "Location")
 #data cleaning and prep
 
     #pull all names from sequencer
-    allnames = read.delim("data/samples-filter.fam", header = F, sep = "") %>% 
+    
+    allnames = read.delim("/scratch/negishi/dryals/queen-quality/plink/samples-filter.fam", header = F, sep = "") %>% 
+    #allnames = read.delim("data/samples-filter.fam", header = F, sep = "") %>% 
       select(gc_id = V1) %>% 
       filter(grepl("QC", gc_id))
     
@@ -57,13 +59,13 @@ pheno = pheno %>% left_join(loc.trans, by = "Location")
       #sum(!is.na(pheno$gc_id))
       #nrow(allnames)
       
-    pheno.fix %>% group_by(gc_id) %>%
-      summarise(n = n()) %>%
-      filter(n > 1) 
-    
-    pheno.fix %>% group_by(pheno_id) %>%
-      summarise(n = n()) %>%
-      filter(n > 1) 
+#     pheno.fix %>% group_by(gc_id) %>%
+#       summarise(n = n()) %>%
+#       filter(n > 1) 
+#     
+#     pheno.fix %>% group_by(pheno_id) %>%
+#       summarise(n = n()) %>%
+#       filter(n > 1) 
     
   
   #check for phenotype outliers
@@ -183,21 +185,16 @@ preblup = preblup %>%
          )
 
 #error checking
-  sapply(preblup, function(x){sum(is.na(x))})
-
-  length(unique(preblup$gc_id))
-  length(unique(preblup$pheno_id))
-  nrow(preblup)
-
-  preblup %>% group_by(pheno_id) %>%
-    summarise(n = n()) %>%
-    filter(n > 1) 
-    
-    #dupes 
-    #gc QC3371
-    #pheno QC2422, QC3371, QC3473
-
-
+#   sapply(preblup, function(x){sum(is.na(x))})
+# 
+#   length(unique(preblup$gc_id))
+#   length(unique(preblup$pheno_id))
+#   nrow(preblup)
+# 
+#   preblup %>% group_by(pheno_id) %>%
+#     summarise(n = n()) %>%
+#     filter(n > 1) 
+#     
          
 # sum(is.na(preblup$weight))
 # sum(is.na(preblup$lsperm))
@@ -207,7 +204,7 @@ preblup = preblup %>%
 
 #output for pheno
   blup = preblup %>% 
-    select(iid, locid, lsperm, weight, vsperm, tsperm, gc_id, loc)
+    select(iid, locid, lsperm, weight, vsperm, tsperm, loc, gc_id, pheno_id)
   
   write.table(blup, "blup/pheno.txt", 
               col.names = F, row.names = F, quote = F)
