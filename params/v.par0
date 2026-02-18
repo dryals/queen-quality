@@ -9,8 +9,8 @@ OBSERVATION(S)
 WEIGHT(S)
 
 EFFECTS:
-1 934 cross #queen_id
-2 11 cross #location
+1 932 cross #queen_id
+2 12 cross #location
 RANDOM_RESIDUAL VALUES
 .9
 RANDOM_GROUP

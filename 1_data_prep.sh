@@ -273,8 +273,7 @@ echo "-----------------------"
 #     module purge
 #     module load biocontainers plink2
 #     
-#     plink2 --bfile samples-pruned -make-rel square \
-#     --threads $SLURM_NTASKS --out samples-pruned --silent
+    plink2 --bfile samples-filter -make-rel square --out samples-filter
 #     
 #     module purge
 #     module load biocontainers r
