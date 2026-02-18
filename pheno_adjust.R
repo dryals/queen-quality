@@ -219,7 +219,7 @@ preblup = preblup %>%
   #sum(blup$id %in% colnames(G))
   
   #remove outliers by diag values
-    remove = colnames(G)[diag(G) > 1.8]
+    remove = colnames(G)[diag(G) > 2]
     
   #output for pheno
   blup = preblup %>% 
