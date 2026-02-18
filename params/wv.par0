@@ -5,16 +5,16 @@ NUMBER_OF_TRAITS
 NUMBER_OF_EFFECTS
 2
 OBSERVATION(S)
-5 4 #vsperm weight
+4 5 #weight, lsperm
 WEIGHT(S)
 
 EFFECTS:
-1 1 911 cross #queen_id
-2 2 11 cross #location
+1 1 906 cross #queen_id
+2 2 12 cross #location
 RANDOM_RESIDUAL VALUES
 1 0.1
 0.1 1
-RANDOM_GROUP
+RANDOM_GROUPs
 1 
 RANDOM_TYPE
 user_file_inv
@@ -26,5 +26,5 @@ covmat.txt
 OPTION missing -999
 OPTION sol se
 OPTION conv_crit 1e-10
-#OPTION EM-reml 10
+OPTION EM-reml 5
 #ulimit -s unlimited

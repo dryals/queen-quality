@@ -28,7 +28,7 @@ setwd("/home/dylan/Documents/bees/harpurlab/project/gensel/tarpy/queen-quality")
 read in data and manipulate
 ```{r}
 #read phenotypic data
-pheno = read.csv("data/cleaned_pheno.csv") %>% 
+pheno = read.csv("data/cleaned_pheno.csv")
 
 #genotype PCA
   eig = read.delim("data/samples-pca.eigenval", header = F)
@@ -298,22 +298,24 @@ read results: quantitative
 ```{r}
 #read phenotype file.....
 pheno.blup = read.delim("data/pheno.txt",
-                        header = F, sep = "") %>% 
-  rename(iid = V1, id = V6)
+                        header = F, sep = "")
+
+colnames(pheno.blup) = c("iid", "locid", "lsperm", "weight", "vsperm", "tsperm", 
+                         "loc", "gc_id", "pheno_id")
 
 
 #pull solutions: 2-trait
-  sol = read.delim("data/sol-12feb26.txt", sep = "", header = F)[-1,]
+  sol = read.delim("data/sol-wl.txt", sep = "", header = F)[-1,]
     colnames(sol) = c("trait", "effect", "level" ,"solution", "se")
     sol = sol %>% mutate(se = as.numeric(se),
                          solution = as.numeric(solution))  
 
   sol.long = sol %>% 
     filter(effect == 1) %>% select(-effect) %>% rename(bv = solution) %>% 
-    mutate(trait = recode(trait, `1` = "lsperm", `2` = "weight"))
+    mutate(trait = recode(trait, `1` = "weight", `2` = "lsperm"))
   
   sol.long = sol.long %>% 
-    left_join(pheno.blup %>% select(level = iid, id) %>% 
+    left_join(pheno.blup %>% select(level = iid, gc_id) %>% 
                 mutate(level = as.character(level)))
   
     sol.wide = sol.long %>%
@@ -324,14 +326,10 @@ pheno.blup = read.delim("data/pheno.txt",
 #plot against raw pheno
   
   pbv = sol.wide%>% 
-    left_join(pheno %>% select(id, m.Body, v.Sperm, l.Sperm)) %>% 
-    mutate(m.Body = as.numeric(m.Body),
-           v.Sperm = as.numeric(v.Sperm),
-           l.Sperm = as.numeric(l.Sperm))
+    left_join(pheno.blup %>% select(gc_id, weight, vsperm, lsperm))
   
-  
-  ggplot(pbv, aes(x = m.Body, y = bv_weight)) + geom_point()
-  ggplot(pbv, aes(x = v.Sperm, y = bv_vsperm)) + geom_point()
+  ggplot(pbv, aes(x = weight, y = bv_weight)) + geom_point()
+  ggplot(pbv, aes(x = lsperm, y = bv_lsperm)) + geom_point()
   
 #investigate strange points
   #attach locations
