@@ -55,6 +55,10 @@ pheno = pheno %>% left_join(loc.trans, by = "Location")
       pheno.fix = pheno %>% 
         left_join(allnames %>% 
                     select(pheno_id = new_id, gc_id), by = 'pheno_id')
+                    
+    #manually drop duplicated pheno id
+    pheno.fix = pheno.fix[-which(pheno.fix$pheno_id == "QC2422")[2],]
+    
       
       #sum(!is.na(pheno$gc_id))
       #nrow(allnames)
@@ -66,7 +70,7 @@ pheno = pheno %>% left_join(loc.trans, by = "Location")
 #     pheno.fix %>% group_by(pheno_id) %>%
 #       summarise(n = n()) %>%
 #       filter(n > 1) 
-    
+#     
   
   #check for phenotype outliers
       pheno.num = pheno.fix %>% 
