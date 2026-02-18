@@ -348,7 +348,7 @@ echo "running GWAS..."
 echo "-----------------------"  
 echo "running BLUP..."
 
-    par=w
+    par=l
 
     #TODO: single-trait blups
     cd ~/ryals/queen-quality/blup
