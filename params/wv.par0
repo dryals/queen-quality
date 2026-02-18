@@ -5,7 +5,7 @@ NUMBER_OF_TRAITS
 NUMBER_OF_EFFECTS
 2
 OBSERVATION(S)
-4 5 #weight, lsperm
+4 5 #weight, vsperm
 WEIGHT(S)
 
 EFFECTS:
