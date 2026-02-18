@@ -176,7 +176,7 @@ preblup = preblup %>%
   select(gc_id, pheno_id, loc = loc.fix, 
   lsperm = l.Sperm, weight = m.Body, vsperm = v.Sperm,
   tsperm = t.Sperm) %>% 
-  mutate(iid = 1:nrow(preblup),
+  mutate(
          locid = blup_rename(loc),
          lsperm = round(scale(lsperm)[,1],4),
          weight = round(scale(weight)[,1],4),
@@ -201,13 +201,6 @@ preblup = preblup %>%
 # 
 # var(preblup$lsperm)
 # var(preblup$weight)
-
-#output for pheno
-  blup = preblup %>% 
-    select(iid, locid, lsperm, weight, vsperm, tsperm, loc, gc_id, pheno_id)
-  
-  write.table(blup, "blup/pheno.txt", 
-              col.names = F, row.names = F, quote = F)
               
 #read grm
   
@@ -221,9 +214,25 @@ preblup = preblup %>%
   
   #sum(blup$id %in% colnames(G))
   
+  #remove outliers by diag values
+    remove = colnames(G)[diag(G) > 1.8]
+    
+  #output for pheno
+  blup = preblup %>% 
+    filter(!gc_id %in% remove)
+    
+    blup = blup %>%
+    mutate(iid = 1:nrow(blup)) %>%
+    select(iid, locid, lsperm, weight, vsperm, tsperm, loc, gc_id, pheno_id)
+  
+  write.table(blup, "blup/pheno.txt", 
+              col.names = F, row.names = F, quote = F)
+    
+    
+  
   #output relationship matrix
   
-  final.mat = G[preblup$gc_id, preblup$gc_id]
+  final.mat = G[blup$gc_id, blup$gc_id]
   
   N = dim(final.mat)[1]
   covmat = matrix(ncol = 3, nrow = (N*N-N)/2 + N)
