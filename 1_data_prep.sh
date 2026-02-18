@@ -262,6 +262,8 @@ echo "-----------------------"
 #     
 # echo "-----------------------"
 # #PCA and GRM
+    #TODO: remove outliers with high diag values and recalculate GRM
+    
 #     cd $CLUSTER_SCRATCH/queen-quality/plink
 #     echo "PCA..."
 #     plink --bfile samples-pruned --pca 500 \
