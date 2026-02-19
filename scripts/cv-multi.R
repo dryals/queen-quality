@@ -1,15 +1,19 @@
 #take a command line argument
 args = commandArgs(trailingOnly=TRUE)
-#args = "w"
-
-#target script for CV runs
-targetParam = paste0(args[1], "-cv.par1")
-
-print(targetParam)
-print(getwd())
+#args = "wv"
 
 library(dplyr)
 
+#split into phenotypes under consideration
+args.split = unlist(strsplit(args, ""))
+
+ntrait = length(args.split)
+
+#target script for CV runs
+targetParam = paste0(args, "-cv.par1")
+
+# print(targetParam)
+# print(getwd())
 #wd is queen quality!
 
 
@@ -29,22 +33,22 @@ fixed.eff = fixed.eff %>% mutate(se = as.numeric(se),
   
 #load sample info from pheno file
 pheno = read.delim("blup/pheno.txt", header = F, sep = " ")
-  #grab colnames of sampleids and locations
-  samp.n = which(grepl("QC", pheno))
-  loc.n = which(grepl("HI", pheno))
+  colnames(pheno) = c("iid", "locid", trait.key$tn, "loc", "gc_id", "pheno_id" )
+
+
+#   #grab colnames of sampleids and locations
+#   samp.n = which(grepl("QC", pheno))
+#   loc.n = which(grepl("HI", pheno))
   
 
 #create list for CV
   #only mask individuals with full pheno data
   masked = pheno
-    colnames(masked)[samp.n] = "id"
-    colnames(masked)[loc.n] = "loc"
-    colnames(masked)[3:(2 + nrow(trait.key))] = trait.key$tn
-  
   
   set.seed(2026)
   masked$CV = sample(c(1:5), nrow(pheno), replace = T)
-  table(masked$CV)
+  
+  #table(masked$CV)
 
 #create output object
 CVout = list()  
@@ -57,7 +61,7 @@ for(CVnum in 1:5){
   pheno.cv = masked
     #mask phenotype columns
     N = dim(pheno.cv)[2]
-    pheno.cv[pheno.cv$CV == CVnum, c(3:(N-3))] = -999
+    pheno.cv[pheno.cv$CV == CVnum, trait.key$tn] = -999
 
   #output for pheno
   pheno.out = pheno.cv %>% 
@@ -67,7 +71,7 @@ for(CVnum in 1:5){
               col.names = F, row.names = F, quote = F)
   
   #RUN BLUP script
-  cmd = paste("scripts/cv.sh", targetParam, CVnum)
+  cmd = paste("scripts/cv-multi.sh", targetParam, CVnum)
   system(cmd)
   
   
