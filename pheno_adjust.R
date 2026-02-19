@@ -220,7 +220,7 @@ preblup = preblup %>%
   
   #remove outliers by diag values
     #TODO: do this earlier in pipeline rather than here...
-    remove = colnames(G)[diag(G) > 1.9]
+    remove = colnames(G)[diag(G) > 1.8]
     print("remove")
     print(remove)
     
