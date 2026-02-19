@@ -66,7 +66,7 @@ for(CVnum in 1:5){
   pheno.cv = masked
     #mask phenotype columns
     N = dim(pheno.cv)[2]
-    pheno.cv[pheno.cv$CV == CVnum, trait.key$tn] = -999
+    #pheno.cv[pheno.cv$CV == CVnum, trait.key$tn] = -999
 
   #output for pheno
   pheno.out = pheno.cv %>% 

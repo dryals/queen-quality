@@ -381,7 +381,7 @@ echo "-----------------------"
     sed -i 's/pheno.txt/pheno-cv.txt/g' blup/${par}-cv.par1
     
     #run cv script
-    Rscript --vanilla scripts/cv.R $par
+    Rscript --vanilla scripts/cv-multi.R $par
  
  
 
