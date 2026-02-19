@@ -3,6 +3,7 @@ args = commandArgs(trailingOnly=TRUE)
 #args = "wv"
 
 library(dplyr)
+library(tidyr)
 
 #split into phenotypes under consideration
 args.split = unlist(strsplit(args, ""))
@@ -20,9 +21,13 @@ targetParam = paste0(args, "-cv.par1")
 # fixed.key = data.frame(effect = c(2:4) %>% as.character(),
 #                        name = c("apnumid", "start", "requeen"))
 # 
-#key for trait ids
+#key for all ids
 trait.key = data.frame(tn = c("l", "w", "v", "t"),
                        trait = c(1:4) %>%  as.character())
+
+#key for traits in this run
+trait.key.used = data.frame( tn = args.split,
+                            trait = c(1:ntrait) %>%  as.character())
 
 #pull fixed effects from full run
 fixed.eff = read.delim(paste0("data/sol-", args[1], ".txt"), sep = "", header = F)[-1,]
@@ -75,7 +80,7 @@ for(CVnum in 1:5){
   system(cmd)
   
   
-  #pull solutions: 1-trait
+  #pull solutions: multi-trait
   pull = paste0("data/sol-cv", CVnum, ".txt")
   sol = read.delim(pull, sep = "", header = F)[-1,]
   colnames(sol) = c("trait", "effect", "level" ,"solution", "se")
@@ -86,28 +91,29 @@ for(CVnum in 1:5){
     #pull masked predictions
     sol.tmp = sol %>% filter(effect == 1) %>% 
       left_join(masked %>% 
-                  select(level = 1, id, CV, locnum = 2, loc) %>% 
+                  select(level = 1, gc_id, CV, locid, loc) %>% 
                   mutate(level = as.character(level)),
                 by = 'level') %>% 
+      left_join(trait.key.used, by = "trait") %>%
       filter(CV == CVnum) %>% 
       select(-effect, -level) %>% 
       #add fixed effect of location
       left_join( fixed.eff %>% 
-        select(locnum = level, loceff = solution) %>%
-        mutate(locnum = as.numeric(locnum)), by = 'locnum') %>%
+        select(locid = level, loceff = solution, trait) %>%
+        mutate(locid = as.numeric(locid)), by = c('locid', 'trait')) %>%
       mutate(pheno.est = solution + loceff)
     
     #compare against real phenos
-    realpheno = masked[masked$CV == CVnum, c("id", args[1])]
-      colnames(realpheno)[2] = "pheno.real"
+    realpheno = masked[masked$CV == CVnum, c("gc_id", args.split)] %>%
+      pivot_longer(cols = all_of(args.split), names_to = "tn", values_to = "pheno.real")
 
-    
     sol.tmp = sol.tmp %>% 
-      left_join(realpheno, by = 'id')
+      left_join(realpheno, by = c('gc_id', 'tn'))
     
     #correlation
     cv = sol.tmp %>% 
-      select(id, pheno.est, pheno.real) %>% 
+      select(gc_id, tn, pheno.est, pheno.real) %>% 
+      group_by(tn) %>%
       summarise(cor = cor(pheno.est, pheno.real),
                 slope = cor * sd(pheno.real) / sd(pheno.est))
     
