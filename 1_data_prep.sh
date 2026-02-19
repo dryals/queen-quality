@@ -305,28 +305,29 @@ echo "-----------------------"
 echo "-----------------------"
 #PCA and GRM
     cd $CLUSTER_SCRATCH/queen-quality/plink
-    echo "PCA..."
-    plink --bfile samples-pruned --pca 500 \
-        --threads $SLURM_NTASKS --out samples-pca --silent
-    
+#     echo "PCA..."
+#     plink --bfile samples-pruned --pca 500 \
+#         --threads $SLURM_NTASKS --out samples-pca --silent
+#     
     echo "GRM..."
     #is plink the best? KING? going with basic make-rel for now
         #TODO: try KING, compare AIC from aireml
     module purge
     module load biocontainers plink2
     
-    plink2 --bfile samples-filter --remove ../het.remove.plink \
-    -make-rel square --out samples-filter
+    plink2 --bfile samples-filter -make-rel square --out samples-filter
+    #--remove ../het.remove.plink \
+        
     
     module purge
     module load biocontainers bcftools vcftools plink r
     
 echo "-----------------------"
-# echo "preparing phenotypic data in R..."
-#     cd ~/ryals/queen-quality
-#     R --vanilla --no-save --no-echo --silent < pheno_adjust.R
-# 
-# 
+echo "preparing phenotypic data in R..."
+    cd ~/ryals/queen-quality
+    R --vanilla --no-save --no-echo --silent < pheno_adjust.R
+
+
 echo "-----------------------"
 echo "running GWAS..."
     echo "    gcta..."
