@@ -83,9 +83,13 @@ echo "-----------------------"
 #     cd plink
 #     awk '{print $2}' samples-filter.bim | tr ":" "\t" > samples-filter.sites
 #     awk '{print $1}' samples-filter.fam > samples-filter.names
+
+    #TODO: remove outliers with heterozygosity?
+    #TODO: remove outliers with high diag values and recalculate GRM
+    #TODO: do the above match?
+
 #  
 echo "-----------------------"
-#TODO: admixture components
     echo "ADMIXTURE analysis"
      cd ${CLUSTER_SCRATCH}/queen-quality
 #          echo "pulling references..."
@@ -262,8 +266,6 @@ echo "-----------------------"
 #     
 # echo "-----------------------"
 # #PCA and GRM
-    #TODO: remove outliers with high diag values and recalculate GRM
-    
 #     cd $CLUSTER_SCRATCH/queen-quality/plink
 #     echo "PCA..."
 #     plink --bfile samples-pruned --pca 500 \
@@ -297,8 +299,6 @@ echo "running GWAS..."
         $gcta --bfile ../plink/samples-pruned --make-grm --thread-num $SLURM_NTASKS \
             --autosome-num 16 --out qq
             
-        #TODO: missing individuals here
-            
         echo "    mlma..."
         #adjusted phenotypes generated in R script...
         $gcta --mlma --bfile ../plink/samples-pruned --grm qq \
@@ -311,12 +311,12 @@ echo "running GWAS..."
             --autosome-num 16 \
             --out qq_weight --thread-num $SLURM_NTASKS
             
-        $gcta --mlma --bfile ../plink/samples-pruned --grm qq \
-            --pheno ~/ryals/queen-quality/data/qq_lsperm.pheno \
-            --autosome-num 16 \
-            --out qq_lsperm --thread-num $SLURM_NTASKS
+#         $gcta --mlma --bfile ../plink/samples-pruned --grm qq \
+#             --pheno ~/ryals/queen-quality/data/qq_lsperm.pheno \
+#             --autosome-num 16 \
+#             --out qq_lsperm --thread-num $SLURM_NTASKS
 # 
-# #TODO: do rest of traits, estimate variance explained by sig QTL
+# #TODO: estimate variance explained by sig QTL
 #     #hit = 3 6923973
 #     cd $CLUSTER_SCRATCH/queen-quality/plink
 #     grep -n "3:6923973" samples-pruned.bim
@@ -348,7 +348,7 @@ echo "running GWAS..."
 echo "-----------------------"  
 echo "running BLUP..."
 
-    par=wl
+    par=wv
 
     #TODO: single-trait blups
     cd ~/ryals/queen-quality/blup
@@ -370,14 +370,15 @@ echo "running BLUP..."
 # #     sed -n 16,80p file1>patch
 # #     sed -i 18rpatch file2
 #     
-#     cp ../params/${par}.par1 .
-#     ./blupf90+ ${par}.par1
-#     cp solutions ../data/sol-${par}.txt
-# 
-#     #     
+    cp ../params/${par}.par1 .
+    ./blupf90+ ${par}.par1
+    cp solutions ../data/sol-${par}.txt
+
+    #     
 # #     
 # #     
-# #TODO: estimate CV error: scripts/cv.R
+ #TODO: estimate CV error: scripts/cv.R
+ #TODO: estimate CV error in multi-trait blup
 # 
 #     #create -cv version which uses pheno-cv.txt
 #     cd ~/ryals/queen-quality

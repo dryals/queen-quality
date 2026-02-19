@@ -305,14 +305,14 @@ colnames(pheno.blup) = c("iid", "locid", "lsperm", "weight", "vsperm", "tsperm",
 
 
 #pull solutions: 2-trait
-  sol = read.delim("data/sol-wl.txt", sep = "", header = F)[-1,]
+  sol = read.delim("data/sol-wv.txt", sep = "", header = F)[-1,]
     colnames(sol) = c("trait", "effect", "level" ,"solution", "se")
     sol = sol %>% mutate(se = as.numeric(se),
                          solution = as.numeric(solution))  
 
   sol.long = sol %>% 
     filter(effect == 1) %>% select(-effect) %>% rename(bv = solution) %>% 
-    mutate(trait = recode(trait, `1` = "weight", `2` = "lsperm"))
+    mutate(trait = recode(trait, `1` = "weight", `2` = "vsperm"))
   
   sol.long = sol.long %>% 
     left_join(pheno.blup %>% select(level = iid, gc_id) %>% 
@@ -329,7 +329,7 @@ colnames(pheno.blup) = c("iid", "locid", "lsperm", "weight", "vsperm", "tsperm",
     left_join(pheno.blup %>% select(gc_id, weight, vsperm, lsperm))
   
   ggplot(pbv, aes(x = weight, y = bv_weight)) + geom_point()
-  ggplot(pbv, aes(x = lsperm, y = bv_lsperm)) + geom_point()
+  ggplot(pbv, aes(x = vsperm, y = bv_vsperm)) + geom_point()
   
 #investigate strange points
   #attach locations
