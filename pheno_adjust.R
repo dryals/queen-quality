@@ -160,7 +160,16 @@ write.table(file = "data/qq_lsperm.pheno",
             sep = "\t")
   
 #TODO: double check all this, formatting may be incorrect...
+
+  #read grm
   
+  G = read.delim("/scratch/negishi/dryals/queen-quality/plink/samples-filter.rel", 
+  sep = "", header = F) %>% as.matrix()
+  
+  Gid = read.delim("/scratch/negishi/dryals/queen-quality/plink/samples-filter.rel.id", 
+  sep = "", header = T)
+  
+  colnames(G) = rownames(G) = Gid[,1]
   
 #prepare files for BLUP
  blup_rename = function(v){
@@ -174,7 +183,7 @@ write.table(file = "data/qq_lsperm.pheno",
 
 
 preblup = pheno.num %>% 
-  filter(gc_id %in% pca.geno$gc_id) 
+  filter(gc_id %in%  colnames(G)) 
 
 preblup = preblup %>% 
   select(gc_id, pheno_id, loc = loc.fix, 
@@ -205,22 +214,13 @@ preblup = preblup %>%
 # 
 # var(preblup$lsperm)
 # var(preblup$weight)
-              
-#read grm
-  
-  G = read.delim("/scratch/negishi/dryals/queen-quality/plink/samples-filter.rel", 
-  sep = "", header = F) %>% as.matrix()
-  
-  Gid = read.delim("/scratch/negishi/dryals/queen-quality/plink/samples-filter.rel.id", 
-  sep = "", header = T)
-  
-  colnames(G) = rownames(G) = Gid[,1]
+            
   
   #sum(blup$id %in% colnames(G))
   
   #remove outliers by diag values
     #TODO: do this earlier in pipeline rather than here...
-    remove = colnames(G)[diag(G) > 1.8]
+    remove = colnames(G)[diag(G) > 1.9]
     print("remove")
     print(remove)
     
