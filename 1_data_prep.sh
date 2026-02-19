@@ -363,25 +363,6 @@ echo "running GWAS..."
 #     plink --bfile samples-pruned --recode oxford --snp '3:6923973' --out test
 # 
 # 
-# echo "-----------------------"  
-# echo "creating GRM for BLUP..."
-#     cd $CLUSTER_SCRATCH/queen-quality/plink
-# #     plink --bfile samples-filter -make-rel square \
-# #         --threads $SLURM_NTASKS --out samples-filter --silent
-# #         
-#     module purge
-#     module load biocontainers plink2
-#     
-# #     plink2 --bfile samples-filter -make-king square \
-# #     --threads $SLURM_NTASKS --out samples-filter --silent
-#     
-#     plink2 --bfile samples-filter -make-king square \
-#         --out samples-filter
-#     
-#     module purge
-#     module load biocontainers r
-# 
-# 
 # 
 # 
 echo "-----------------------"  
