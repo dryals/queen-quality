@@ -1,3 +1,4 @@
+#use this high up in the pipeline?
     echo "heterozygosity QC"
     echo "    formatting..."
     cd $CLUSTER_SCRATCH/queen-quality

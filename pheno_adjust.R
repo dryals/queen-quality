@@ -112,7 +112,7 @@ pheno = pheno %>% left_join(loc.trans, by = "Location")
   
 
 #read plink PCA
-  pca.geno = read.delim("/scratch/negishi/dryals/queen-quality/plink/samples-pca.eigenvec",
+  pca.geno = read.delim("/scratch/negishi/dryals/queen-quality/plink/samples-gwas.eigenvec",
   #pca.geno = read.delim("data/samples-pca.eigenvec",
                        header = F, sep = "")[,c(1, 3:5)]
     colnames(pca.geno) = c("gc_id", "PC1", "PC2", "PC3")
@@ -154,10 +154,10 @@ write.table(file = "data/qq_vsperm.pheno",
             gwas.out %>% select(fid, iid, vsperm),
             col.names = F, row.names = F, quote = F,
             sep = "\t")
-write.table(file = "data/qq_lsperm.pheno",
-            gwas.out %>% select(fid, iid, lsperm),
-            col.names = F, row.names = F, quote = F,
-            sep = "\t")
+# write.table(file = "data/qq_lsperm.pheno",
+#             gwas.out %>% select(fid, iid, lsperm),
+#             col.names = F, row.names = F, quote = F,
+#             sep = "\t")
   
 #TODO: double check all this, formatting may be incorrect...
 

@@ -83,7 +83,38 @@ echo "-----------------------"
     #TODO: do the above match?
 
 #further sample QC
-#TODO: move this further up the pipeline...
+echo "-----------------------"
+    echo "removing GRM outliers"
+    cd $CLUSTER_SCRATCH/queen-quality/plink
+    module purge
+    module load biocontainers plink2
+    
+    plink2 --bfile samples-filter -make-rel square --out samples-filter
+    #--remove ../het.remove.plink \
+        
+    
+    module purge
+    module load biocontainers bcftools vcftools plink r
+    
+    R
+        library(dplyr)
+        G = read.delim("samples-filter.rel", 
+            sep = "", header = F) %>% as.matrix()
+  
+        Gid = read.delim("samples-filter.rel.id", 
+            sep = "", header = T)
+  
+        colnames(G) = rownames(G) = Gid[,1]
+    
+        remove = colnames(G)[diag(G) > 1.8]
+        
+        write.table(remove, file = "GRM.remove",
+                    row.names = F, col.names = F, quote = F)
+                    
+    quit(save = "no")
+    
+    paste GRM.remove GRM.remove > GRM.remove.plink
+    
 
         
 echo "-----------------------"
@@ -260,7 +291,14 @@ echo "-----------------------"
 #         cd $CLUSTER_SCRATCH/queen-quality/plink
 #         plink --bfile samples-filter --make-bed --exclude ../ld/allMAFremove.txt \
 #             --threads $SLURM_NTASKS --silent --out samples-pruned
-#     
+
+    echo "    removing GRM outliers..."
+    plink --bfile samples-pruned --make-bed \
+        --remove GRM.remove.plink \
+        --pca 500 \
+        --threads $SLURM_NTASKS --out samples-gwas
+        
+        
 echo "-----------------------"
 #PCA and GRM
     cd $CLUSTER_SCRATCH/queen-quality/plink

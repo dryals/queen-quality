@@ -50,7 +50,7 @@ pheno = read.delim("blup/pheno.txt", header = F, sep = " ")
   #only mask individuals with full pheno data
   masked = pheno
   
-  #set.seed(2026)
+  set.seed(2026)
   masked$CV = sample(c(1:5), nrow(pheno), replace = T)
   
   #table(masked$CV)
