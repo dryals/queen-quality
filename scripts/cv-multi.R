@@ -66,7 +66,7 @@ for(CVnum in 1:5){
   pheno.cv = masked
     #mask phenotype columns
     N = dim(pheno.cv)[2]
-    #pheno.cv[pheno.cv$CV == CVnum, trait.key$tn] = -999
+    pheno.cv[pheno.cv$CV == CVnum, trait.key$tn] = -999
 
   #output for pheno
   pheno.out = pheno.cv %>% 
@@ -140,6 +140,8 @@ for(i in 2:5){
 }
 
 print(CVdf)
+
+print(CVdf %>% group_by(tn) %>% summarise(meancor = mean(cor)))
 
 # #plot cor
 # ggplot(CVdf, aes(x = tn, y = cor)) + 
