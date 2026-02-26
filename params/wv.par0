@@ -10,7 +10,7 @@ WEIGHT(S)
 
 EFFECTS:
 1 1 906 cross #queen_id
-2 2 12 cross #location
+2 2 42 cross #location
 RANDOM_RESIDUAL VALUES
 1 0.1
 0.1 1
