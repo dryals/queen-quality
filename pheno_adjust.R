@@ -232,7 +232,7 @@ preblup = pheno.num %>%
   filter(gc_id %in%  colnames(G)) 
 
 preblup = preblup %>% 
-  select(gc_id, pheno_id, loc = loc.fix, 
+  select(gc_id, pheno_id, loc = loc.year, 
   lsperm = l.Sperm, weight = m.Body, vsperm = v.Sperm,
   tsperm = t.Sperm) %>% 
   mutate(
