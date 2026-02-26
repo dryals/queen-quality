@@ -10,10 +10,10 @@ WEIGHT(S)
 
 EFFECTS:
 1 1 906 cross #queen_id
-2 2 12 cross #location
+2 2 42 cross #location
 RANDOM_RESIDUAL VALUES
-  0.27680      0.19516E-01
-  0.19516E-01  0.71328  
+  0.31016      0.23008E-01
+  0.23008E-01  0.96483    
 RANDOM_GROUP
 1 
 RANDOM_TYPE
@@ -21,8 +21,8 @@ user_file_inv
 FILE
 covmat.txt
 (CO)VARIANCES
-  0.31707      0.52276E-01
-  0.52276E-01  0.25667  
+  0.20248      0.50262E-01
+  0.50262E-01  0.12484E-01
 OPTION missing -999
 OPTION sol se
 OPTION conv_crit 1e-10
