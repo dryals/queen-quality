@@ -173,8 +173,8 @@ gwas = pheno.num %>%
 
 #sapply(gwas, function(x){sum(is.na(x))})
 
-summary(lm(m.Body ~ loc.year + PC1 + PC2, data = gwas))
-summary(lm(v.Sperm ~ loc.year + PC1 + PC2, data = gwas))
+#summary(lm(m.Body ~ loc.year + PC1 + PC2, data = gwas))
+#summary(lm(v.Sperm ~ loc.year + PC1 + PC2, data = gwas))
 
 
 gwas$adj.m.Body = lm(m.Body ~ loc.year + PC1 + PC2, data = gwas)$residuals %>% 
@@ -189,8 +189,8 @@ gwas$adj.v.Sperm = lm(v.Sperm ~ loc.year + PC1 + PC2, data = gwas)$residuals %>%
 gwas.out = data.frame(fid = gwas$gc_id, 
                       iid = gwas$gc_id, 
                       weight = gwas$adj.m.Body, 
-                      vsperm = gwas$adj.v.Sperm,
-                      lsperm = gwas$adj.l.Sperm)
+                      vsperm = gwas$adj.v.Sperm)#,
+                      #lsperm = gwas$adj.l.Sperm)
                       
 write.table(file = "data/qq_weight.pheno",
             gwas.out %>% select(fid, iid, weight),
