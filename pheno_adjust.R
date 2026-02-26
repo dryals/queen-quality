@@ -245,10 +245,10 @@ write.table(file = "data/qq_vsperm.pheno",
         G.mat = matrix(nrow = nrow(G$id), ncol = nrow(G$id))
           colnames(G.mat) = rownames(G.mat) = G$id[,1]
           
-        G.mat[lower.tri(G.mat, diag = F)] = G$off
+        G.mat[lower.tri(G.mat, diag = F)] = round(G$off,4)
         diag(G.mat) = G$diag
         
-        G.mat = forceSymmetric(G.mat, uplo = "L")
+        G.mat = forceSymmetric(G.mat, uplo = "L") %>% as.matrix()
 
 
   
@@ -320,7 +320,7 @@ preblup = preblup %>%
   
   #output relationship matrix
   
-  final.mat = G.mat[blup$gc_id, blup$gc_id] %>% as.matrix()
+  final.mat = G.mat[blup$gc_id, blup$gc_id]
   
   N = dim(final.mat)[1]
   covmat = matrix(ncol = 3, nrow = (N*N-N)/2 + N)
