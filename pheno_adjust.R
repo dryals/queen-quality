@@ -246,7 +246,7 @@ write.table(file = "data/qq_vsperm.pheno",
           colnames(G.mat) = rownames(G.mat) = G$id[,1]
           
         G.mat[lower.tri(G.mat, diag = F)] = round(G$off,4)
-        diag(G.mat) = G$diag
+        diag(G.mat) = round(G$diag,4)
         
         G.mat = forceSymmetric(G.mat, uplo = "L") %>% as.matrix()
 
