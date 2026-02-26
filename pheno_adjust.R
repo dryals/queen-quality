@@ -1,6 +1,7 @@
 library(dplyr)
 library(readxl)
 library(lubridate)
+library(Matrix)
 
 select=dplyr::select
 
@@ -209,13 +210,47 @@ write.table(file = "data/qq_vsperm.pheno",
 
   #read grm
   
-  G = read.delim("/scratch/negishi/dryals/queen-quality/plink/samples-filter.rel", 
-  sep = "", header = F) %>% as.matrix()
-  
-  Gid = read.delim("/scratch/negishi/dryals/queen-quality/plink/samples-filter.rel.id", 
-  sep = "", header = T)
-  
-  colnames(G) = rownames(G) = Gid[,1]
+#   G = read.delim("/scratch/negishi/dryals/queen-quality/plink/samples-filter.rel", 
+#   sep = "", header = F) %>% as.matrix()
+#   
+#   Gid = read.delim("/scratch/negishi/dryals/queen-quality/plink/samples-filter.rel.id", 
+#   sep = "", header = T)
+#   
+#   colnames(G) = rownames(G) = Gid[,1]
+
+        ReadGRMBin=function(prefix, AllN=F, size=4){
+            sum_i=function(i){
+                return(sum(1:i))
+            }
+                BinFileName=paste(prefix,".grm.bin",sep="")
+                NFileName=paste(prefix,".grm.N.bin",sep="")
+                IDFileName=paste(prefix,".grm.id",sep="")
+                id = read.table(IDFileName)
+                n=dim(id)[1]
+                BinFile=file(BinFileName, "rb");
+                grm=readBin(BinFile, n=n*(n+1)/2, what=numeric(0), size=size)
+                NFile=file(NFileName, "rb");
+                if(AllN==T){
+                    N=readBin(NFile, n=n*(n+1)/2, what=numeric(0), size=size)
+                }
+                else N=readBin(NFile, n=1, what=numeric(0), size=size)
+                i=sapply(1:n, sum_i)
+                return(list(diag=grm[i], off=grm[-i], id=id, N=N))
+            }
+        
+        G = ReadGRMBin("/scratch/negishi/dryals/queen-quality/plink/samples-gs")
+    
+        remove = G$id[G$diag > 1.7,1]
+        
+        G.mat = matrix(nrow = nrow(G$id), ncol = nrow(G$id))
+          colnames(G.mat) = rownames(G.mat) = G$id[,1]
+          
+        G.mat[lower.tri(G.mat, diag = F)] = G$off
+        diag(G.mat) = G$diag
+        
+        G.mat = forceSymmetric(G.mat, uplo = "L")
+
+
   
 #prepare files for BLUP
  blup_rename = function(v){
@@ -229,7 +264,7 @@ write.table(file = "data/qq_vsperm.pheno",
 
 
 preblup = pheno.num %>% 
-  filter(gc_id %in%  colnames(G)) 
+  filter(gc_id %in%  colnames(G.mat)) 
 
 preblup = preblup %>% 
   select(gc_id, pheno_id, loc = loc.year, 
@@ -266,7 +301,7 @@ preblup = preblup %>%
   
   #remove outliers by diag values
     #TODO: do this earlier in pipeline rather than here...
-    remove = colnames(G)[diag(G) > 1.8]
+    remove = colnames(G.mat)[diag(G.mat) > 1.7]
     print("remove")
     print(remove)
     
@@ -285,7 +320,7 @@ preblup = preblup %>%
   
   #output relationship matrix
   
-  final.mat = G[blup$gc_id, blup$gc_id]
+  final.mat = G.mat[blup$gc_id, blup$gc_id] %>% as.matrix()
   
   N = dim(final.mat)[1]
   covmat = matrix(ncol = 3, nrow = (N*N-N)/2 + N)

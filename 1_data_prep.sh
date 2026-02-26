@@ -82,29 +82,56 @@ echo "-----------------------"
 
 #further sample QC
 echo "-----------------------"
-    echo "removing GRM outliers"
+#     echo "removing GRM outliers"
+#     cd $CLUSTER_SCRATCH/queen-quality/plink
+#     module purge
+#     module load biocontainers plink2
+#     
+#     plink2 --bfile samples-filter -make-rel square --out samples-filter
+#     #--remove ../het.remove.plink \
+#         
+#     
+#     module purge
+#     module load biocontainers bcftools vcftools plink r
+
+    echo "GRM in GCTA..."
     cd $CLUSTER_SCRATCH/queen-quality/plink
-    module purge
-    module load biocontainers plink2
     
-    plink2 --bfile samples-filter -make-rel square --out samples-filter
-    #--remove ../het.remove.plink \
+    plink --bfile samples-filter --maf 0.05 \
+        --make-bed --threads $SLURM_NTASKS --out samples-gs
         
+    gcta=/depot/bharpur/apps/gcta/gcta-1.94.1-linux-kernel-3-x86_64/gcta-1.94.1
     
-    module purge
-    module load biocontainers bcftools vcftools plink r
-    
+        $gcta --bfile samples-gs --make-grm --thread-num $SLURM_NTASKS \
+            --autosome-num 16 --out samples-gs
+    echo "reading GRM..."
+            
     R
-        library(dplyr)
-        G = read.delim("samples-filter.rel", 
-            sep = "", header = F) %>% as.matrix()
-  
-        Gid = read.delim("samples-filter.rel.id", 
-            sep = "", header = T)
-  
-        colnames(G) = rownames(G) = Gid[,1]
+        ReadGRMBin=function(prefix, AllN=F, size=4){
+            sum_i=function(i){
+                return(sum(1:i))
+            }
+                BinFileName=paste(prefix,".grm.bin",sep="")
+                NFileName=paste(prefix,".grm.N.bin",sep="")
+                IDFileName=paste(prefix,".grm.id",sep="")
+                id = read.table(IDFileName)
+                n=dim(id)[1]
+                BinFile=file(BinFileName, "rb");
+                grm=readBin(BinFile, n=n*(n+1)/2, what=numeric(0), size=size)
+                NFile=file(NFileName, "rb");
+                if(AllN==T){
+                    N=readBin(NFile, n=n*(n+1)/2, what=numeric(0), size=size)
+                }
+                else N=readBin(NFile, n=1, what=numeric(0), size=size)
+                i=sapply(1:n, sum_i)
+                return(list(diag=grm[i], off=grm[-i], id=id, N=N))
+            }
+        
+        G = ReadGRMBin("samples-gs")
     
-        remove = colnames(G)[diag(G) > 1.8]
+        remove = G$id[G$diag > 1.7,1]
+        
+        remove
         
         write.table(remove, file = "GRM.remove",
                     row.names = F, col.names = F, quote = F)
