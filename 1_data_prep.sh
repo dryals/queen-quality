@@ -40,6 +40,7 @@ echo "-----------------------"
 #     
     #TODO: try removing missing data before calling bialleleic sites, might retain more that way!
     #TODO: why are there two LDprune scripts?
+    #TODO: make sure GRM filter hapens once only, same samples used for all analyses
     
 #     
 #     #keep no contigs, only bialleleci snps, remove duplicats (norm), rename chrs
@@ -78,9 +79,6 @@ echo "-----------------------"
 #     cd plink
 #     awk '{print $2}' samples-filter.bim | tr ":" "\t" > samples-filter.sites
 #     awk '{print $1}' samples-filter.fam > samples-filter.names
-
-    #TODO: remove outliers with high diag values and recalculate GRM
-    #TODO: do the above match?
 
 #further sample QC
 echo "-----------------------"
@@ -333,17 +331,17 @@ echo "running GWAS..."
     cd gwas
     gcta=/depot/bharpur/apps/gcta/gcta-1.94.1-linux-kernel-3-x86_64/gcta-1.94.1
     
-        $gcta --bfile ../plink/samples-pruned --make-grm --thread-num $SLURM_NTASKS \
+        $gcta --bfile ../plink/samples-gwas --make-grm --thread-num $SLURM_NTASKS \
             --autosome-num 16 --out qq
             
         echo "    mlma..."
         #adjusted phenotypes generated in R script...
-        $gcta --mlma --bfile ../plink/samples-pruned --grm qq \
+        $gcta --mlma --bfile ../plink/samples-gwas --grm qq \
             --pheno ~/ryals/queen-quality/data/qq_vsperm.pheno \
             --autosome-num 16 \
             --out qq_vsperm --thread-num $SLURM_NTASKS
             
-        $gcta --mlma --bfile ../plink/samples-pruned --grm qq \
+        $gcta --mlma --bfile ../plink/samples-gwas --grm qq \
             --pheno ~/ryals/queen-quality/data/qq_weight.pheno \
             --autosome-num 16 \
             --out qq_weight --thread-num $SLURM_NTASKS

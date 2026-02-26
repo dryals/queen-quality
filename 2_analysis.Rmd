@@ -16,6 +16,8 @@ library(cowplot)
 library(readxl)
 library(corrplot)
 library(ggrepel)
+library(lme4)
+library(sjPlot)
 
 select = dplyr::select
 rename = dplyr::rename
@@ -39,9 +41,9 @@ pheno = read.csv("data/cleaned_pheno.csv")
     ggplot(aes(y = perc, x = x)) + geom_col()
 
   pca.geno = read.delim("data/samples-pca.eigenvec", header = F, sep = "")[,c(1,3:5)]
-    colnames(pca.geno) = c("id", "PC1", "PC2", "PC3")
+    colnames(pca.geno) = c("gc_id", "PC1", "PC2", "PC3")
     
-    pca.geno = pca.geno %>% left_join(pheno %>% select(id, loc.fix))
+    pca.geno = pca.geno %>% left_join(pheno %>% select(gc_id, loc.fix))
   
     ggplot(pca.geno, aes(x = PC1, y = PC2, color = loc.fix)) + geom_point()
     
@@ -50,13 +52,13 @@ pheno = read.csv("data/cleaned_pheno.csv")
     admix = cbind(read.delim("data/finaladmix.fam", header = F, sep = "")[,1],
                   read.delim("data/finaladmix.4.Q", header = F, sep = "")
                   )
-      colnames(admix)[1]="id"
+      colnames(admix)[1]="gc_id"
       
     reffam = read.delim("references/refData.txt")
     
     #verify lineage identity
-    lins = admix %>% left_join(reffam %>% select(id = SRR, lineage)) %>% 
-      filter(grepl ("SRR", id)) %>%
+    lins = admix %>% left_join(reffam %>% select(gc_id = SRR, lineage)) %>% 
+      filter(grepl ("SRR", gc_id)) %>%
       pivot_longer(starts_with("V")) %>%
       group_by(name, lineage) %>%
       mutate(m = mean(value)) %>% ungroup %>% 
@@ -64,7 +66,7 @@ pheno = read.csv("data/cleaned_pheno.csv")
     
     #rename
     admix = admix %>% rename(A = V4, M = V1, C = V2, O = V3) %>% 
-      left_join(pheno %>% select(id, loc.fix))
+      left_join(pheno %>% select(gc_id, loc.fix))
     
     #admixture bar chart
     admix.bar = admix 
@@ -86,7 +88,6 @@ pheno = read.csv("data/cleaned_pheno.csv")
       scale_fill_brewer(palette = "PRGn") +
       labs(x = "sample", y = "Proportion of Genome", fill = "Lineage") + 
       theme_bw()
-    
 
 #phenotype PCA
   pheno.num = pheno %>% 
@@ -103,6 +104,52 @@ pheno = read.csv("data/cleaned_pheno.csv")
     prcomp(center = F, scale = F) 
   
   biplot(pca.pheno)
+  
+#correlations b/w admixture and phenotypes
+  admixpheno = admix %>% 
+    left_join(pheno %>% 
+                select(gc_id, m.Body, v.Sperm)) %>% 
+    filter(!is.na(m.Body))
+  
+  admixphenocor = admixpheno %>% select(m.Body, v.Sperm, A, M, C, O) %>% as.matrix
+  corrplot(cor(admixphenocor))
+  
+  #models
+  
+  summary(lm(m.Body ~ loc.fix + M + A , data = admixpheno))
+  
+  massmod = lmer(m.Body ~ M + C + O + (1|loc.fix) , data = admixpheno)
+  AIC(massmod)
+  summary(massmod)
+  
+  plot_model(massmod)
+  
+  #outliers
+  remove = read.delim("data/GRMremove.txt", header = F)
+  colnames(remove) = "gc_id"
+  remove = remove %>% left_join(admixpheno)
+  
+  mean(remove$M)
+  mean(admixpheno$M)
+  
+  admixpheno$remove = ifelse(admixpheno$gc_id %in% remove$gc_id, "remove", "ok")
+  
+  #TODO: try correcting with KING?
+  
+#Fstat and pheno
+  fstat = read.delim("data/samples-filter.het") %>% 
+    select(gc_id = INDV, fstat = `F`) %>% 
+    left_join(admixpheno)
+  
+    fcor = fstat %>% select(m.Body, v.Sperm, fstat) %>% as.matrix()
+    corrplot(cor(fcor, use = "pairwise.complete.obs"))
+  
+  ggplot(fstat, aes(x = fstat, y = v.Sperm)) + 
+    geom_point(alpha = 0.5)
+  
+  
+   
+    
 
 #GWAS  
   #viability
@@ -148,23 +195,23 @@ pheno = read.csv("data/cleaned_pheno.csv")
     scale_x_continuous(labels = function(x) format(x, scientific = TRUE))
   
 
-  #total viable sperm
-  l.mlma = read.delim("data/qq_vsperm.mlma", sep = "")
-  l.mlma$padj = p.adjust(l.mlma$p, method = "bonferroni", n = nrow(l.mlma))
-  l.mlma$logp = log(l.mlma$padj, base = 10)* -1
-  l.mlma$lograwp = log(l.mlma$p, base = 10) * -1
-  
-  
-  ggplot(l.mlma, aes(x = bp, y = lograwp)) + 
-    geom_point() + 
-    geom_hline(aes(yintercept = 
-                     (-1 * log(0.05 / nrow(v.mlma), base = 10))),
-                      #(-1 * log(0.05, base = 10))),
-           linetype = 2, col = 'red') +
-    facet_wrap(facets = vars(Chr), scales = "free_x") + 
-    labs(title = "7a. GWAS: Total Viable Sperm", y = "-log(p)") +
-    scale_x_continuous(labels = function(x) format(x, scientific = TRUE))
-  
+  # #total viable sperm
+  # l.mlma = read.delim("data/qq_vsperm.mlma", sep = "")
+  # l.mlma$padj = p.adjust(l.mlma$p, method = "bonferroni", n = nrow(l.mlma))
+  # l.mlma$logp = log(l.mlma$padj, base = 10)* -1
+  # l.mlma$lograwp = log(l.mlma$p, base = 10) * -1
+  # 
+  # 
+  # ggplot(l.mlma, aes(x = bp, y = lograwp)) + 
+  #   geom_point() + 
+  #   geom_hline(aes(yintercept = 
+  #                    (-1 * log(0.05 / nrow(v.mlma), base = 10))),
+  #                     #(-1 * log(0.05, base = 10))),
+  #          linetype = 2, col = 'red') +
+  #   facet_wrap(facets = vars(Chr), scales = "free_x") + 
+  #   labs(title = "7a. GWAS: Total Viable Sperm", y = "-log(p)") +
+  #   scale_x_continuous(labels = function(x) format(x, scientific = TRUE))
+  # 
   
 #output top hits
   all.mlma.l = list(l.mlma, w.mlma, v.mlma)
@@ -256,7 +303,7 @@ pheno = read.csv("data/cleaned_pheno.csv")
 }
     
 
-qqPlot(l.mlma$p)
+qqPlot(v.mlma$p)
 qqPlot(w.mlma$p)
 
 

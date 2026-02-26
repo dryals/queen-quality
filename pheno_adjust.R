@@ -1,12 +1,39 @@
 library(dplyr)
 library(readxl)
+library(lubridate)
 
 select=dplyr::select
 
 
 #read phenotypic data
 pheno = read_excel("data/phenotypes.xlsx") %>% 
-  mutate(pheno_id = gsub(" ", "", QC))
+  mutate(pheno_id = gsub(" ", "", QC)) 
+
+#repair dates
+  pheno$date.1 = as_date(NA)
+  pheno$date.1[grepl("^[0-9]*$", pheno$Received)] = 
+    as_date(as.numeric(pheno$Received[grepl("^[0-9]*$", pheno$Received)]), origin = "1899-12-30")
+  
+  pheno$date.2 = as_date(NA)
+  pheno$date.2[grepl("Z$", pheno$Received)] = 
+    as_date(pheno$Received[grepl("Z$", pheno$Received)])
+  
+  
+  pheno$date = as_date(NA)
+  for(i in 1:nrow(pheno)){
+    if(is.na(pheno$date.1[i])){
+      pheno$date[i] = pheno$date.2[i]
+    } else{
+      pheno$date[i] = pheno$date.1[i]
+    }
+  }
+  
+  pheno = pheno %>% select(-date.1, -date.2)
+  
+  pheno$year = year(pheno$date)
+  
+
+
 #standardize locations
 loc.trans = data.frame(Location = c("Hawaii", "Georgia", "Southern California", "Minnesota",
                                     "Northern California", "Washington", "West Virginia",
@@ -96,15 +123,37 @@ pheno = pheno %>% left_join(loc.trans, by = "Location")
       
       #TODO: problems with thorax and head, ask bradley
       
-  #collapse some small locs
-    #TODO: try to fix these???
-    small = pheno.num %>% group_by(loc.fix) %>% 
+    #collapse some small levels
+      #manually fix northern california 2019
+      pheno.num$loc.fix[pheno.num$loc.fix == "NCA" &
+                          pheno.num$year == 2019] = "CA"
+      
+      #loc.years with small count become USA.year
+      small = pheno.num %>% group_by(loc.fix, year) %>% 
+        summarise(n = n()) %>% 
+        filter(n<5) %>% 
+        ungroup() 
+      
+      
+      
+      for(i in 1:nrow(small)){
+        pheno.num$loc.fix[pheno.num$loc.fix == small$loc.fix[i] &
+                          pheno.num$year == small$year[i]] = "USA"
+      }
+    #create loc.year effect
+    pheno.num$loc.year = paste0(pheno.num$loc.fix, pheno.num$year)
+    
+    #collapse remaining small USA levels
+    small.usa = pheno.num %>% filter(loc.fix == "USA") %>% 
+      group_by(loc.year) %>% 
       summarise(n = n()) %>% 
       filter(n<5) %>% 
-      ungroup() %>% 
-      select(loc.fix)
+      ungroup
     
-    pheno.num$loc.fix[pheno.num$loc.fix %in% small$loc.fix] = "USA"
+    pheno.num$loc.year[pheno.num$loc.year %in% small.usa$loc.year] = "USA20XX"
+    
+    #table(pheno.num$loc.year)
+
     
     #write cleaned phenotypes
     write.csv(pheno.num, "data/cleaned_pheno.csv",
@@ -124,20 +173,17 @@ gwas = pheno.num %>%
 
 #sapply(gwas, function(x){sum(is.na(x))})
 
-#summary(lm(m.Body ~ loc.fix + PC1 + PC2 + PC3, data = gwas))
-#summary(lm(l.Sperm ~ loc.fix + PC1 + PC2 + PC3, data = gwas))
-#summary(lm(v.Spermatheca ~ loc.fix + PC1 + PC2 + PC3, data = gwas))
+summary(lm(m.Body ~ loc.year + PC1 + PC2, data = gwas))
+summary(lm(v.Sperm ~ loc.year + PC1 + PC2, data = gwas))
 
 
-gwas$adj.m.Body = lm(m.Body ~ loc.fix + PC1, data = gwas)$residuals %>% 
+gwas$adj.m.Body = lm(m.Body ~ loc.year + PC1 + PC2, data = gwas)$residuals %>% 
   round(4)
-  
-  #TODO: v sperm should be beta distributed (or something?)
-  
-gwas$adj.v.Sperm = lm(v.Sperm ~ loc.fix + PC1 + PC2 + PC3, data = gwas)$residuals %>% 
+gwas$adj.v.Sperm = lm(v.Sperm ~ loc.year + PC1 + PC2, data = gwas)$residuals %>% 
   round(4)
-gwas$adj.l.Sperm = lm(l.Sperm ~ loc.fix + PC1 + +PC2 + PC3, data = gwas)$residuals %>% 
-  round(4)
+
+# gwas$adj.l.Sperm = lm(l.Sperm ~ loc.year + PC1 + PC2, data = gwas)$residuals %>% 
+#   round(4)
 
 #write out
 gwas.out = data.frame(fid = gwas$gc_id, 
