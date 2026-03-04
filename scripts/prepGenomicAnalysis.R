@@ -4,6 +4,9 @@ library(lubridate)
 library(Matrix)
 
 select=dplyr::select
+
+#read phenotypic data
+pheno = read.csv("data/cleaned_pheno.csv")
                 
 #read plink PCA
   pca.geno = read.delim("/scratch/negishi/dryals/queen-quality/plink/samples-gwas.eigenvec",
@@ -132,9 +135,6 @@ write.table(file = "data/qq_vsperm.pheno",
     }
     return(as.numeric(out))
   }
-
-pheno = read.csv("data/cleaned_pheno.csv")
-
 
   #ensure same individuals in same order
 preblup = data.frame(gc_id = colnames(G.p)) %>%
