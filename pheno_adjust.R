@@ -252,7 +252,7 @@ write.table(file = "data/qq_vsperm.pheno",
         
     #remove high diags
     #remove = G$id[G$diag > 1.5,1]
-    remove = colnames(G.p)[diag(G.p) > 1.8]
+    remove = colnames(G.p)[diag(G.p) > 1.7]
 
 #         #compare the grms
 #         G.test = G.mat[lower.tri(G.mat, diag = F)] - 
