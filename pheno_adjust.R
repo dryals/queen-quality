@@ -241,8 +241,6 @@ write.table(file = "data/qq_vsperm.pheno",
             }
         
         G = ReadGRMBin("/scratch/negishi/dryals/queen-quality/plink/samples-gs")
-    
-        remove = G$id[G$diag > 1.5,1]
         
         G.mat = matrix(nrow = nrow(G$id), ncol = nrow(G$id))
           colnames(G.mat) = rownames(G.mat) = G$id[,1]
@@ -251,6 +249,10 @@ write.table(file = "data/qq_vsperm.pheno",
         diag(G.mat) = round(G$diag,4)
         
         G.mat = forceSymmetric(G.mat, uplo = "L") %>% as.matrix()
+        
+    #remove high diags
+    #remove = G$id[G$diag > 1.5,1]
+    remove = colnames(G.p)[diag(G.p) > 1.7]
 
 #         #compare the grms
 #         G.test = G.mat[lower.tri(G.mat, diag = F)] - 
