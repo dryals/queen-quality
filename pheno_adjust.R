@@ -212,13 +212,13 @@ write.table(file = "data/qq_vsperm.pheno",
 
   #read grm
   
-#   G = read.delim("/scratch/negishi/dryals/queen-quality/plink/samples-filter.rel", 
-#   sep = "", header = F) %>% as.matrix()
-#   
-#   Gid = read.delim("/scratch/negishi/dryals/queen-quality/plink/samples-filter.rel.id", 
-#   sep = "", header = T)
-#   
-#   colnames(G) = rownames(G) = Gid[,1]
+  G.p = read.delim("/scratch/negishi/dryals/queen-quality/plink/samples-filter.rel", 
+  sep = "", header = F) %>% as.matrix()
+  
+  G.p.id = read.delim("/scratch/negishi/dryals/queen-quality/plink/samples-filter.rel.id", 
+  sep = "", header = T)
+  
+  colnames(G.p) = rownames(G.p) = G.p.id[,1]
 
         ReadGRMBin=function(prefix, AllN=F, size=4){
             sum_i=function(i){
@@ -242,7 +242,7 @@ write.table(file = "data/qq_vsperm.pheno",
         
         G = ReadGRMBin("/scratch/negishi/dryals/queen-quality/plink/samples-gs")
     
-        remove = G$id[G$diag > 1.8,1]
+        remove = G$id[G$diag > 1.5,1]
         
         G.mat = matrix(nrow = nrow(G$id), ncol = nrow(G$id))
           colnames(G.mat) = rownames(G.mat) = G$id[,1]
@@ -252,6 +252,23 @@ write.table(file = "data/qq_vsperm.pheno",
         
         G.mat = forceSymmetric(G.mat, uplo = "L") %>% as.matrix()
 
+#         #compare the grms
+#         G.test = G.mat[lower.tri(G.mat, diag = F)] - 
+#                  G.p[lower.tri(G.p, diag = F)]
+#         
+#         G.testdiag = diag(G.mat) - diag(G.p)
+#         
+#         range(diag(G.mat))
+#         range(diag(G.p))
+#                  
+#         pdf(file = "grmcompare.pdf")
+#           hist(G.test)
+#         dev.off()
+#         pdf(file = "grmcomparediag.pdf")
+#           hist(G.testdiag)
+#         dev.off()
+#         
+#         sum(colnames(G.p) == colnames(G.mat))
 
   
 #prepare files for BLUP
