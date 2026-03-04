@@ -337,7 +337,7 @@ preblup = preblup %>%
   
   #output relationship matrix
   
-  final.mat = G.mat[blup$gc_id, blup$gc_id]
+  final.mat = G.p[blup$gc_id, blup$gc_id]
   
   N = dim(final.mat)[1]
   covmat = matrix(ncol = 3, nrow = (N*N-N)/2 + N)
