@@ -99,17 +99,6 @@ echo "-----------------------"
 #     
 #     module purge
 #     module load biocontainers bcftools vcftools plink r
-# 
-    echo "GRM in GCTA..."
-    cd $CLUSTER_SCRATCH/queen-quality/plink
-    
-    plink --bfile samples-filter --maf 0.05 \
-        --make-bed --threads $SLURM_NTASKS --out samples-gs
-        
-    gcta=/depot/bharpur/apps/gcta/gcta-1.94.1-linux-kernel-3-x86_64/gcta-1.94.1
-    
-        $gcta --bfile samples-gs --make-grm --thread-num $SLURM_NTASKS \
-            --autosome-num 16 --out samples-gs
             
 #    
 #    echo "reading GRM..."
@@ -356,6 +345,22 @@ echo "-----------------------"
 echo "preparing phenotypic data in R..."
     cd ~/ryals/queen-quality
     R --vanilla --no-save --no-echo --silent < pheno_adjust.R
+    
+    
+    echo "GRM in GCTA..."
+    cd ~/ryals/queen-quality/data
+    paste phenotyped.gcnames phenotyped.gcnames > phenotyped.plink
+    
+    cd $CLUSTER_SCRATCH/queen-quality/plink
+    
+    plink --bfile samples-filter --maf 0.05 \
+        --keep ~/ryals/queen-quality/data/phenotyped.plink \
+        --make-bed --threads $SLURM_NTASKS --out samples-gs
+        
+    gcta=/depot/bharpur/apps/gcta/gcta-1.94.1-linux-kernel-3-x86_64/gcta-1.94.1
+    
+        $gcta --bfile samples-gs --make-grm --thread-num $SLURM_NTASKS \
+            --autosome-num 16 --out samples-gs
 
 
 # echo "-----------------------"
@@ -439,7 +444,6 @@ echo "running BLUP..."
 # 
 echo "-----------------------"
     echo "  CV error: multi-trait"
- #TODO: estimate CV error in multi-trait blup
     
     par=wv
  
