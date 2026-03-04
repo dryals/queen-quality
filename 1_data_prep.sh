@@ -100,16 +100,17 @@ echo "-----------------------"
 #     module purge
 #     module load biocontainers bcftools vcftools plink r
 # 
-#     echo "GRM in GCTA..."
-#     cd $CLUSTER_SCRATCH/queen-quality/plink
-#     
-#     plink --bfile samples-filter --maf 0.05 \
-#         --make-bed --threads --freq $SLURM_NTASKS --out samples-gs
-#         
-#     gcta=/depot/bharpur/apps/gcta/gcta-1.94.1-linux-kernel-3-x86_64/gcta-1.94.1
-#     
-#         $gcta --bfile samples-gs --make-grm --thread-num $SLURM_NTASKS \
-#             --autosome-num 16 --out samples-gs
+    echo "GRM in GCTA..."
+    cd $CLUSTER_SCRATCH/queen-quality/plink
+    
+    plink --bfile samples-filter --maf 0.05 \
+        --make-bed --threads $SLURM_NTASKS --out samples-gs
+        
+    gcta=/depot/bharpur/apps/gcta/gcta-1.94.1-linux-kernel-3-x86_64/gcta-1.94.1
+    
+        $gcta --bfile samples-gs --make-grm --thread-num $SLURM_NTASKS \
+            --autosome-num 16 --out samples-gs
+            
 #    
 #    echo "reading GRM..."
 #             
@@ -351,12 +352,12 @@ echo "-----------------------"
 #     module purge
 #     module load biocontainers bcftools vcftools plink r
 #     
-# echo "-----------------------"
-# echo "preparing phenotypic data in R..."
-#     cd ~/ryals/queen-quality
-#     R --vanilla --no-save --no-echo --silent < pheno_adjust.R
-# 
-# 
+echo "-----------------------"
+echo "preparing phenotypic data in R..."
+    cd ~/ryals/queen-quality
+    R --vanilla --no-save --no-echo --silent < pheno_adjust.R
+
+
 # echo "-----------------------"
 # echo "running GWAS..."
 #     echo "    gcta..."
@@ -395,35 +396,35 @@ echo "-----------------------"
 # 
 # 
 # 
-# echo "-----------------------"  
-# echo "running BLUP..."
-# 
-#     par=wv
-# 
-#     #TODO: single-trait blups
-#     cd ~/ryals/queen-quality/blup
-#         #create links
-#         if [ ! -f  blupf90+ ]; then
-#             echo "    creating links..."
-#             ln -S blupf90+ /depot/bharpur/apps/blupf90/blupf90+
-#             ln -S airemlf90 /depot/bharpur/apps/blupf90/airemlf90 
-#         fi
-# 
-#     cd ~/ryals/queen-quality
-#     cp params/${par}.par0 blup
-#     cd blup
-#     ./airemlf90 ${par}.par0
-#     
-#     
-#     #TODO
-#     #read G and R matricies into blup.par2
-# #     sed -n 16,80p file1>patch
-# #     sed -i 18rpatch file2
-#     
-#     cp ../params/${par}.par1 .
-#     ./blupf90+ ${par}.par1
-#     cp solutions ../data/sol-${par}.txt
-# 
+echo "-----------------------"  
+echo "running BLUP..."
+
+    par=wv
+
+    #TODO: single-trait blups
+    cd ~/ryals/queen-quality/blup
+        #create links
+        if [ ! -f  blupf90+ ]; then
+            echo "    creating links..."
+            ln -S blupf90+ /depot/bharpur/apps/blupf90/blupf90+
+            ln -S airemlf90 /depot/bharpur/apps/blupf90/airemlf90 
+        fi
+
+    cd ~/ryals/queen-quality
+    cp params/${par}.par0 blup
+    cd blup
+    ./airemlf90 ${par}.par0
+    
+    
+    #TODO
+    #read G and R matricies into blup.par2
+#     sed -n 16,80p file1>patch
+#     sed -i 18rpatch file2
+    
+    cp ../params/${par}.par1 .
+    ./blupf90+ ${par}.par1
+    cp solutions ../data/sol-${par}.txt
+
 # echo "-----------------------"
 #     echo "  CV error: single-trait"
 # #TODO: estimate CV error: scripts/cv.R

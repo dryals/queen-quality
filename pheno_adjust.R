@@ -242,7 +242,7 @@ write.table(file = "data/qq_vsperm.pheno",
         
         G = ReadGRMBin("/scratch/negishi/dryals/queen-quality/plink/samples-gs")
     
-        remove = G$id[G$diag > 1.7,1]
+        remove = G$id[G$diag > 1.8,1]
         
         G.mat = matrix(nrow = nrow(G$id), ncol = nrow(G$id))
           colnames(G.mat) = rownames(G.mat) = G$id[,1]
@@ -302,8 +302,6 @@ preblup = preblup %>%
   #sum(blup$id %in% colnames(G))
   
   #remove outliers by diag values
-    #TODO: do this earlier in pipeline rather than here...
-    remove = colnames(G.mat)[diag(G.mat) > 1.7]
     print("remove")
     print(remove)
     
