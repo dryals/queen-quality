@@ -7,6 +7,7 @@ select=dplyr::select
 
 #read phenotypic data
 pheno = read.csv("data/cleaned_pheno.csv")
+
                 
 #read plink PCA
   pca.geno = read.delim("/scratch/negishi/dryals/queen-quality/plink/samples-gwas.eigenvec",
@@ -139,7 +140,9 @@ write.table(file = "data/qq_vsperm.pheno",
   #ensure same individuals in same order
 preblup = data.frame(gc_id = colnames(G.p)) %>%
   left_join(pheno)
-
+  
+  #TODO: where do those NAs come from in m.Body but not v.sperm?
+  
 preblup = preblup %>% 
   select(gc_id, pheno_id, loc = loc.year, 
   lsperm = l.Sperm, weight = m.Body, vsperm = v.Sperm,
@@ -151,6 +154,8 @@ preblup = preblup %>%
          vsperm = round(scale(vsperm)[,1],4),
          tsperm = round(scale(tsperm)[,1],4)
          )
+         
+  preblup[is.na(preblup)] = -999
 
 #error checking
 #   sapply(preblup, function(x){sum(is.na(x))})
