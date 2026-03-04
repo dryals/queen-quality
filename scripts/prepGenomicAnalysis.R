@@ -1,5 +1,3 @@
-#TODO: STOP here and break into two scripts!
-
 library(dplyr)
 library(readxl)
 library(lubridate)
@@ -14,7 +12,7 @@ select=dplyr::select
     colnames(pca.geno) = c("gc_id", "PC1", "PC2", "PC3")
 
 #prepare gwas  
-gwas = pheno.num %>% 
+gwas = pheno %>% 
   filter(gc_id %in% pca.geno$gc_id) %>% 
   left_join(pca.geno %>% select(gc_id, PC1, PC2, PC3), by = 'gc_id')
 
