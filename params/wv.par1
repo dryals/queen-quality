@@ -12,8 +12,8 @@ EFFECTS:
 1 1 899 cross #queen_id
 2 2 42 cross #location
 RANDOM_RESIDUAL VALUES
-  0.29747      0.31840E-01
-  0.31840E-01  0.52407     
+  0.28396      0.30536E-01
+  0.30536E-01  0.48939      
 RANDOM_GROUP
 1 
 RANDOM_TYPE
@@ -21,8 +21,8 @@ user_file_inv
 FILE
 covmat.txt
 (CO)VARIANCES
-  0.22528      0.37453E-01
-  0.37453E-01  0.42391   
+  0.24230      0.40144E-01
+  0.40144E-01  0.47199    
 OPTION missing -999
 OPTION sol se
 OPTION conv_crit 1e-10
