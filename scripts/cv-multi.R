@@ -89,6 +89,7 @@ for(CVnum in 1:5){
   
   #CV correlation
     #pull masked predictions
+
     sol.tmp = sol %>% filter(effect == 1) %>% 
       left_join(masked %>% 
                   select(level = 1, gc_id, CV, locid, loc) %>% 
@@ -101,14 +102,19 @@ for(CVnum in 1:5){
       left_join( fixed.eff %>% 
         select(locid = level, loceff = solution, trait) %>%
         mutate(locid = as.numeric(locid)), by = c('locid', 'trait')) %>%
-      mutate(pheno.est = solution + loceff)
+      mutate(pheno.est = solution)
     
     #compare against real phenos
+    
+    #TODO: which calculation is correct for cv? Y-X=Z or Y=X+Z
+    
     realpheno = masked[masked$CV == CVnum, c("gc_id", args.split)] %>%
       pivot_longer(cols = all_of(args.split), names_to = "tn", values_to = "pheno.real")
 
     sol.tmp = sol.tmp %>% 
-      left_join(realpheno, by = c('gc_id', 'tn'))
+      left_join(realpheno, by = c('gc_id', 'tn')) %>% 
+      mutate(pheno.real = pheno.real - loceff) 
+      #mutate(pheno.est = pheno.est + loceff)
     
     #correlation
     cv = sol.tmp %>% 
