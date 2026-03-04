@@ -345,7 +345,7 @@ echo "-----------------------"
     module purge
     module load biocontainers plink2
     
-    plink2 --bfile samples-filter --maf 0.05 --geno 0.1 -make-rel square --out samples-gs2
+    plink2 --bfile samples-filter --maf 0.05 --geno 0.05 -make-rel square --out samples-gs2
 #         
 #     
     module purge

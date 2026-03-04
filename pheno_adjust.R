@@ -284,8 +284,13 @@ write.table(file = "data/qq_vsperm.pheno",
   }
 
 
-preblup = pheno.num %>% 
-  filter(gc_id %in%  colnames(G.mat)) 
+# preblup = pheno.num %>% 
+#   filter(gc_id %in%  colnames(G.mat)) 
+  
+  preblup = pheno.num %>% 
+  filter(gc_id %in%  colnames(G.p)) 
+  
+  
 
 preblup = preblup %>% 
   select(gc_id, pheno_id, loc = loc.year, 
