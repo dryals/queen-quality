@@ -28,6 +28,10 @@ echo "-----------------------"
     chrs=$( awk '{print $1}' $rename | tr '\n' ',' )
     chrsShort=$( awk '{print $2}' $rename | tr '\n' ' ' )
 
+echo "-----------------------"
+echo "preparing phenotypic data in R..."
+    cd ~/ryals/queen-quality
+    R --vanilla --no-save --no-echo --silent < scripts/pheno_adjust.R
     
 echo "-----------------------"
 #     #directory setup
@@ -322,6 +326,9 @@ echo "-----------------------"
 #         
 #         
 # echo "-----------------------"
+
+
+echo "-----------------------"
 #PCA and GRM
     cd $CLUSTER_SCRATCH/queen-quality/plink
 #     echo "PCA..."
@@ -335,33 +342,29 @@ echo "-----------------------"
     module load biocontainers plink2
     
     plink2 --bfile samples-filter -make-rel square --out samples-gs2
-#         
-#     
+
     module purge
     module load biocontainers bcftools vcftools plink r
     
+#     echo "GRM in GCTA..."
+#     cd ~/ryals/queen-quality/data
+#     paste phenotyped.gcnames phenotyped.gcnames > phenotyped.plink
 #     
+#     cd $CLUSTER_SCRATCH/queen-quality/plink
+#     
+#     plink --bfile samples-filter --maf 0.01 \
+#         --keep ~/ryals/queen-quality/data/phenotyped.plink \
+#         --make-bed --threads $SLURM_NTASKS --out samples-gs
+#         
+#     gcta=/depot/bharpur/apps/gcta/gcta-1.94.1-linux-kernel-3-x86_64/gcta-1.94.1
+#     
+#         $gcta --bfile samples-gs --make-grm --thread-num $SLURM_NTASKS \
+#             --autosome-num 16 --out samples-gs
+            
 echo "-----------------------"
-echo "preparing phenotypic data in R..."
+echo "preparing data for GWAS and GS"
     cd ~/ryals/queen-quality
-    R --vanilla --no-save --no-echo --silent < pheno_adjust.R
-    
-    
-    echo "GRM in GCTA..."
-    cd ~/ryals/queen-quality/data
-    paste phenotyped.gcnames phenotyped.gcnames > phenotyped.plink
-    
-    cd $CLUSTER_SCRATCH/queen-quality/plink
-    
-    plink --bfile samples-filter --maf 0.05 \
-        --keep ~/ryals/queen-quality/data/phenotyped.plink \
-        --make-bed --threads $SLURM_NTASKS --out samples-gs
-        
-    gcta=/depot/bharpur/apps/gcta/gcta-1.94.1-linux-kernel-3-x86_64/gcta-1.94.1
-    
-        $gcta --bfile samples-gs --make-grm --thread-num $SLURM_NTASKS \
-            --autosome-num 16 --out samples-gs
-
+    R --vanilla --no-save --no-echo --silent < scripts/prepGenomicAnalysis.R
 
 # echo "-----------------------"
 # echo "running GWAS..."
