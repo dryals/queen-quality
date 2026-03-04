@@ -341,7 +341,8 @@ echo "-----------------------"
     module purge
     module load biocontainers plink2
     
-    plink2 --bfile samples-filter -make-rel square --out samples-gs2
+    plink2 --bfile samples-filter --keep ~/ryals/queen-quality/data/phenotyped.plink \
+        -make-rel square --out samples-gs2
 
     module purge
     module load biocontainers bcftools vcftools plink r
@@ -457,6 +458,7 @@ echo "-----------------------"
     
     #run cv script
     Rscript --vanilla scripts/cv-multi.R $par
+    
 #  
 #  
 echo "-----------------------"
