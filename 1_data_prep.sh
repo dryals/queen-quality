@@ -13,7 +13,7 @@
 #SBATCH --error=/home/dryals/ryals/queen-quality/outputs/prep.out
 
 #Dylan Ryals 06 FEB 2026
-#last edit   09 FEB 2026
+#last edit   04 MAR 2026
 
 echo "date"
 echo "-----------------------"
@@ -29,39 +29,45 @@ echo "-----------------------"
     chrsShort=$( awk '{print $2}' $rename | tr '\n' ' ' )
 
     
-# echo "-----------------------"
+echo "-----------------------"
 #     #directory setup
 #     mkdir -p outputs
 #     mkdir -p locks
 #     mkdir -p $CLUSTER_SCRATCH/queen-quality
 #     mkdir -p blup 
 #     #filter and prepare vcf  
-#     cd $CLUSTER_SCRATCH/queen-quality
+    cd $CLUSTER_SCRATCH/queen-quality
 #     
     #TODO: try removing missing data before calling bialleleic sites, might retain more that way!
     #TODO: why are there two LDprune scripts?
+    
     #TODO: make sure GRM filter hapens once only, same samples used for all analyses
     
+    #TODO: compare various methods of GRM construction, verify everything loaded into BLUP correctly...
+    #TODO: fit PCs to BLUP as well as GWAS ... ???
+    
 #     
-#     #keep no contigs, only bialleleci snps, remove duplicats (norm), rename chrs
-#     echo "filtering sample vcf..."
-#     bcftools view $vcf -v snps -r $chrs -Ou | bcftools norm -m +snps -Ou | \
-#         bcftools view -m2 -M2 -Ou | \
-#         bcftools annotate --rename-chrs $rename --threads $SLURM_NTASKS -Ob -o samples.bcf.gz
-#     
-#     bcftools index -c samples.bcf.gz
-#     
-#     #remove non-QC samples
-#     bcftools query samples.bcf.gz -l > samples.names
-#     grep "QC" samples.names > keep.names
-#         
-#     #mark low propability as missing 
-#     echo "    mark missing..."
-#     bcftools view samples.bcf.gz -S keep.names -Ou | 
-#         bcftools filter  -S . -i 'GP[:0] > 0.99 | GP[:1] > 0.99 | GP[:2] > 0.99' \
-#         --threads $SLURM_NTASKS -Ob -o samples.missing.bcf.gz
+    #keep no contigs, only bialleleci snps, remove duplicats (norm), rename chrs
+    echo "filtering sample vcf..."
+    bcftools view $vcf -v snps -r $chrs -Ou | bcftools norm -m +snps -Ou | \
+        bcftools view -m2 -M2 -Ou | \
+        bcftools annotate --rename-chrs $rename --threads $SLURM_NTASKS -Ob -o samples.bcf.gz
+    
+    bcftools index -c samples.bcf.gz
+    
+    #remove non-QC samples
+    bcftools query samples.bcf.gz -l > samples.names
+    grep "QC" samples.names > keep.names
+        
+
+#TODO: increase post prob threshold?
+    #mark low propability as missing 
+    echo "    mark missing..."
+    bcftools view samples.bcf.gz -S keep.names -Ou | 
+        bcftools filter  -S . -i 'GP[:0] > 0.995 | GP[:1] > 0.995 | GP[:2] > 0.995' \
+        --threads $SLURM_NTASKS -Ob -o samples.missing.bcf.gz 
      
-     #TODO: try to retain more sites ... lower prop threshold, lower maf threshold?
+     
      
 #     #filter in plink
 #     echo "    mind, geno, and maf filters..."
@@ -81,7 +87,7 @@ echo "-----------------------"
 #     awk '{print $1}' samples-filter.fam > samples-filter.names
 
 #further sample QC
-echo "-----------------------"
+# echo "-----------------------"
 #     echo "removing GRM outliers"
 #     cd $CLUSTER_SCRATCH/queen-quality/plink
 #     module purge
@@ -93,58 +99,59 @@ echo "-----------------------"
 #     
 #     module purge
 #     module load biocontainers bcftools vcftools plink r
-
-    echo "GRM in GCTA..."
-    cd $CLUSTER_SCRATCH/queen-quality/plink
-    
-    plink --bfile samples-filter --maf 0.05 \
-        --make-bed --threads $SLURM_NTASKS --out samples-gs
-        
-    gcta=/depot/bharpur/apps/gcta/gcta-1.94.1-linux-kernel-3-x86_64/gcta-1.94.1
-    
-        $gcta --bfile samples-gs --make-grm --thread-num $SLURM_NTASKS \
-            --autosome-num 16 --out samples-gs
-    echo "reading GRM..."
-            
-    R
-        ReadGRMBin=function(prefix, AllN=F, size=4){
-            sum_i=function(i){
-                return(sum(1:i))
-            }
-                BinFileName=paste(prefix,".grm.bin",sep="")
-                NFileName=paste(prefix,".grm.N.bin",sep="")
-                IDFileName=paste(prefix,".grm.id",sep="")
-                id = read.table(IDFileName)
-                n=dim(id)[1]
-                BinFile=file(BinFileName, "rb");
-                grm=readBin(BinFile, n=n*(n+1)/2, what=numeric(0), size=size)
-                NFile=file(NFileName, "rb");
-                if(AllN==T){
-                    N=readBin(NFile, n=n*(n+1)/2, what=numeric(0), size=size)
-                }
-                else N=readBin(NFile, n=1, what=numeric(0), size=size)
-                i=sapply(1:n, sum_i)
-                return(list(diag=grm[i], off=grm[-i], id=id, N=N))
-            }
-        
-        G = ReadGRMBin("samples-gs")
-    
-        remove = G$id[G$diag > 1.7,1]
-        
-        remove
-        
-        write.table(remove, file = "GRM.remove",
-                    row.names = F, col.names = F, quote = F)
-                    
-    quit(save = "no")
-    
-    paste GRM.remove GRM.remove > GRM.remove.plink
-    
-
-        
-echo "-----------------------"
-    echo "ADMIXTURE analysis"
-     cd ${CLUSTER_SCRATCH}/queen-quality
+# 
+#     echo "GRM in GCTA..."
+#     cd $CLUSTER_SCRATCH/queen-quality/plink
+#     
+#     plink --bfile samples-filter --maf 0.05 \
+#         --make-bed --threads --freq $SLURM_NTASKS --out samples-gs
+#         
+#     gcta=/depot/bharpur/apps/gcta/gcta-1.94.1-linux-kernel-3-x86_64/gcta-1.94.1
+#     
+#         $gcta --bfile samples-gs --make-grm --thread-num $SLURM_NTASKS \
+#             --autosome-num 16 --out samples-gs
+#    
+#    echo "reading GRM..."
+#             
+#     R
+#         ReadGRMBin=function(prefix, AllN=F, size=4){
+#             sum_i=function(i){
+#                 return(sum(1:i))
+#             }
+#                 BinFileName=paste(prefix,".grm.bin",sep="")
+#                 NFileName=paste(prefix,".grm.N.bin",sep="")
+#                 IDFileName=paste(prefix,".grm.id",sep="")
+#                 id = read.table(IDFileName)
+#                 n=dim(id)[1]
+#                 BinFile=file(BinFileName, "rb");
+#                 grm=readBin(BinFile, n=n*(n+1)/2, what=numeric(0), size=size)
+#                 NFile=file(NFileName, "rb");
+#                 if(AllN==T){
+#                     N=readBin(NFile, n=n*(n+1)/2, what=numeric(0), size=size)
+#                 }
+#                 else N=readBin(NFile, n=1, what=numeric(0), size=size)
+#                 i=sapply(1:n, sum_i)
+#                 return(list(diag=grm[i], off=grm[-i], id=id, N=N))
+#             }
+#         
+#         G = ReadGRMBin("samples-gs")
+#     
+#         remove = G$id[G$diag > 1.7,1]
+#         
+#         remove
+#         
+#         write.table(remove, file = "GRM.remove",
+#                     row.names = F, col.names = F, quote = F)
+#                     
+#     quit(save = "no")
+#     
+#     paste GRM.remove GRM.remove > GRM.remove.plink
+#     
+# 
+#         
+# echo "-----------------------"
+#     echo "ADMIXTURE analysis"
+#      cd ${CLUSTER_SCRATCH}/queen-quality
 #          echo "pulling references..."
 #         #no multiallelic sites, only snps, keep subset of references, no contigs, rename chromosomes to "1,2,3...16"
 #         bcftools view $refs -S /home/dryals/ryals/ahb/references/pureRefs.txt \
@@ -316,63 +323,63 @@ echo "-----------------------"
 #         cd $CLUSTER_SCRATCH/queen-quality/plink
 #         plink --bfile samples-filter --make-bed --exclude ../ld/allMAFremove.txt \
 #             --threads $SLURM_NTASKS --silent --out samples-pruned
-
-    echo "    removing GRM outliers..."
-    plink --bfile samples-pruned --make-bed \
-        --remove GRM.remove.plink \
-        --pca 500 \
-        --threads $SLURM_NTASKS --out samples-gwas
-        
-        
-echo "-----------------------"
+# 
+#     echo "    removing GRM outliers..."
+#     plink --bfile samples-pruned --make-bed \
+#         --remove GRM.remove.plink \
+#         --pca 500 \
+#         --threads $SLURM_NTASKS --out samples-gwas
+#         
+#         
+# echo "-----------------------"
 #PCA and GRM
-    cd $CLUSTER_SCRATCH/queen-quality/plink
+#     cd $CLUSTER_SCRATCH/queen-quality/plink
 #     echo "PCA..."
 #     plink --bfile samples-pruned --pca 500 \
 #         --threads $SLURM_NTASKS --out samples-pca --silent
 #     
-    echo "GRM..."
-    #is plink the best? KING? going with basic make-rel for now
-        #TODO: try KING, compare AIC from aireml
-    module purge
-    module load biocontainers plink2
-    
-    plink2 --bfile samples-filter -make-rel square --out samples-filter
-    #--remove ../het.remove.plink \
-        
-    
-    module purge
-    module load biocontainers bcftools vcftools plink r
-    
-echo "-----------------------"
-echo "preparing phenotypic data in R..."
-    cd ~/ryals/queen-quality
-    R --vanilla --no-save --no-echo --silent < pheno_adjust.R
-
-
-echo "-----------------------"
-echo "running GWAS..."
-    echo "    gcta..."
-    cd $CLUSTER_SCRATCH/queen-quality
-    mkdir -p gwas
-    cd gwas
-    gcta=/depot/bharpur/apps/gcta/gcta-1.94.1-linux-kernel-3-x86_64/gcta-1.94.1
-    
-        $gcta --bfile ../plink/samples-gwas --make-grm --thread-num $SLURM_NTASKS \
-            --autosome-num 16 --out qq
-            
-        echo "    mlma..."
-        #adjusted phenotypes generated in R script...
-        $gcta --mlma --bfile ../plink/samples-gwas --grm qq \
-            --pheno ~/ryals/queen-quality/data/qq_vsperm.pheno \
-            --autosome-num 16 \
-            --out qq_vsperm --thread-num $SLURM_NTASKS
-            
-        $gcta --mlma --bfile ../plink/samples-gwas --grm qq \
-            --pheno ~/ryals/queen-quality/data/qq_weight.pheno \
-            --autosome-num 16 \
-            --out qq_weight --thread-num $SLURM_NTASKS
-            
+#     echo "GRM..."
+#     #is plink the best? KING? going with basic make-rel for now
+#         #TODO: try KING, compare AIC from aireml
+#     module purge
+#     module load biocontainers plink2
+#     
+#     plink2 --bfile samples-filter -make-rel square --out samples-filter
+#     #--remove ../het.remove.plink \
+#         
+#     
+#     module purge
+#     module load biocontainers bcftools vcftools plink r
+#     
+# echo "-----------------------"
+# echo "preparing phenotypic data in R..."
+#     cd ~/ryals/queen-quality
+#     R --vanilla --no-save --no-echo --silent < pheno_adjust.R
+# 
+# 
+# echo "-----------------------"
+# echo "running GWAS..."
+#     echo "    gcta..."
+#     cd $CLUSTER_SCRATCH/queen-quality
+#     mkdir -p gwas
+#     cd gwas
+#     gcta=/depot/bharpur/apps/gcta/gcta-1.94.1-linux-kernel-3-x86_64/gcta-1.94.1
+#     
+#         $gcta --bfile ../plink/samples-gwas --make-grm --thread-num $SLURM_NTASKS \
+#             --autosome-num 16 --out qq
+#             
+#         echo "    mlma..."
+#         #adjusted phenotypes generated in R script...
+#         $gcta --mlma --bfile ../plink/samples-gwas --grm qq \
+#             --pheno ~/ryals/queen-quality/data/qq_vsperm.pheno \
+#             --autosome-num 16 \
+#             --out qq_vsperm --thread-num $SLURM_NTASKS
+#             
+#         $gcta --mlma --bfile ../plink/samples-gwas --grm qq \
+#             --pheno ~/ryals/queen-quality/data/qq_weight.pheno \
+#             --autosome-num 16 \
+#             --out qq_weight --thread-num $SLURM_NTASKS
+#             
 #         $gcta --mlma --bfile ../plink/samples-pruned --grm qq \
 #             --pheno ~/ryals/queen-quality/data/qq_lsperm.pheno \
 #             --autosome-num 16 \
@@ -388,41 +395,38 @@ echo "running GWAS..."
 # 
 # 
 # 
-echo "-----------------------"  
-echo "running BLUP..."
-
-    par=wv
-
-    #TODO: single-trait blups
-    cd ~/ryals/queen-quality/blup
-        #create links
-        if [ ! -f  blupf90+ ]; then
-            echo "    creating links..."
-            ln -S blupf90+ /depot/bharpur/apps/blupf90/blupf90+
-            ln -S airemlf90 /depot/bharpur/apps/blupf90/airemlf90 
-        fi
-
-    cd ~/ryals/queen-quality
-    cp params/${par}.par0 blup
-    cd blup
-    ./airemlf90 ${par}.par0
-    
+# echo "-----------------------"  
+# echo "running BLUP..."
+# 
+#     par=wv
+# 
+#     #TODO: single-trait blups
+#     cd ~/ryals/queen-quality/blup
+#         #create links
+#         if [ ! -f  blupf90+ ]; then
+#             echo "    creating links..."
+#             ln -S blupf90+ /depot/bharpur/apps/blupf90/blupf90+
+#             ln -S airemlf90 /depot/bharpur/apps/blupf90/airemlf90 
+#         fi
+# 
+#     cd ~/ryals/queen-quality
+#     cp params/${par}.par0 blup
+#     cd blup
+#     ./airemlf90 ${par}.par0
+#     
 #     
 #     #TODO
 #     #read G and R matricies into blup.par2
 # #     sed -n 16,80p file1>patch
 # #     sed -i 18rpatch file2
 #     
-    cp ../params/${par}.par1 .
-    ./blupf90+ ${par}.par1
-    cp solutions ../data/sol-${par}.txt
-
-    #     
-# #     
-# #    
-echo "-----------------------"
-    echo "  CV error: single-trait"
- #TODO: estimate CV error: scripts/cv.R
+#     cp ../params/${par}.par1 .
+#     ./blupf90+ ${par}.par1
+#     cp solutions ../data/sol-${par}.txt
+# 
+# echo "-----------------------"
+#     echo "  CV error: single-trait"
+# #TODO: estimate CV error: scripts/cv.R
 # 
 #     #create -cv version which uses pheno-cv.txt
 #     cd ~/ryals/queen-quality
@@ -431,23 +435,22 @@ echo "-----------------------"
 #     
 #     #run cv script
 #     Rscript --vanilla scripts/cv.R $par
-
-echo "-----------------------"
-    echo "  CV error: multi-trait"
- #TODO: estimate CV error in multi-trait blup
-    
-    par=wv
- 
-     #create -cv version which uses pheno-cv.txt
-    cd ~/ryals/queen-quality
-    cp params/${par}.par1 blup/${par}-cv.par1
-    sed -i 's/pheno.txt/pheno-cv.txt/g' blup/${par}-cv.par1
-    
-    #run cv script
-    Rscript --vanilla scripts/cv-multi.R $par
- 
- 
-
+# 
+# echo "-----------------------"
+#     echo "  CV error: multi-trait"
+#  #TODO: estimate CV error in multi-trait blup
+#     
+#     par=wv
+#  
+#      #create -cv version which uses pheno-cv.txt
+#     cd ~/ryals/queen-quality
+#     cp params/${par}.par1 blup/${par}-cv.par1
+#     sed -i 's/pheno.txt/pheno-cv.txt/g' blup/${par}-cv.par1
+#     
+#     #run cv script
+#     Rscript --vanilla scripts/cv-multi.R $par
+#  
+#  
 echo "-----------------------"
 echo "DONE"
 echo "-----------------------"

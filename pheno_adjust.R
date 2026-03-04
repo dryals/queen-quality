@@ -206,7 +206,9 @@ write.table(file = "data/qq_vsperm.pheno",
 #             col.names = F, row.names = F, quote = F,
 #             sep = "\t")
   
-#TODO: double check all this, formatting may be incorrect...
+
+#TODO: try using plink's GRM again but with maf 0.05 ...
+#TODO: why doesnt gcta's grm work?!
 
   #read grm
   
