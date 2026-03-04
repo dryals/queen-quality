@@ -212,10 +212,10 @@ write.table(file = "data/qq_vsperm.pheno",
 
   #read grm
   
-  G.p = read.delim("/scratch/negishi/dryals/queen-quality/plink/samples-filter.rel", 
+  G.p = read.delim("/scratch/negishi/dryals/queen-quality/plink/samples-gs2.rel", 
   sep = "", header = F) %>% as.matrix()
   
-  G.p.id = read.delim("/scratch/negishi/dryals/queen-quality/plink/samples-filter.rel.id", 
+  G.p.id = read.delim("/scratch/negishi/dryals/queen-quality/plink/samples-gs2.rel.id", 
   sep = "", header = T)
   
   colnames(G.p) = rownames(G.p) = G.p.id[,1]

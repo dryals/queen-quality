@@ -334,23 +334,23 @@ echo "-----------------------"
 #         
 # echo "-----------------------"
 #PCA and GRM
-#     cd $CLUSTER_SCRATCH/queen-quality/plink
+    cd $CLUSTER_SCRATCH/queen-quality/plink
 #     echo "PCA..."
 #     plink --bfile samples-pruned --pca 500 \
 #         --threads $SLURM_NTASKS --out samples-pca --silent
 #     
-#     echo "GRM..."
-#     #is plink the best? KING? going with basic make-rel for now
-#         #TODO: try KING, compare AIC from aireml
-#     module purge
-#     module load biocontainers plink2
-#     
-#     plink2 --bfile samples-filter -make-rel square --out samples-filter
-#     #--remove ../het.remove.plink \
+    echo "GRM..."
+    #is plink the best? KING? going with basic make-rel for now
+        #TODO: try KING, compare AIC from aireml
+    module purge
+    module load biocontainers plink2
+    
+    plink2 --bfile samples-filter --maf 0.05 --geno 0.05 -make-rel square --out samples-gs2
 #         
 #     
-#     module purge
-#     module load biocontainers bcftools vcftools plink r
+    module purge
+    module load biocontainers bcftools vcftools plink r
+    
 #     
 echo "-----------------------"
 echo "preparing phenotypic data in R..."
