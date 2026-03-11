@@ -23,16 +23,11 @@ echo "-----------------------"
     module load biocontainers bcftools vcftools plink r
     
     #vcf location
-    vcf="/depot/bharpur/data/popgenomes/gencove/NCstate/NCstate_final.bcf.gz"
+    vcf="/depot/bharpur/data/popgenomes/gencove/NCstate/NCstate_final2.bcf.gz"
     rename=/home/dryals/ryals/queen-quality/chrsrename.txt
     chrs=$( awk '{print $1}' $rename | tr '\n' ',' )
     chrsShort=$( awk '{print $2}' $rename | tr '\n' ' ' )
 
-echo "-----------------------"
-echo "preparing phenotypic data in R..."
-    cd ~/ryals/queen-quality
-    R --vanilla --no-save --no-echo --silent < scripts/pheno_adjust.R
-    
 echo "-----------------------"
 #     #directory setup
 #     mkdir -p outputs
@@ -71,24 +66,28 @@ echo "-----------------------"
         bcftools filter  -S . -i 'GP[:0] > 0.995 | GP[:1] > 0.995 | GP[:2] > 0.995' \
         --threads $SLURM_NTASKS -Ob -o samples.missing.bcf.gz 
      
-     
-     
-#     #filter in plink
-#     echo "    mind, geno, and maf filters..."
-#     cd $CLUSTER_SCRATCH/queen-quality
-#     mkdir -p plink
-#     #takes LONG time
-#     plink --bcf samples.missing.bcf.gz --make-bed \
-#         --allow-extra-chr --chr-set 16 no-xy -chr $chrsShort \
-#         --set-missing-var-ids @:# \
-#         #-keep keep.plink \
-#         --mind 0.2 --geno 0.1 --maf 0.01 \
-#         --threads $SLURM_NTASKS --out plink/samples-filter --silent
-#         
-#     #output sites for ref filter, samples
-#     cd plink
-#     awk '{print $2}' samples-filter.bim | tr ":" "\t" > samples-filter.sites
-#     awk '{print $1}' samples-filter.fam > samples-filter.names
+    #filter in plink
+    echo "    mind, geno, and maf filters..."
+    cd $CLUSTER_SCRATCH/queen-quality
+    mkdir -p plink
+    #takes LONG time
+    plink --bcf samples.missing.bcf.gz --make-bed \
+        --allow-extra-chr --chr-set 16 no-xy -chr $chrsShort \
+        --set-missing-var-ids @:# \
+        #-keep keep.plink \
+        --mind 0.2 --geno 0.1 --maf 0.01 \
+        --threads $SLURM_NTASKS --out plink/samples-filter --silent
+        
+    #output sites for ref filter, samples
+    cd plink
+    awk '{print $2}' samples-filter.bim | tr ":" "\t" > samples-filter.sites
+    awk '{print $1}' samples-filter.fam > samples-filter.names
+
+echo "-----------------------"
+echo "preparing phenotypic data in R..."
+    cd ~/ryals/queen-quality
+    R --vanilla --no-save --no-echo --silent < scripts/pheno_adjust.R
+    
 
 #further sample QC
 # echo "-----------------------"
@@ -325,28 +324,26 @@ echo "-----------------------"
 #         --threads $SLURM_NTASKS --out samples-gwas
 #         
 #         
+# 
 # echo "-----------------------"
-
-
-echo "-----------------------"
-#PCA and GRM
-    cd $CLUSTER_SCRATCH/queen-quality/plink
+# #PCA and GRM
+#     cd $CLUSTER_SCRATCH/queen-quality/plink
 #     echo "PCA..."
 #     plink --bfile samples-pruned --pca 500 \
 #         --threads $SLURM_NTASKS --out samples-pca --silent
 #     
-    echo "GRM..."
-    #is plink the best? KING? going with basic make-rel for now
-        #TODO: try KING, compare AIC from aireml
-    module purge
-    module load biocontainers plink2
-    
-    plink2 --bfile samples-filter --keep ~/ryals/queen-quality/data/phenotyped.plink \
-        -make-rel square --out samples-gs2
-
-    module purge
-    module load biocontainers bcftools vcftools plink r
-    
+#     echo "GRM..."
+#     #is plink the best? KING? going with basic make-rel for now
+#         #TODO: try KING, compare AIC from aireml
+#     module purge
+#     module load biocontainers plink2
+#     
+#     plink2 --bfile samples-filter --keep ~/ryals/queen-quality/data/phenotyped.plink \
+#         -make-rel square --out samples-gs2
+# 
+#     module purge
+#     module load biocontainers bcftools vcftools plink r
+#     
 #     echo "GRM in GCTA..."
 #     cd ~/ryals/queen-quality/data
 #     paste phenotyped.gcnames phenotyped.gcnames > phenotyped.plink
@@ -361,11 +358,11 @@ echo "-----------------------"
 #     
 #         $gcta --bfile samples-gs --make-grm --thread-num $SLURM_NTASKS \
 #             --autosome-num 16 --out samples-gs
-            
-echo "-----------------------"
-echo "preparing data for GWAS and GS"
-    cd ~/ryals/queen-quality
-    R --vanilla --no-save --no-echo --silent < scripts/prepGenomicAnalysis.R
+#             
+# echo "-----------------------"
+# echo "preparing data for GWAS and GS"
+#     cd ~/ryals/queen-quality
+#     R --vanilla --no-save --no-echo --silent < scripts/prepGenomicAnalysis.R
 
 # echo "-----------------------"
 # echo "running GWAS..."
@@ -405,34 +402,34 @@ echo "preparing data for GWAS and GS"
 # 
 # 
 # 
-echo "-----------------------"  
-echo "running BLUP..."
-
-    par=wv
-
-    #TODO: single-trait blups
-    cd ~/ryals/queen-quality/blup
-        #create links
-        if [ ! -f  blupf90+ ]; then
-            echo "    creating links..."
-            ln -S blupf90+ /depot/bharpur/apps/blupf90/blupf90+
-            ln -S airemlf90 /depot/bharpur/apps/blupf90/airemlf90 
-        fi
-
-    cd ~/ryals/queen-quality
-    cp params/${par}.par0 blup
-    cd blup
-    ./airemlf90 ${par}.par0
-    
-    
-    #TODO
-    #read G and R matricies into blup.par2
-#     sed -n 16,80p file1>patch
-#     sed -i 18rpatch file2
-    
-    cp ../params/${par}.par1 .
-    ./blupf90+ ${par}.par1
-    cp solutions ../data/sol-${par}.txt
+# echo "-----------------------"  
+# echo "running BLUP..."
+# 
+#     par=wv
+# 
+#     #TODO: single-trait blups
+#     cd ~/ryals/queen-quality/blup
+#         #create links
+#         if [ ! -f  blupf90+ ]; then
+#             echo "    creating links..."
+#             ln -S blupf90+ /depot/bharpur/apps/blupf90/blupf90+
+#             ln -S airemlf90 /depot/bharpur/apps/blupf90/airemlf90 
+#         fi
+# 
+#     cd ~/ryals/queen-quality
+#     cp params/${par}.par0 blup
+#     cd blup
+#     ./airemlf90 ${par}.par0
+#     
+#     
+#     #TODO
+#     #read G and R matricies into blup.par2
+# #     sed -n 16,80p file1>patch
+# #     sed -i 18rpatch file2
+#     
+#     cp ../params/${par}.par1 .
+#     ./blupf90+ ${par}.par1
+#     cp solutions ../data/sol-${par}.txt
 
 # echo "-----------------------"
 #     echo "  CV error: single-trait"
@@ -446,19 +443,19 @@ echo "running BLUP..."
 #     #run cv script
 #     Rscript --vanilla scripts/cv.R $par
 # 
-echo "-----------------------"
-    echo "  CV error: multi-trait"
-    
-    par=wv
- 
-     #create -cv version which uses pheno-cv.txt
-    cd ~/ryals/queen-quality
-    cp params/${par}.par1 blup/${par}-cv.par1
-    sed -i 's/pheno.txt/pheno-cv.txt/g' blup/${par}-cv.par1
-    
-    #run cv script
-    Rscript --vanilla scripts/cv-multi.R $par
-    
+# echo "-----------------------"
+#     echo "  CV error: multi-trait"
+#     
+#     par=wv
+#  
+#      #create -cv version which uses pheno-cv.txt
+#     cd ~/ryals/queen-quality
+#     cp params/${par}.par1 blup/${par}-cv.par1
+#     sed -i 's/pheno.txt/pheno-cv.txt/g' blup/${par}-cv.par1
+#     
+#     #run cv script
+#     Rscript --vanilla scripts/cv-multi.R $par
+#     
 #  
 #  
 echo "-----------------------"
