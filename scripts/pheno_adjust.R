@@ -90,6 +90,8 @@ pheno = pheno %>% left_join(loc.trans, by = "Location")
     #manually remove this problematic individual
     pheno.fix = pheno.fix[-which(pheno.fix$gc_id == "QC0758"),]
     
+#TODO: get a count for how many phenotypes actually exist...
+      
       
       #sum(!is.na(pheno$gc_id))
       #nrow(allnames)

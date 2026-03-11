@@ -67,7 +67,7 @@ write.table(file = "data/qq_vsperm.pheno",
   sep = "", header = T)
   
   colnames(G.p) = rownames(G.p) = G.p.id[,1]
-# 
+# #script from GCTA website
 #         ReadGRMBin=function(prefix, AllN=F, size=4){
 #             sum_i=function(i){
 #                 return(sum(1:i))
@@ -88,43 +88,29 @@ write.table(file = "data/qq_vsperm.pheno",
 #                 return(list(diag=grm[i], off=grm[-i], id=id, N=N))
 #             }
 #         
-#         G = ReadGRMBin("/scratch/negishi/dryals/queen-quality/plink/samples-gs")
+#         Glist = ReadGRMBin("/scratch/negishi/dryals/queen-quality/plink/samples-gs")
 #         
-#         #TODO: what is the order of G$off???
+#         # Convert to symmetric matrix
+#         n=dim(Glist$id)[1]
+#         G = matrix(data = 0, nrow = n, ncol = n)
 #         
-#         G.mat = matrix(nrow = nrow(G$id), ncol = nrow(G$id))
-#           colnames(G.mat) = rownames(G.mat) = G$id[,1]
-#           
-#         G.mat[lower.tri(G.mat, diag = F)] = round(G$off,4)
+#         G[upper.tri(G, diag=FALSE)] = Glist$off
+#         G = G + t(G)
+#         diag(G) = Glist$diag
 #         
-#         G.mat[1:10,1:10]
-#         head(G$off)
+#         #compare
+#         dim(G)
+#         dim(G.p)
 #         
-#         G.mat = forceSymmetric(G.mat, uplo = "L") %>% as.matrix()
+#         cor(G[lower.tri(G, diag=FALSE)], G.p[lower.tri(G.p, diag=FALSE)])
+#         mean(abs(G[lower.tri(G, diag=FALSE)] - G.p[lower.tri(G.p, diag=FALSE)]))
 #         
-#         diag(G.mat) = round(G$diag,4)
+#         cor(diag(G), diag(G.p))
+#         mean(abs(diag(G) - diag(G.p)))
         
-    #remove high diags
-    #remove = G$id[G$diag > 1.8,1]
-    remove = colnames(G.p)[diag(G.p) > 1.7]
 
-#         #compare the grms
-#         G.test = G.mat[lower.tri(G.mat, diag = F)] - 
-#                  G.p[lower.tri(G.p, diag = F)]
-#         
-#         G.testdiag = diag(G.mat) - diag(G.p)
-#         
-#         range(diag(G.mat))
-#         range(diag(G.p))
-#                  
-#         pdf(file = "grmcompare.pdf")
-#           hist(G.test)
-#         dev.off()
-#         pdf(file = "grmcomparediag.pdf")
-#           hist(G.testdiag)
-#         dev.off()
-#         
-#         sum(colnames(G.p) == colnames(G.mat))
+    #remove high diags
+    remove = colnames(G.p)[diag(G.p) > 1.8]
 
   
 #prepare files for BLUP
@@ -140,8 +126,6 @@ write.table(file = "data/qq_vsperm.pheno",
   #ensure same individuals in same order
 preblup = data.frame(gc_id = colnames(G.p)) %>%
   left_join(pheno)
-  
-  #TODO: where do those NAs come from in m.Body but not v.sperm?
   
 preblup = preblup %>% 
   select(gc_id, pheno_id, loc = loc.year, 
@@ -208,27 +192,7 @@ preblup = preblup %>%
       covmat[cmr,] = c(i,j, final.mat[i,j])
     }
   }
-#   
-#   covmat.old = covmat
-#   #another version for gcta grm
-#     N = dim(G$id)[1]
-#     covmat = matrix(ncol = 3, nrow = (N*N-N)/2 + N)
-#     cmr = 0
-#     k = 0
-#     for(i in 1:N){
-#       for(j in 1:i){
-#         cmr = cmr +1
-#         if(i == j){
-#             covmat[cmr,] = c(i,j, G$diag[i])
-#         } else {
-#             k = k+1
-#             covmat[cmr,] = c(i,j, G$off[k])
-#         }
-#         
-#       }
-#     }
-#   
-#   
+
   write.table(covmat, "blup/covmat.txt", row.names = F, col.names = F, sep = " ")
   
 max(covmat[,2])

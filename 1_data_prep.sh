@@ -327,22 +327,24 @@ echo "preparing phenotypic data in R..."
 # 
 # echo "-----------------------"
 # #PCA and GRM
-#     cd $CLUSTER_SCRATCH/queen-quality/plink
+     cd $CLUSTER_SCRATCH/queen-quality/plink
 #     echo "PCA..."
 #     plink --bfile samples-pruned --pca 500 \
 #         --threads $SLURM_NTASKS --out samples-pca --silent
 #     
-#     echo "GRM..."
-#     #is plink the best? KING? going with basic make-rel for now
-#         #TODO: try KING, compare AIC from aireml
-#     module purge
-#     module load biocontainers plink2
-#     
-#     plink2 --bfile samples-filter --keep ~/ryals/queen-quality/data/phenotyped.plink \
-#         -make-rel square --out samples-gs2
-# 
-#     module purge
-#     module load biocontainers bcftools vcftools plink r
+    echo "GRM..."
+    #is plink the best? KING? going with basic make-rel for now
+        #TODO: try KING, compare AIC from aireml
+    module purge
+    module load biocontainers plink2
+    
+    plink2 --bfile samples-filter --keep ~/ryals/queen-quality/data/phenotyped.plink \
+        -maf 0.01 \
+        -make-rel square --out samples-gs2
+
+    module purge
+    module load biocontainers bcftools vcftools plink r
+    
 #     
 #     echo "GRM in GCTA..."
 #     cd ~/ryals/queen-quality/data
@@ -358,11 +360,12 @@ echo "preparing phenotypic data in R..."
 #     
 #         $gcta --bfile samples-gs --make-grm --thread-num $SLURM_NTASKS \
 #             --autosome-num 16 --out samples-gs
-#             
-# echo "-----------------------"
-# echo "preparing data for GWAS and GS"
-#     cd ~/ryals/queen-quality
-#     R --vanilla --no-save --no-echo --silent < scripts/prepGenomicAnalysis.R
+
+            #             
+echo "-----------------------"
+echo "preparing data for GWAS and GS"
+    cd ~/ryals/queen-quality
+    R --vanilla --no-save --no-echo --silent < scripts/prepGenomicAnalysis.R
 
 # echo "-----------------------"
 # echo "running GWAS..."
