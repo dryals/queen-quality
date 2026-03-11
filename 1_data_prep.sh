@@ -339,7 +339,7 @@ echo "preparing phenotypic data in R..."
     module load biocontainers plink2
     
     plink2 --bfile samples-filter --keep ~/ryals/queen-quality/data/phenotyped.plink \
-        -maf 0.01 \
+        -maf 0.05 \
         -make-rel square --out samples-gs2
 
     module purge
@@ -408,22 +408,22 @@ echo "preparing data for GWAS and GS"
 # echo "-----------------------"  
 # echo "running BLUP..."
 # 
-#     par=wv
-# 
-#     #TODO: single-trait blups
-#     cd ~/ryals/queen-quality/blup
-#         #create links
-#         if [ ! -f  blupf90+ ]; then
-#             echo "    creating links..."
-#             ln -S blupf90+ /depot/bharpur/apps/blupf90/blupf90+
-#             ln -S airemlf90 /depot/bharpur/apps/blupf90/airemlf90 
-#         fi
-# 
-#     cd ~/ryals/queen-quality
-#     cp params/${par}.par0 blup
-#     cd blup
-#     ./airemlf90 ${par}.par0
-#     
+    par=wv
+
+    #TODO: single-trait blups
+    cd ~/ryals/queen-quality/blup
+        #create links
+        if [ ! -f  blupf90+ ]; then
+            echo "    creating links..."
+            ln -S blupf90+ /depot/bharpur/apps/blupf90/blupf90+
+            ln -S airemlf90 /depot/bharpur/apps/blupf90/airemlf90 
+        fi
+
+    cd ~/ryals/queen-quality
+    cp params/${par}.par0 blup
+    cd blup
+    ./airemlf90 ${par}.par0
+    
 #     
 #     #TODO
 #     #read G and R matricies into blup.par2
