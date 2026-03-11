@@ -110,7 +110,7 @@ write.table(file = "data/qq_vsperm.pheno",
         
 
     #remove high diags
-    remove = colnames(G.p)[diag(G.p) > 1.8]
+    remove = colnames(G.p)[diag(G.p) > 1.7]
 
   
 #prepare files for BLUP
