@@ -150,7 +150,11 @@ preblup = preblup %>%
   preblup[is.na(preblup)] = -999
   
   
-  
+  #print pheno var
+  print("pheno vars: weight, lsperm , vsperm"
+  var(preblup$weight)
+  var(preblup$lsperm)
+  var(preblup$vsperm)
   
 
 #error checking
