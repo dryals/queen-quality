@@ -120,7 +120,8 @@ write.table(file = "data/qq_lsperm.pheno",
     G.p = G.p.tmp
     
   #remove high diags
-  remove = colnames(G.p)[diag(G.p) > 1.8]
+  remove = colnames(G.p)[diag(G.p) > 2]
+  print(remove)
   
 
 # #script from GCTA website
