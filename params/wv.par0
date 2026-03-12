@@ -23,8 +23,8 @@ user_file_inv
 FILE
 covmat.txt
 (CO)VARIANCES
-150 20
-20 2
+150 10
+10 5
 OPTION missing -999
 OPTION sol se
 OPTION conv_crit 1e-10
