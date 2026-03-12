@@ -3,7 +3,7 @@ pheno.txt
 NUMBER_OF_TRAITS
 2
 NUMBER_OF_EFFECTS
-4
+2
 OBSERVATION(S)
 6 7 #weight, vsperm
 WEIGHT(S)
@@ -11,8 +11,8 @@ WEIGHT(S)
 EFFECTS:
 1 1 874 cross #queen_id
 2 2 42 cross #location
-3 3 1 cov #PC1
-4 4 1 cov #PC2
+#3 3 1 cov #PC1
+#4 4 1 cov #PC2
 RANDOM_RESIDUAL VALUES
 200 50
 50 200
