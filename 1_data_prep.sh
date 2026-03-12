@@ -348,24 +348,24 @@ echo "-----------------------"
 # 
 # echo "-----------------------"
 # #PCA and GRM
-#     cd $CLUSTER_SCRATCH/queen-quality/plink
+    cd $CLUSTER_SCRATCH/queen-quality/plink
 #     echo "PCA..."
 #     plink --bfile samples-filter --pca 500 \
 #         --threads $SLURM_NTASKS --out samples-gwas --silent
 #      
-#     echo "GRM..."
-#     #is plink the best? KING? going with basic make-rel for now
-#         #TODO: consider gcta GRM after all
-#     module purge
-#     module load biocontainers plink2
-#     
-#     plink2 --bfile samples-filter --keep ~/ryals/queen-quality/data/phenotyped.plink \
-#         -maf 0.05 \
-#         -make-rel square --out samples-gs2
-# 
-#     module purge
-#     module load biocontainers bcftools vcftools plink r
-#     
+    echo "GRM..."
+    #is plink the best? KING? going with basic make-rel for now
+        #TODO: consider gcta GRM after all
+    module purge
+    module load biocontainers plink2
+    
+    plink2 --bfile samples-filter --keep ~/ryals/queen-quality/data/phenotyped.plink \
+        -maf 0.01 \
+        -make-rel square --out samples-gs2
+
+    module purge
+    module load biocontainers bcftools vcftools plink r
+    
 #     
 #     echo "GRM in GCTA..."
 #     cd ~/ryals/queen-quality/data
