@@ -211,11 +211,11 @@ preblup = preblup %>%
   preblup[is.na(preblup)] = -999
   
   
-#   #print pheno var
-#   print("pheno vars: weight, lsperm , vsperm")
-#   var(preblup$weight)
-#   var(preblup$lsperm)
-#   var(preblup$vsperm)
+  #print pheno var
+  print("pheno vars: weight, lsperm , vsperm")
+  var(preblup$weight)
+  var(preblup$lsperm)
+  var(preblup$vsperm)
 #   
 #   #herit ests
 #   var(preblup$weight) * 0.2

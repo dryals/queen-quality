@@ -452,21 +452,21 @@ echo "running GWAS..."
 # #     sed -n 16,80p file1>patch
 # #     sed -i 18rpatch file2
 #     
-#     cp ../params/${par}.par1 .
-#     ./blupf90+ ${par}.par1
-#     cp solutions ../data/sol-${par}.txt
+    cp ../params/${par}.par1 .
+    ./blupf90+ ${par}.par1
+    cp solutions ../data/sol-${par}.txt
 
 # echo "-----------------------"
 #     echo "  CV error: single-trait"
 # #TODO: estimate CV error: scripts/cv.R
 # 
-#     #create -cv version which uses pheno-cv.txt
-#     cd ~/ryals/queen-quality
-#     cp params/${par}.par1 blup/${par}-cv.par1
-#     sed -i 's/pheno.txt/pheno-cv.txt/g' blup/${par}-cv.par1
-#     
-#     #run cv script
-#     Rscript --vanilla scripts/cv.R $par
+    #create -cv version which uses pheno-cv.txt
+    cd ~/ryals/queen-quality
+    cp params/${par}.par1 blup/${par}-cv.par1
+    sed -i 's/pheno.txt/pheno-cv.txt/g' blup/${par}-cv.par1
+    
+    #run cv script
+    Rscript --vanilla scripts/cv.R $par
 # 
 # echo "-----------------------"
 #     echo "  CV error: multi-trait"

@@ -1,6 +1,6 @@
 #take a command line argument
 args = commandArgs(trailingOnly=TRUE)
-#args = "wv"
+#args = "wl"
 
 library(dplyr)
 library(tidyr)
