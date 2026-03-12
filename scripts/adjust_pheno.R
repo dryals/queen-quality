@@ -150,7 +150,7 @@ preblup = preblup %>%
          PC2 = round(PC2,4),
          lsperm = round(lsperm / 1e5 ,4),
          weight = round(weight,4),
-         vsperm = round(vsperm,4),
+         vsperm = round(vsperm * 100,4),
          tsperm = round(tsperm,4)
          )
          
@@ -161,11 +161,12 @@ preblup = preblup %>%
 #   print("pheno vars: weight, lsperm , vsperm")
 #   var(preblup$weight)
 #   var(preblup$lsperm)
-#   var(preblup$vsperm)
+   var(preblup$vsperm)
 #   
 #   #herit ests
 #   var(preblup$weight) * 0.2
 #   var(preblup$lsperm) * 0.01
+  var(preblup$vsperm) * 0.01
   
 
 #error checking
