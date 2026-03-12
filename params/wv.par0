@@ -3,7 +3,7 @@ pheno.txt
 NUMBER_OF_TRAITS
 2
 NUMBER_OF_EFFECTS
-4
+5
 OBSERVATION(S)
 7 8 #weight, vsperm
 WEIGHT(S)
