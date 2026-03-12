@@ -166,7 +166,7 @@ echo "preparing phenotypic data in R..."
 #         
 echo "-----------------------"
     echo "ADMIXTURE analysis"
-#      cd ${CLUSTER_SCRATCH}/queen-quality
+    cd ${CLUSTER_SCRATCH}/queen-quality
 # #          echo "pulling references..."
 # #         #no multiallelic sites, only snps, keep subset of references, no contigs, rename chromosomes to "1,2,3...16"
 # #         bcftools view $refs -S /home/dryals/ryals/ahb/references/pureRefs.txt \
@@ -179,46 +179,46 @@ echo "-----------------------"
 #     #copy from admix dir
 #     cp ../pipeline/reference.bcf.* .
 #     
-#     echo "    filtering references ..."
-#         bcftools view reference.bcf.gz -T plink/samples-filter.sites --threads $SLURM_NTASKS \
-#         -Ob -o reference-filter.bcf.gz
-# 
-#      bcftools index -c reference-filter.bcf.gz
-#      
-#     
-#     echo "launching Ia script...."
-#         #count number of samples in each population
-#         cd ${CLUSTER_SCRATCH}/queen-quality
-#         mkdir -p aim
-#         cd aim
-#         #specify reference file
-#         echo "reference-filter.bcf.gz" > ref_filename.txt
-#         #reset logifle
-#         cd /home/dryals/ryals/queen-quality
-#         echo -n "" > outputs/aim.out
-# 
-#         #launch the Ia script array
-#         sbatch --array=1-16 scripts/AIM_v3.sh
-#         
-#     echo "waiting for Ia results (see aim.out)..."
-#     cd ~/ryals/queen-quality
-#     while [ $(grep "FINISHED" outputs/aim.out | wc -l | awk '{print $1}') -lt 16 ] #wait for all 16 to finish
-#     do
-#         sleep 20 #wait between each check
-#     done
-#     
-#     echo "compiling Ia results..."    
-#     cd ${CLUSTER_SCRATCH}/queen-quality/aim
-#     #this will hold all the aims
-#     cat chr*/chr*.ia | grep -v "chr" | sort -k3 -gr > aim.ia.txt
-#    
-#         grep -v "NA" aim.ia.txt | awk '$3>0' | awk 'OFS=":" {print$1, $2}' > plink_aim.ia.txt
-#           cat plink_aim.ia.txt | tr ":" "\t" > bct_aim.ia.txt
-#           
-#         
-#     count=$( wc -l plink_aim.ia.txt | awk '{print $1}')
-#     echo "    Calculated Ia for $count sites"
-#    
+    echo "    filtering references ..."
+        bcftools view reference.bcf.gz -T plink/samples-filter.sites --threads $SLURM_NTASKS \
+        -Ob -o reference-filter.bcf.gz
+
+     bcftools index -c reference-filter.bcf.gz
+     
+    
+    echo "launching Ia script...."
+        #count number of samples in each population
+        cd ${CLUSTER_SCRATCH}/queen-quality
+        mkdir -p aim
+        cd aim
+        #specify reference file
+        echo "reference-filter.bcf.gz" > ref_filename.txt
+        #reset logifle
+        cd /home/dryals/ryals/queen-quality
+        echo -n "" > outputs/aim.out
+
+        #launch the Ia script array
+        sbatch --array=1-16 scripts/AIM_v3.sh
+        
+    echo "waiting for Ia results (see aim.out)..."
+    cd ~/ryals/queen-quality
+    while [ $(grep "FINISHED" outputs/aim.out | wc -l | awk '{print $1}') -lt 16 ] #wait for all 16 to finish
+    do
+        sleep 20 #wait between each check
+    done
+    
+    echo "compiling Ia results..."    
+    cd ${CLUSTER_SCRATCH}/queen-quality/aim
+    #this will hold all the aims
+    cat chr*/chr*.ia | grep -v "chr" | sort -k3 -gr > aim.ia.txt
+   
+        grep -v "NA" aim.ia.txt | awk '$3>0' | awk 'OFS=":" {print$1, $2}' > plink_aim.ia.txt
+          cat plink_aim.ia.txt | tr ":" "\t" > bct_aim.ia.txt
+          
+        
+    count=$( wc -l plink_aim.ia.txt | awk '{print $1}')
+    echo "    Calculated Ia for $count sites"
+   
     echo "merging samples and references..."
     cd $CLUSTER_SCRATCH/queen-quality
     bcftools view samples.missing.bcf.gz -T plink/samples-filter.sites -S plink/samples-filter.names \
