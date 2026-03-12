@@ -383,10 +383,10 @@ echo "-----------------------"
 #             --autosome-num 16 --out samples-gs
 # 
 #                          
-# echo "-----------------------"
-# echo "preparing data for GWAS and GS"
-#     cd ~/ryals/queen-quality
-#     R --vanilla --no-save --no-echo --silent < scripts/adjust_pheno.R
+echo "-----------------------"
+echo "preparing data for GWAS and GS"
+    cd ~/ryals/queen-quality
+    R --vanilla --no-save --no-echo --silent < scripts/adjust_pheno.R
 
 echo "-----------------------"
 echo "running GWAS..."
@@ -430,7 +430,7 @@ echo "running GWAS..."
 # echo "-----------------------"  
 # echo "running BLUP..."
 # 
-    par=wv
+    par=wl
 
     #TODO: single-trait blups
     cd ~/ryals/queen-quality/blup

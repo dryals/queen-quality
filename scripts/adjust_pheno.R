@@ -151,10 +151,14 @@ preblup = preblup %>%
   
   
   #print pheno var
-  print("pheno vars: weight, lsperm , vsperm"
+  print("pheno vars: weight, lsperm , vsperm")
   var(preblup$weight)
   var(preblup$lsperm)
   var(preblup$vsperm)
+  
+  #herit ests
+  var(preblup$weight) * 0.2
+  var(preblup$lsperm) * 0.01
   
 
 #error checking
