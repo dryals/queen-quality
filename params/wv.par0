@@ -5,7 +5,7 @@ NUMBER_OF_TRAITS
 NUMBER_OF_EFFECTS
 4
 OBSERVATION(S)
-6 7 #weight, vsperm
+7 8 #weight, vsperm
 WEIGHT(S)
 
 EFFECTS:
@@ -13,6 +13,7 @@ EFFECTS:
 2 2 42 cross #location
 3 3 1 cov #PC1
 4 4 1 cov #PC2
+5 5 1 cov #PC#
 RANDOM_RESIDUAL VALUES
 200 50
 50 200
