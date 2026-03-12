@@ -9,7 +9,7 @@ OBSERVATION(S)
 WEIGHT(S)
 
 EFFECTS:
-1 1 901 cross #queen_id
+1 1 903 cross #queen_id
 2 2 42 cross #location
 RANDOM_RESIDUAL VALUES
 500 10
@@ -26,5 +26,5 @@ covmat.txt
 OPTION missing -999
 OPTION sol se
 OPTION conv_crit 1e-10
-OPTION EM-reml 5
+OPTION EM-reml 20
 #ulimit -s unlimited
