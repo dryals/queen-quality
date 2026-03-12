@@ -10,8 +10,8 @@ pheno = read.csv("data/cleaned_pheno.csv")
 
                 
 #read plink PCA
-  pca.geno = read.delim("/scratch/negishi/dryals/queen-quality/plink/samples-gwas.eigenvec",
-  #pca.geno = read.delim("data/samples-pca.eigenvec",
+  #pca.geno = read.delim("/scratch/negishi/dryals/queen-quality/plink/samples-gwas.eigenvec",
+  pca.geno = read.delim("data/samples-pca.eigenvec",
                        header = F, sep = "")[,c(1, 3:5)]
     colnames(pca.geno) = c("gc_id", "PC1", "PC2", "PC3")
 
@@ -30,16 +30,18 @@ gwas$adj.m.Body = lm(m.Body ~ loc.year + PC1 + PC2, data = gwas)$residuals %>%
   round(4)
 gwas$adj.v.Sperm = lm(v.Sperm ~ loc.year + PC1 + PC2, data = gwas)$residuals %>% 
   round(4)
-
-# gwas$adj.l.Sperm = lm(l.Sperm ~ loc.year + PC1 + PC2, data = gwas)$residuals %>% 
-#   round(4)
+  #residuals are not normally distributed!
+  
+gwas$adj.l.Sperm = lm(l.Sperm ~ loc.year + PC1 + PC2, data = gwas)$residuals %>% 
+  round(4)
+  
 
 #write out
 gwas.out = data.frame(fid = gwas$gc_id, 
                       iid = gwas$gc_id, 
                       weight = gwas$adj.m.Body, 
-                      vsperm = gwas$adj.v.Sperm)#,
-                      #lsperm = gwas$adj.l.Sperm)
+                      vsperm = gwas$adj.v.Sperm),
+                      lsperm = gwas$adj.l.Sperm)
                       
 write.table(file = "data/qq_weight.pheno",
             gwas.out %>% select(fid, iid, weight),
@@ -49,14 +51,11 @@ write.table(file = "data/qq_vsperm.pheno",
             gwas.out %>% select(fid, iid, vsperm),
             col.names = F, row.names = F, quote = F,
             sep = "\t")
-# write.table(file = "data/qq_lsperm.pheno",
-#             gwas.out %>% select(fid, iid, lsperm),
-#             col.names = F, row.names = F, quote = F,
-#             sep = "\t")
+write.table(file = "data/qq_lsperm.pheno",
+            gwas.out %>% select(fid, iid, lsperm),
+            col.names = F, row.names = F, quote = F,
+            sep = "\t")
   
-
-#TODO: try using plink's GRM again but with maf 0.05 ...
-#TODO: why doesnt gcta's grm work?!
 
   #read grm
   
@@ -131,12 +130,21 @@ preblup = preblup %>%
   select(gc_id, pheno_id, loc = loc.year, 
   lsperm = l.Sperm, weight = m.Body, vsperm = v.Sperm,
   tsperm = t.Sperm) %>% 
-  mutate(
+#   #scale
+#   mutate(
+#          locid = blup_rename(loc),
+#          lsperm = round(scale(lsperm)[,1],4),
+#          weight = round(scale(weight)[,1],4),
+#          vsperm = round(scale(vsperm)[,1],4),
+#          tsperm = round(scale(tsperm)[,1],4)
+#          )
+  #do not scale
+    mutate(
          locid = blup_rename(loc),
-         lsperm = round(scale(lsperm)[,1],4),
-         weight = round(scale(weight)[,1],4),
-         vsperm = round(scale(vsperm)[,1],4),
-         tsperm = round(scale(tsperm)[,1],4)
+         lsperm = round(lsperm,4),
+         weight = round(weight,4),
+         vsperm = round(vsperm,4),
+         tsperm = round(tsperm,4)
          )
          
   preblup[is.na(preblup)] = -999
