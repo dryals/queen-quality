@@ -28,5 +28,5 @@ covmat.txt
 OPTION missing -999
 OPTION sol se
 OPTION conv_crit 1e-10
-OPTION EM-REML 20
+OPTION EM-REML 5
 #ulimit -s unlimited
