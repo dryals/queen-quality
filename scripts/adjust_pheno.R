@@ -10,8 +10,8 @@ pheno = read.csv("data/cleaned_pheno.csv")
 
                 
 #read plink PCA
-  #pca.geno = read.delim("/scratch/negishi/dryals/queen-quality/plink/samples-gwas.eigenvec",
-  pca.geno = read.delim("data/samples-pca.eigenvec",
+  pca.geno = read.delim("/scratch/negishi/dryals/queen-quality/plink/samples-gwas.eigenvec",
+  #pca.geno = read.delim("data/samples-pca.eigenvec",
                        header = F, sep = "")[,c(1, 3:5)]
     colnames(pca.geno) = c("gc_id", "PC1", "PC2", "PC3")
 
