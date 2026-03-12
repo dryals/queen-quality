@@ -5,12 +5,14 @@ NUMBER_OF_TRAITS
 NUMBER_OF_EFFECTS
 2
 OBSERVATION(S)
-4 3 #weight, lsperm
+6 5 #weight, lsperm
 WEIGHT(S)
 
 EFFECTS:
-1 1 890 cross #queen_id
+1 1 907 cross #queen_id
 2 2 42 cross #location
+3 3 0 cov #PC1
+4 4 0 cov #PC2
 RANDOM_RESIDUAL VALUES
 200 50
 50 500

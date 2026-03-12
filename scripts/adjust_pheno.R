@@ -14,6 +14,9 @@ pheno = read.csv("data/cleaned_pheno.csv")
   #pca.geno = read.delim("data/samples-pca.eigenvec",
                        header = F, sep = "")[,c(1, 3:5)]
     colnames(pca.geno) = c("gc_id", "PC1", "PC2", "PC3")
+    
+    
+#TODO: read admix components 
 
 #prepare gwas  
 gwas = pheno %>% 
@@ -124,10 +127,12 @@ write.table(file = "data/qq_lsperm.pheno",
 
   #ensure same individuals in same order
 preblup = data.frame(gc_id = colnames(G.p)) %>%
-  left_join(pheno)
+  left_join(pheno) %>%
+  #join pc's 
+  left_join(gwas %>% select(gc_id, PC1, PC2))
   
 preblup = preblup %>% 
-  select(gc_id, pheno_id, loc = loc.year, 
+  select(gc_id, pheno_id, loc = loc.year, PC1, PC2, 
   lsperm = l.Sperm, weight = m.Body, vsperm = v.Sperm,
   tsperm = t.Sperm) %>% 
 #   #scale
@@ -141,6 +146,8 @@ preblup = preblup %>%
   #do not scale
     mutate(
          locid = blup_rename(loc),
+         PC1 = round(PC1, 4),
+         PC2 = round(PC2,4),
          lsperm = round(lsperm / 1e5 ,4),
          weight = round(weight,4),
          vsperm = round(vsperm,4),
@@ -192,7 +199,7 @@ preblup = preblup %>%
 
     blup = blup %>%
     mutate(iid = 1:nrow(blup)) %>%
-    select(iid, locid, lsperm, weight, vsperm, tsperm, loc, gc_id, pheno_id)
+    select(iid, locid, PC1, PC2, lsperm, weight, vsperm, tsperm, loc, gc_id, pheno_id)
   
   write.table(blup, "blup/pheno.txt", 
               col.names = F, row.names = F, quote = F)
