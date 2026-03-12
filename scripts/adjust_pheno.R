@@ -2,6 +2,7 @@ library(dplyr)
 library(readxl)
 library(lubridate)
 library(Matrix)
+ library(matrixcalc)
 
 select=dplyr::select
 
@@ -16,26 +17,47 @@ pheno = read.csv("data/cleaned_pheno.csv")
     colnames(pca.geno) = c("gc_id", "PC1", "PC2", "PC3")
     
     
-#TODO: read admix components 
+# #read admix components 
+#     #read admix data
+#     
+#     admix = cbind(read.delim("/scratch/negishi/dryals/queen-quality/plink/finaladmix.fam", header = F, sep = "")[,1],
+#                   read.delim("/scratch/negishi/dryals/queen-quality/admix/supervised/finaladmix.4.Q", header = F, sep = "")
+#                   )
+#       colnames(admix)[1]="gc_id"
+#       
+#     reffam = read.delim("references/refData.txt")
+#     
+#     #verify lineage identity
+#     lins = admix %>% left_join(reffam %>% select(gc_id = SRR, lineage)) %>% 
+#       filter(grepl ("SRR", gc_id)) %>%
+#       pivot_longer(starts_with("V")) %>%
+#       group_by(name, lineage) %>%
+#       mutate(m = mean(value)) %>% ungroup %>% 
+#       group_by(name) %>% arrange(desc(m)) %>% slice(1) %>% select(lineage, name)
+#     
+#     #rename
+#     admix = admix %>% rename(A = V4, M = V1, C = V2, O = V3) %>% 
+#       left_join(pheno %>% select(gc_id, loc.year))
+    
 
 #prepare gwas  
 gwas = pheno %>% 
   filter(gc_id %in% pca.geno$gc_id) %>% 
-  left_join(pca.geno %>% select(gc_id, PC1, PC2, PC3), by = 'gc_id')
+  left_join(pca.geno %>% select(gc_id, PC1, PC2, PC3), by = 'gc_id') #%>%
+  #left_join(admix %>% select(gc_id, A, M, C, O), by = 'gc_id')
 
 #sapply(gwas, function(x){sum(is.na(x))})
 
-#summary(lm(m.Body ~ loc.year + PC1 + PC2, data = gwas))
 #summary(lm(v.Sperm ~ loc.year + PC1 + PC2, data = gwas))
 
 
-gwas$adj.m.Body = lm(m.Body ~ loc.year + PC1 + PC2, data = gwas)$residuals %>% 
+gwas$adj.m.Body = lm(m.Body ~ loc.year + PC1 + PC2 + PC3, data = gwas)$residuals %>% 
   round(4)
-gwas$adj.v.Sperm = lm(v.Sperm ~ loc.year + PC1 + PC2, data = gwas)$residuals %>% 
+gwas$adj.v.Sperm = lm(v.Sperm ~ loc.year + PC1 + PC2 + PC3, data = gwas)$residuals %>% 
   round(4)
   #residuals are not normally distributed!
   
-gwas$adj.l.Sperm = lm(l.Sperm ~ loc.year + PC1 + PC2, data = gwas)$residuals %>% 
+gwas$adj.l.Sperm = lm(l.Sperm ~ loc.year + PC1 + PC2 + PC3, data = gwas)$residuals %>% 
   round(4)
   
 
@@ -62,13 +84,45 @@ write.table(file = "data/qq_lsperm.pheno",
 
   #read grm
   
-  G.p = read.delim("/scratch/negishi/dryals/queen-quality/plink/samples-gs2.rel", 
+  G.p = read.delim("/scratch/negishi/dryals/queen-quality/plink/samples-gs.rel", 
   sep = "", header = F) %>% as.matrix()
   
-  G.p.id = read.delim("/scratch/negishi/dryals/queen-quality/plink/samples-gs2.rel.id", 
+  G.p.id = read.delim("/scratch/negishi/dryals/queen-quality/plink/samples-gs.rel.id", 
   sep = "", header = T)
   
   colnames(G.p) = rownames(G.p) = G.p.id[,1]
+  
+  #force positive definite
+  make.positive.definite <- function(M)
+    {
+      tol=1e-6
+      eig <- eigen(M, symmetric=TRUE)
+      rtol <- tol * eig$values[1]
+      if(min(eig$values) < rtol)
+      {
+        vals <- eig$values
+        vals[vals < rtol] <- rtol
+        srev <- eig$vectors %*% (vals * t(eig$vectors))
+        dimnames(srev) <- dimnames(M)
+        return(srev)
+      } else
+      {
+        return(M)
+      }
+    }
+    
+    G.p.tmp = make.positive.definite(G.p)
+    G.p.tmp = round(G.p.tmp, 4)
+    
+    #is.positive.definite(G.p.tmp)
+    
+    #overwrite
+    G.p = G.p.tmp
+    
+  #remove high diags
+  remove = colnames(G.p)[diag(G.p) > 1.8]
+  
+
 # #script from GCTA website
 #         ReadGRMBin=function(prefix, AllN=F, size=4){
 #             sum_i=function(i){
@@ -111,8 +165,7 @@ write.table(file = "data/qq_lsperm.pheno",
 #         mean(abs(diag(G) - diag(G.p)))
         
 
-    #remove high diags
-    remove = colnames(G.p)[diag(G.p) > 1.7]
+
 
   
 #prepare files for BLUP
@@ -129,10 +182,10 @@ write.table(file = "data/qq_lsperm.pheno",
 preblup = data.frame(gc_id = colnames(G.p)) %>%
   left_join(pheno) %>%
   #join pc's 
-  left_join(gwas %>% select(gc_id, PC1, PC2))
+  left_join(gwas %>% select(gc_id, PC1, PC2, PC3))
   
 preblup = preblup %>% 
-  select(gc_id, pheno_id, loc = loc.year, PC1, PC2, 
+  select(gc_id, pheno_id, loc = loc.year, PC1, PC2, PC3,
   lsperm = l.Sperm, weight = m.Body, vsperm = v.Sperm,
   tsperm = t.Sperm) %>% 
 #   #scale
@@ -200,7 +253,7 @@ preblup = preblup %>%
 
     blup = blup %>%
     mutate(iid = 1:nrow(blup)) %>%
-    select(iid, locid, PC1, PC2, lsperm, weight, vsperm, tsperm, loc, gc_id, pheno_id)
+    select(iid, locid, PC1, PC2, PC3, lsperm, weight, vsperm, tsperm, loc, gc_id, pheno_id)
   
   write.table(blup, "blup/pheno.txt", 
               col.names = F, row.names = F, quote = F)

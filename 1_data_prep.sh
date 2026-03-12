@@ -360,8 +360,8 @@ echo "-----------------------"
     module load biocontainers plink2
     
     plink2 --bfile samples-filter --keep ~/ryals/queen-quality/data/phenotyped.plink \
-        -maf 0.01 \
-        -make-rel square --out samples-gs2
+        -maf 0.05 \
+        -make-rel square --out samples-gs
 
     module purge
     module load biocontainers bcftools vcftools plink r
