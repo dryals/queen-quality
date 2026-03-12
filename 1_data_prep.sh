@@ -38,17 +38,15 @@ echo "-----------------------"
 #     #filter and prepare vcf  
 #     cd $CLUSTER_SCRATCH/queen-quality
 
+
 #TODO: Luiz Suggestions
     #filtering: 
-        #HWE 10^-8
-        #check fixed eff residuals
-        #check viability distr
         #fixed effect of season?
     #GWAS: 
         #fit ancestry (test against PCA)
-        #no LD pruning, cluping
+        #clumping
         #var exp from snp eff
-        #independent chromosomal segments
+        #independent chromosomal segments for MHT
     #GS: 
         #dont standardize phenos
         #better estimates for reml

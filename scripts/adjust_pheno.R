@@ -141,13 +141,17 @@ preblup = preblup %>%
   #do not scale
     mutate(
          locid = blup_rename(loc),
-         lsperm = round(lsperm,4),
+         lsperm = round(lsperm / 1e5 ,4),
          weight = round(weight,4),
          vsperm = round(vsperm,4),
          tsperm = round(tsperm,4)
          )
          
   preblup[is.na(preblup)] = -999
+  
+  
+  
+  
 
 #error checking
 #   sapply(preblup, function(x){sum(is.na(x))})
