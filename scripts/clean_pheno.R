@@ -129,37 +129,9 @@ pheno = pheno %>% left_join(loc.trans, by = "Location")
       
       #TODO: problems with thorax and head, ask bradley
       
-    #collapse some small levels
-      #manually fix northern california 2019
-      pheno.num$loc.fix[pheno.num$loc.fix == "NCA" &
-                          pheno.num$year == 2019] = "CA"
-      
-      #loc.years with small count become USA.year
-      small = pheno.num %>% group_by(loc.fix, year) %>% 
-        summarise(n = n()) %>% 
-        filter(n<5) %>% 
-        ungroup() 
-      
-      
-      
-      for(i in 1:nrow(small)){
-        pheno.num$loc.fix[pheno.num$loc.fix == small$loc.fix[i] &
-                          pheno.num$year == small$year[i]] = "USA"
-      }
     #create loc.year effect
     pheno.num$loc.year = paste0(pheno.num$loc.fix, pheno.num$year)
     
-    #collapse remaining small USA levels
-    small.usa = pheno.num %>% filter(loc.fix == "USA") %>% 
-      group_by(loc.year) %>% 
-      summarise(n = n()) %>% 
-      filter(n<5) %>% 
-      ungroup
-    
-    pheno.num$loc.year[pheno.num$loc.year %in% small.usa$loc.year] = "USA20XX"
-    
-    #table(pheno.num$loc.year)
-
     
     #write cleaned phenotypes
     write.csv(pheno.num, "data/cleaned_pheno.csv",

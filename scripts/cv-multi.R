@@ -1,6 +1,6 @@
 #take a command line argument
 args = commandArgs(trailingOnly=TRUE)
-#args = "wl"
+#args = "wv"
 
 library(dplyr)
 library(tidyr)
@@ -40,7 +40,7 @@ fixed.eff = fixed.eff %>% mutate(se = as.numeric(se),
   
 #load sample info from pheno file
 pheno = read.delim("blup/pheno.txt", header = F, sep = " ")
-  colnames(pheno) = c("iid", "locid", trait.key$tn, "loc", "gc_id", "pheno_id" )
+  colnames(pheno) = c("iid", "locid", "PC1","PC2","PC3", trait.key$tn, "loc", "gc_id", "pheno_id" )
 
 
 #   #grab colnames of sampleids and locations

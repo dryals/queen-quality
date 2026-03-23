@@ -16,6 +16,36 @@ pheno = read.csv("data/cleaned_pheno.csv")
                        header = F, sep = "")[,c(1, 3:5)]
     colnames(pca.geno) = c("gc_id", "PC1", "PC2", "PC3")
     
+#TODO: read phenotyped individuals then clenaup siteyear 
+
+    #collapse some small levels
+      #manually fix northern california 2019
+      pheno.num$loc.fix[pheno.num$loc.fix == "NCA" &
+                          pheno.num$year == 2019] = "CA"
+      
+      #loc.years with small count become USA.year
+      small = pheno.num %>% group_by(loc.fix, year) %>% 
+        summarise(n = n()) %>% 
+        filter(n<5) %>% 
+        ungroup() 
+      
+      
+      
+      for(i in 1:nrow(small)){
+        pheno.num$loc.fix[pheno.num$loc.fix == small$loc.fix[i] &
+                          pheno.num$year == small$year[i]] = "USA"
+      }
+
+    
+    #collapse remaining small USA levels
+    small.usa = pheno.num %>% filter(loc.fix == "USA") %>% 
+      group_by(loc.year) %>% 
+      summarise(n = n()) %>% 
+      filter(n<5) %>% 
+      ungroup
+    
+    pheno.num$loc.year[pheno.num$loc.year %in% small.usa$loc.year] = "USA20XX"
+    
     
 # #read admix components 
 #     #read admix data
