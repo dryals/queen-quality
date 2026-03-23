@@ -102,10 +102,10 @@ echo "-----------------------"
 #     awk '{print $2}' samples-filter.bim | tr ":" "\t" > samples-filter.sites
 #     awk '{print $1}' samples-filter.fam > samples-filter.names
 # 
-# echo "-----------------------"
-# echo "preparing phenotypic data in R..."
-#     cd ~/ryals/queen-quality
-#     R --vanilla --no-save --no-echo --silent < scripts/clean_pheno.R     
+echo "-----------------------"
+echo "preparing phenotypic data in R..."
+    cd ~/ryals/queen-quality
+    R --vanilla --no-save --no-echo --silent < scripts/clean_pheno.R     
 
 #further sample QC
 # echo "-----------------------"

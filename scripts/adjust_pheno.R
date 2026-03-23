@@ -9,6 +9,9 @@ select=dplyr::select
 #read phenotypic data
 pheno = read.csv("data/cleaned_pheno.csv")
 
+phenotyped = read.csv("data/phenotyped.gcnames", header = F)
+  colnames(phenotyped) = "gc_id"
+
                 
 #read plink PCA
   pca.geno = read.delim("/scratch/negishi/dryals/queen-quality/plink/samples-gwas.eigenvec",
@@ -18,33 +21,44 @@ pheno = read.csv("data/cleaned_pheno.csv")
     
 #TODO: read phenotyped individuals then clenaup siteyear 
 
-    #collapse some small levels
-      #manually fix northern california 2019
-      pheno.num$loc.fix[pheno.num$loc.fix == "NCA" &
-                          pheno.num$year == 2019] = "CA"
+pheno.filter = pheno %>%
+filter(gc_id %in% phenotyped$gc_id)
+
+    #collapse small levels, preserving year over location
       
+      table(pheno.filter$loc.year)
+      
+      #don't split CA into N/S
+      pheno.filter$loc.fix[pheno.filter$loc.fix %in% c("NCA", "SCA", "CA")] = "CA"
+      
+    
+     
       #loc.years with small count become USA.year
-      small = pheno.num %>% group_by(loc.fix, year) %>% 
+      small = pheno.filter %>% group_by(loc.fix, year) %>% 
         summarise(n = n()) %>% 
         filter(n<5) %>% 
         ungroup() 
       
-      
-      
+      #consider site-years with small n as "USA"
       for(i in 1:nrow(small)){
-        pheno.num$loc.fix[pheno.num$loc.fix == small$loc.fix[i] &
-                          pheno.num$year == small$year[i]] = "USA"
+        pheno.filter$loc.fix[pheno.filter$loc.fix == small$loc.fix[i] &
+                          pheno.filter$year == small$year[i]] = "USA"
       }
 
     
+    #overwrite loc.year
+    pheno.filter$loc.year = paste0(pheno.filter$loc.fix, pheno.filter$year)
+    
     #collapse remaining small USA levels
-    small.usa = pheno.num %>% filter(loc.fix == "USA") %>% 
+    small.usa = pheno.filter %>% filter(loc.fix == "USA") %>% 
       group_by(loc.year) %>% 
       summarise(n = n()) %>% 
       filter(n<5) %>% 
       ungroup
     
-    pheno.num$loc.year[pheno.num$loc.year %in% small.usa$loc.year] = "USA20XX"
+    pheno.filter$loc.year[pheno.filter$loc.year %in% small.usa$loc.year] = "USA20XX"
+    
+    table(pheno.filter$loc.year)
     
     
 # #read admix components 
@@ -71,8 +85,7 @@ pheno = read.csv("data/cleaned_pheno.csv")
     
 
 #prepare gwas  
-gwas = pheno %>% 
-  filter(gc_id %in% pca.geno$gc_id) %>% 
+gwas = pheno.filter %>% 
   left_join(pca.geno %>% select(gc_id, PC1, PC2, PC3), by = 'gc_id') #%>%
   #left_join(admix %>% select(gc_id, A, M, C, O), by = 'gc_id')
 
@@ -149,11 +162,6 @@ write.table(file = "data/qq_lsperm.pheno",
     #overwrite
     G.p = G.p.tmp
     
-  #remove high diags
-  remove = colnames(G.p)[diag(G.p) > 2]
-  print(remove)
-  
-
 # #script from GCTA website
 #         ReadGRMBin=function(prefix, AllN=F, size=4){
 #             sum_i=function(i){
@@ -211,7 +219,7 @@ write.table(file = "data/qq_lsperm.pheno",
 
   #ensure same individuals in same order
 preblup = data.frame(gc_id = colnames(G.p)) %>%
-  left_join(pheno) %>%
+  left_join(pheno.filter) %>%
   #join pc's 
   left_join(gwas %>% select(gc_id, PC1, PC2, PC3))
   
@@ -279,9 +287,8 @@ preblup = preblup %>%
 #     print(remove)
 #     
 #   #output for pheno
-  blup = preblup %>% 
-    filter(!gc_id %in% remove)
-
+  blup = preblup
+  
     blup = blup %>%
     mutate(iid = 1:nrow(blup)) %>%
     select(iid, locid, PC1, PC2, PC3, lsperm, weight, vsperm, tsperm, loc, gc_id, pheno_id)
