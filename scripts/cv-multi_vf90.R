@@ -56,6 +56,41 @@ pheno = read.delim("blup/pheno.txt", header = F, sep = " ")
   masked$CV = sample(c(1:5), nrow(pheno), replace = T)
   
   
+#TODO: using validationf90
+
+  #mask
+  CVnum = 1
+  pheno.cv = masked
+    #mask phenotype columns
+    N = dim(pheno.cv)[2]
+    pheno.cv[pheno.cv$CV == CVnum, trait.key$tn] = -999
+    
+  #output for pheno
+  pheno.out = pheno.cv %>% 
+    select(-CV)
+  
+  #write masked phenotypes
+  write.table(pheno.out, "blup/pheno-cv.txt", 
+              col.names = F, row.names = F, quote = F)
+              
+  #write masked ids
+    write.table(pheno.cv$iid[pheno.cv$CV == CVnum], "blup/mask.ids", 
+              col.names = F, row.names = F, quote = F)
+              
+      
+      
+      
+      
+      
+  #run BLUP script
+  cmd = paste("scripts/cv-multi.sh", targetParam, CVnum)
+  system(cmd)
+
+
+    
+    
+  
+  
   #table(masked$CV)
 
 #create output object
@@ -65,22 +100,11 @@ for(CVnum in 1:5){
   
   #CVnum=1
   
-  #mask
-  pheno.cv = masked
-    #mask phenotype columns
-    N = dim(pheno.cv)[2]
-    pheno.cv[pheno.cv$CV == CVnum, trait.key$tn] = -999
 
-  #output for pheno
-  pheno.out = pheno.cv %>% 
-    select(-CV)
+
+
   
-  write.table(pheno.out, "blup/pheno-cv.txt", 
-              col.names = F, row.names = F, quote = F)
-  
-  #RUN BLUP script
-  cmd = paste("scripts/cv-multi.sh", targetParam, CVnum)
-  system(cmd)
+
   
   
   #pull solutions: multi-trait
