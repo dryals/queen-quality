@@ -17,6 +17,8 @@ targetParam = paste0(args, "-cv.par1")
 # print(getwd())
 #wd is queen quality!
 
+#TODO: edit for multiple fixed effs and new pheno file!
+
 
 # fixed.key = data.frame(effect = c(2:4) %>% as.character(),
 #                        name = c("apnumid", "start", "requeen"))
@@ -34,7 +36,7 @@ fixed.eff = read.delim(paste0("data/sol-", args[1], ".txt"), sep = "", header = 
 colnames(fixed.eff) = c("trait", "effect", "level" ,"solution", "se")
 fixed.eff = fixed.eff %>% mutate(se = as.numeric(se),
                                  solution = as.numeric(solution)) %>% 
-  filter(effect == 2)
+  filter(effect != 1)
   
 #load sample info from pheno file
 pheno = read.delim("blup/pheno.txt", header = F, sep = " ")

@@ -48,12 +48,10 @@ echo "-----------------------"
         #var exp from snp eff
         #independent chromosomal segments for MHT
     #GS: 
-        #dont standardize phenos
-        #better estimates for reml
-        #add small value to diagonal, check PD
         #check mean diag and off-diag values
-        #EM-reml x 20
-    #analysis: 
+    #CV:
+        #try validationf90?
+        #update so it runs w/ multiple fixed effs
         #BV trend over years...
         
 
@@ -353,19 +351,19 @@ echo "-----------------------"
 #     plink --bfile samples-filter --pca 500 \
 #         --threads $SLURM_NTASKS --out samples-gwas --silent
 #      
-    echo "GRM..."
-    #is plink the best? KING? going with basic make-rel for now
-        #TODO: consider gcta GRM after all
-    module purge
-    module load biocontainers plink2
-    
-    plink2 --bfile samples-filter --keep ~/ryals/queen-quality/data/phenotyped.plink \
-        -maf 0.05 \
-        -make-rel square --out samples-gs
-
-    module purge
-    module load biocontainers bcftools vcftools plink r
-    
+#     echo "GRM..."
+#     #is plink the best? KING? going with basic make-rel for now
+#         #TODO: consider gcta GRM after all
+#     module purge
+#     module load biocontainers plink2
+#     
+#     plink2 --bfile samples-filter --keep ~/ryals/queen-quality/data/phenotyped.plink \
+#         -maf 0.05 \
+#         -make-rel square --out samples-gs
+# 
+#     module purge
+#     module load biocontainers bcftools vcftools plink r
+#     
 #     
 #     echo "GRM in GCTA..."
 #     cd ~/ryals/queen-quality/data
@@ -430,7 +428,7 @@ echo "running GWAS..."
 # echo "-----------------------"  
 # echo "running BLUP..."
 # 
-    par=wl
+    par=wv
 
     #TODO: single-trait blups
     cd ~/ryals/queen-quality/blup
