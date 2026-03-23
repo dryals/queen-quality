@@ -10,7 +10,7 @@ WEIGHT(S)
 
 EFFECTS:
 1 1 908 cross #queen_id
-2 2 42 cross #location
+2 2 36 cross #location
 3 3 1 cov #PC1
 4 4 1 cov #PC2
 5 5 1 cov #PC3

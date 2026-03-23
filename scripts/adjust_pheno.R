@@ -26,7 +26,7 @@ filter(gc_id %in% phenotyped$gc_id)
 
     #collapse small levels, preserving year over location
       
-      table(pheno.filter$loc.year)
+      #table(pheno.filter$loc.year)
       
       #don't split CA into N/S
       pheno.filter$loc.fix[pheno.filter$loc.fix %in% c("NCA", "SCA", "CA")] = "CA"
@@ -58,7 +58,7 @@ filter(gc_id %in% phenotyped$gc_id)
     
     pheno.filter$loc.year[pheno.filter$loc.year %in% small.usa$loc.year] = "USA20XX"
     
-    table(pheno.filter$loc.year)
+    #table(pheno.filter$loc.year)
     
     
 # #read admix components 
@@ -314,6 +314,7 @@ preblup = preblup %>%
 
   write.table(covmat, "blup/covmat.txt", row.names = F, col.names = F, sep = " ")
   
+print("n = ")
 max(covmat[,2])
   
 sapply(blup, max)
