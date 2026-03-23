@@ -42,12 +42,6 @@ fixed.eff = fixed.eff %>% mutate(se = as.numeric(se),
 pheno = read.delim("blup/pheno.txt", header = F, sep = " ")
   colnames(pheno) = c("iid", "locid", "PC1","PC2","PC3", trait.key$tn, "loc", "gc_id", "pheno_id" )
 
-
-#   #grab colnames of sampleids and locations
-#   samp.n = which(grepl("QC", pheno))
-#   loc.n = which(grepl("HI", pheno))
-  
-
 #create list for CV
   #only mask individuals with full pheno data
   masked = pheno
@@ -100,31 +94,61 @@ for(CVnum in 1:5){
                 by = 'level') %>% 
       left_join(trait.key.used, by = "trait") %>%
       filter(CV == CVnum) %>% 
-      select(-effect, -level) %>% 
-      #add fixed effect of location
-      left_join( fixed.eff %>% 
-        select(locid = level, loceff = solution, trait) %>%
-        mutate(locid = as.numeric(locid)), by = c('locid', 'trait')) %>%
-      mutate(pheno.est = solution)
+      select(gc_id, pheno.est = solution, tn)
+      
+#       %>% 
+#       #add fixed effect of location
+#       left_join( fixed.eff %>% 
+#         select(locid = level, loceff = solution, trait) %>%
+#         mutate(locid = as.numeric(locid)), by = c('locid', 'trait')) %>%
+#       mutate(pheno.est = solution)
     
     #compare against real phenos
     
-    #TODO: which calculation is correct for cv? Y-X=Z or Y=X+Z
+    #pull real phenos and adjust by all fixed effects
     
     realpheno = masked[masked$CV == CVnum, c("gc_id", args.split)] %>%
-      pivot_longer(cols = all_of(args.split), names_to = "tn", values_to = "pheno.real")
+      pivot_longer(cols = all_of(args.split), names_to = "tn", values_to = "pheno.raw") %>%
+      left_join(masked %>% select(gc_id, PC1, PC2, PC3, locid))
+      
+      realpheno$pheno.adj = NA
+      
+      #TODO: hardcoded, fix later
+      realpheno$trait = ifelse(realpheno$tn == "w", 1, 2)
+      
+      for(i in 1:nrow(realpheno)){
+        #location
+        X = fixed.eff$solution[fixed.eff$trait == realpheno$trait[i] &
+                               fixed.eff$effect == 2 &
+                               fixed.eff$level == realpheno$locid[i]]
+        #PC1
+        X = X + (fixed.eff$solution[fixed.eff$effect == 3 &
+                                   fixed.eff$level == 1 &
+                                   fixed.eff$trait == realpheno$trait[i] ] *
+                 realpheno$PC1[i])
+        #PC2
+        X = X + (fixed.eff$solution[fixed.eff$effect == 4 &
+                                   fixed.eff$level == 1 &
+                                   fixed.eff$trait == realpheno$trait[i] ] *
+                 realpheno$PC2[i])
+        #PC3
+        X = X + (fixed.eff$solution[fixed.eff$effect == 5 &
+                                   fixed.eff$level == 1 &
+                                   fixed.eff$trait == realpheno$trait[i] ] *
+                 realpheno$PC3[i])
+                 
+      realpheno$pheno.adj[i] = realpheno$pheno.raw[i] - X
+
+      }
 
     sol.tmp = sol.tmp %>% 
-      left_join(realpheno, by = c('gc_id', 'tn')) %>% 
-      mutate(pheno.real = pheno.real - loceff) 
-      #mutate(pheno.est = pheno.est + loceff)
+      left_join(realpheno %>% select(gc_id, tn, pheno.adj), by = c('gc_id', 'tn'))
     
     #correlation
     cv = sol.tmp %>% 
-      select(gc_id, tn, pheno.est, pheno.real) %>% 
       group_by(tn) %>%
-      summarise(cor = cor(pheno.est, pheno.real),
-                slope = cor * sd(pheno.real) / sd(pheno.est))
+      summarise(cor = cor(pheno.est, pheno.adj),
+                slope = cor * sd(pheno.adj) / sd(pheno.est))
     
     CVout[[CVnum]] = cv
   

@@ -481,12 +481,6 @@ echo "-----------------------"
     #run cv script
     Rscript --vanilla scripts/cv-multi.R $par
     
-    #run blup again
-    ./blupf90+ ${par}-cv.par1
-    cp solutions sol-${par}_partial
-    
-    #run validationf90
-    ./validationf90 ${par}-validate.par1
     
 #  
 #  
