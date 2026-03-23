@@ -346,7 +346,7 @@ echo "preparing phenotypic data in R..."
 # 
 # echo "-----------------------"
 # #PCA and GRM
-    cd $CLUSTER_SCRATCH/queen-quality/plink
+#     cd $CLUSTER_SCRATCH/queen-quality/plink
 #     echo "PCA..."
 #     plink --bfile samples-filter --pca 500 \
 #         --threads $SLURM_NTASKS --out samples-gwas --silent
@@ -409,12 +409,12 @@ echo "running GWAS..."
             --autosome-num 16 \
             --out qq_weight --thread-num $SLURM_NTASKS
             
-        $gcta --mlma --bfile ../plink/samples-filter --grm qq \
-            --pheno ~/ryals/queen-quality/data/qq_lsperm.pheno \
-            --autosome-num 16 \
-            --out qq_lsperm --thread-num $SLURM_NTASKS
-            
-
+#         $gcta --mlma --bfile ../plink/samples-filter --grm qq \
+#             --pheno ~/ryals/queen-quality/data/qq_lsperm.pheno \
+#             --autosome-num 16 \
+#             --out qq_lsperm --thread-num $SLURM_NTASKS
+#             
+# 
 # #TODO: estimate variance explained by sig QTL
 #     #hit = 3 6923973
 #     cd $CLUSTER_SCRATCH/queen-quality/plink
@@ -425,36 +425,36 @@ echo "running GWAS..."
 # 
 # 
 # 
-echo "-----------------------"  
-echo "running BLUP..."
-
-    par=wv
-
-    #TODO: single-trait blups
-    cd ~/ryals/queen-quality/blup
-        #create links
-        if [ ! -f  blupf90+ ]; then
-            echo "    creating links..."
-            ln -S blupf90+ /depot/bharpur/apps/blupf90/blupf90+
-            ln -S airemlf90 /depot/bharpur/apps/blupf90/airemlf90 
-            ln -S validationf90 /depot/bharpur/apps/blupf90/validationf90
-        fi
-
-    cd ~/ryals/queen-quality
-    cp params/${par}.par0 blup
-    cd blup
-    ./airemlf90 ${par}.par0
-    
+# echo "-----------------------"  
+# echo "running BLUP..."
+# 
+#     par=wv
+# 
+#     #TODO: single-trait blups
+#     cd ~/ryals/queen-quality/blup
+#         #create links
+#         if [ ! -f  blupf90+ ]; then
+#             echo "    creating links..."
+#             ln -S blupf90+ /depot/bharpur/apps/blupf90/blupf90+
+#             ln -S airemlf90 /depot/bharpur/apps/blupf90/airemlf90 
+#             ln -S validationf90 /depot/bharpur/apps/blupf90/validationf90
+#         fi
+# 
+#     cd ~/ryals/queen-quality
+#     cp params/${par}.par0 blup
+#     cd blup
+#     ./airemlf90 ${par}.par0
+#     
 #     
 #     #TODO
 #     #read G and R matricies into blup.par2
 # #     sed -n 16,80p file1>patch
 # #     sed -i 18rpatch file2
 #     
-    cp ../params/${par}.par1 .
-    ./blupf90+ ${par}.par1
-    cp solutions ../data/sol-${par}.txt
-    cp solutions sol-${par}_whole
+#     cp ../params/${par}.par1 .
+#     ./blupf90+ ${par}.par1
+#     cp solutions ../data/sol-${par}.txt
+#     cp solutions sol-${par}_whole
 
 # echo "-----------------------"
 #     echo "  CV error: single-trait"
@@ -468,20 +468,20 @@ echo "running BLUP..."
 #     #run cv script
 #     Rscript --vanilla scripts/cv.R $par
 # 
-echo "-----------------------"
-    echo "  CV error: multi-trait"
-    
-    par=wv
- 
-     #create -cv version which uses pheno-cv.txt
-    cd ~/ryals/queen-quality
-    cp params/${par}.par1 blup/${par}-cv.par1
-    sed -i 's/pheno.txt/pheno-cv.txt/g' blup/${par}-cv.par1
-    
-    #run cv script
-    Rscript --vanilla scripts/cv-multi.R $par
-    
-    
+# echo "-----------------------"
+#     echo "  CV error: multi-trait"
+#     
+#     par=wv
+#  
+#      #create -cv version which uses pheno-cv.txt
+#     cd ~/ryals/queen-quality
+#     cp params/${par}.par1 blup/${par}-cv.par1
+#     sed -i 's/pheno.txt/pheno-cv.txt/g' blup/${par}-cv.par1
+#     
+#     #run cv script
+#     Rscript --vanilla scripts/cv-multi.R $par
+#     
+#     
 #  
 #  
 echo "-----------------------"
