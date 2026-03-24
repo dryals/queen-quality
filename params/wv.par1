@@ -30,4 +30,5 @@ OPTION missing -999
 OPTION sol se
 OPTION conv_crit 1e-10
 OPTION EM-REML 5
+OPTION store_accuracy 1
 #ulimit -s unlimited

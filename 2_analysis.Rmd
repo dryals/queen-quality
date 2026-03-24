@@ -147,24 +147,16 @@ pheno = read.csv("data/cleaned_pheno.csv")
   ggplot(fstat, aes(x = fstat, y = v.Sperm)) + 
     geom_point(alpha = 0.5)
   
-  
-   
-    
 
-#GWAS  
+#GWAS 
+  
+  #TODO: adjust by independent chr segments, not bonf
+  
   #viability
   v.mlma = read.delim("data/qq_vsperm.mlma", sep = "")
   v.mlma$padj = p.adjust(v.mlma$p, method = "bonferroni", n = nrow(v.mlma))
   v.mlma$logp = log(v.mlma$padj, base = 10)* -1
   v.mlma$lograwp = log(v.mlma$p, base = 10) * -1
-
-  # out = v.mlma %>% filter(padj < 0.05) %>% arrange(padj) %>%
-  #   select(Chr, bp, A1, A2, p, padj)
-  # 
-  # write.csv(out, file = "data/viability_gwashits.csv", 
-  #           row.names = F, quote = F)
-  
-  #hist(v.mlma$p)
   
   ggplot(v.mlma, aes(x = bp, y = lograwp)) + 
     geom_point() + 
@@ -183,7 +175,6 @@ pheno = read.csv("data/cleaned_pheno.csv")
   w.mlma$logp = log(w.mlma$padj, base = 10)* -1
   w.mlma$lograwp = log(w.mlma$p, base = 10) * -1
   
-  
   ggplot(w.mlma, aes(x = bp, y = lograwp)) + 
     geom_point() + 
     geom_hline(aes(yintercept = 
@@ -194,28 +185,9 @@ pheno = read.csv("data/cleaned_pheno.csv")
     labs(title = "Weight", y = "-log(p)") +
     scale_x_continuous(labels = function(x) format(x, scientific = TRUE))
   
-
-  # #total viable sperm
-  # l.mlma = read.delim("data/qq_vsperm.mlma", sep = "")
-  # l.mlma$padj = p.adjust(l.mlma$p, method = "bonferroni", n = nrow(l.mlma))
-  # l.mlma$logp = log(l.mlma$padj, base = 10)* -1
-  # l.mlma$lograwp = log(l.mlma$p, base = 10) * -1
-  # 
-  # 
-  # ggplot(l.mlma, aes(x = bp, y = lograwp)) + 
-  #   geom_point() + 
-  #   geom_hline(aes(yintercept = 
-  #                    (-1 * log(0.05 / nrow(v.mlma), base = 10))),
-  #                     #(-1 * log(0.05, base = 10))),
-  #          linetype = 2, col = 'red') +
-  #   facet_wrap(facets = vars(Chr), scales = "free_x") + 
-  #   labs(title = "7a. GWAS: Total Viable Sperm", y = "-log(p)") +
-  #   scale_x_continuous(labels = function(x) format(x, scientific = TRUE))
-  # 
-  
 #output top hits
-  all.mlma.l = list(l.mlma, w.mlma, v.mlma)
-  traits = c("l.Sperm", "m.Body", "v.Sperm")
+  all.mlma.l = list(l.mlma, w.mlma)
+  traits = c("l.Sperm", "m.Body")
   
   all.mlma = data.frame(Chr = NA, 
                         bp = NA, 
@@ -347,8 +319,8 @@ read results: quantitative
 pheno.blup = read.delim("data/pheno.txt",
                         header = F, sep = "")
 
-colnames(pheno.blup) = c("iid", "locid", "lsperm", "weight", "vsperm", "tsperm", 
-                         "loc", "gc_id", "pheno_id")
+colnames(pheno.blup) = c("iid", "locid", "PC1", "PC2", "PC3", "lsperm", "weight", "vsperm", "tsperm", 
+                         "locyear", "gc_id", "pheno_id")
 
 
 #pull solutions: 2-trait
@@ -362,8 +334,9 @@ colnames(pheno.blup) = c("iid", "locid", "lsperm", "weight", "vsperm", "tsperm",
     mutate(trait = recode(trait, `1` = "weight", `2` = "vsperm"))
   
   sol.long = sol.long %>% 
-    left_join(pheno.blup %>% select(level = iid, gc_id) %>% 
-                mutate(level = as.character(level)))
+    left_join(pheno.blup %>% select(level = iid, gc_id, locyear) %>% 
+                mutate(level = as.character(level))) %>% 
+    mutate(year = gsub(".*([0-9]{4})$", "\\1", locyear))
   
     sol.wide = sol.long %>%
     pivot_wider(values_from = c(se, bv), names_from = trait)
@@ -378,37 +351,87 @@ colnames(pheno.blup) = c("iid", "locid", "lsperm", "weight", "vsperm", "tsperm",
   ggplot(pbv, aes(x = weight, y = bv_weight)) + geom_point()
   ggplot(pbv, aes(x = vsperm, y = bv_vsperm)) + geom_point()
   
-#investigate strange points
-  #attach locations
-  pbv %>% left_join(pheno %>% select(id, loc.fix)) %>% 
-    mutate(ga = (loc.fix == "NCA")) %>% 
-    ggplot(aes(x = v.Sperm, y = bv_vsperm, color = loc.fix)) + geom_point()
+#plot against time
+  sol.time = sol.long %>% filter(locyear != "USA20XX") %>% 
+    mutate(year = as.numeric(year))
   
-  View(pbv)
+  ggplot(sol.time, aes(x = year, y = bv)) + 
+    geom_point() + 
+    geom_smooth(method = 'lm', se = F, color = 'blue', linetype = 1) +
+    facet_wrap(~trait)
+  
+
+  #model 
+  w.mod = lm(bv~ year, data = sol.time %>% filter(trait == "weight"))
+  v.mod = lm(bv~ year, data = sol.time %>% filter(trait == "vsperm"))
   
   
+#TODO: use BVs not phenos
 #estimate genetic gain per generation
-    #all in origional unit? no standardizing?
   
-addvar = 0.2
-BVacc = 0.65
-  #create a range of reasonable values for i
-  pheno.num = pheno$m.Body %>% as.numeric()
-  pheno.scale = pheno.num %>% scale()
-  hist(pheno.scale)
-  max_i = max(pheno.scale, na.rm = T)
-  intensity = seq(0, max_i, 0.1)
+params = data.frame(trait = c("weight", "vsperm"),
+                    acc = c(0.2, 0.2),
+                    sdG = c(sqrt(131), sqrt(109)),
+                    sdX = c(sd(sol.time$bv[sol.time$trait == "weight"]),
+                            sd(sol.time$bv[sol.time$trait == "vsperm"])))
+
+
+  #difference in standardized breeding value for selected individuals
+
+  sol.time.wide = sol.time %>% 
+    select(gc_id, year, trait, bv) %>% 
+    pivot_wider(names_from = "trait", values_from = "bv") %>% 
+    as.data.frame()
+
+  # pheno.z = pheno %>% 
+  #   mutate(weight = scale(m.Body)[,1],
+  #          vsperm = scale(v.Sperm)[,1]) %>% 
+  #   select(weight, vsperm) %>% 
+  #   filter(!is.na(weight), !is.na(vsperm))
   
-  gain = data.frame(i = intensity,
-                    gain = addvar * BVacc * intensity) %>% 
-    mutate(gain_mg = gain * sd(pheno.num, na.rm = T) )
+  prog = data.frame(prop = rep(c(0.5, 0.1, 0.01, 0.001),2),
+                         trait = c(rep("weight", 4), rep("vsperm",4)),
+                         intensity = NA,
+                         prog = NA)
   
-  plot(gain$i, gain$gain_mg)
-  max(gain$gain * sd(pheno.num, na.rm = T))
+  for(i in 1:nrow(intensity)){
+    #number of individuals for desired %
+    N = ceiling(nrow(sol.time.wide) * intensity$prop[i])
+    #average of top N phenos
+    prog$intensity[i] = mean(sort(sol.time.wide[,prog$trait[i]], 
+                                  decreasing = T)[1:N])
+    #progress in BV
+    prog$prog[i] = prog$intensity[i] *
+      params$sdG[params$trait == prog$trait[i]] *
+      params$acc[params$trait == prog$trait[i]] /
+      params$sdX[params$trait == prog$trait[i]]
+  }
   
-  mean(pheno.num, na.rm = T)
+  #points for theoretical trend
+  prog$a = NA
+    prog$a[prog$trait == "weight"] = predict(w.mod, data.frame(year = 2025))
+    prog$a[prog$trait == "vsperm"] = predict(v.mod, data.frame(year = 2025))
+    
+  prog$b = prog$a + prog$prog
+  
+  prog.plot = prog %>% 
+    select(prop, trait, a, b) %>% 
+    pivot_longer(cols = c("a", "b"), names_to = "point", values_to = "bv")
+  
+    prog.plot$year = ifelse(prog.plot$point == "b", 2026, 2025)
   
   
+    ggplot(sol.time, aes(x = year, y = bv)) + 
+    geom_point() + 
+    geom_smooth(method = 'lm', se = F, color = 'blue', linetype = 1) +
+    geom_line(data = prog.plot,
+              aes(x = year, y = bv, linetype = as.factor(prop)),
+              color = 'red') +
+    facet_wrap(~trait, scales = "free")
+  
+  
+
+
   
 # #plotting BVs
 #   p6a = ggplot(pbv, aes(x = weight, y = bv_weight, color = Location,
