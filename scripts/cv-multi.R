@@ -172,7 +172,7 @@ for(i in 2:5){
   CVdf = rbind(CVdf, x)
 }
 
-print(CVdf)
+write.csv(CVdf, file = "data/CV_summary.csv", row.names = F)
 
 print(CVdf %>% group_by(tn) %>% summarise(meancor = mean(cor)))
 

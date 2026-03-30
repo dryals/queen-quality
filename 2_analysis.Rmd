@@ -32,6 +32,22 @@ read in data and manipulate
 #read phenotypic data
 pheno = read.csv("data/cleaned_pheno.csv")
 
+#explore trends across time
+  # pheno.mod = pheno %>% 
+  #   filter(!is.na(m.Body), !is.na(v.Sperm))
+  # pheno.mod = pheno.mod %>% 
+  #   mutate(weight.resid = lm(m.Body ~ loc.fix, data = pheno.mod)$residuals,
+  #          vsperm.resid = lm(v.Sperm ~ loc.fix, data = pheno.mod)$residuals)
+  # 
+  # #phenotype over time?
+  # ggplot(pheno.mod, aes(x = year, y = weight.resid)) + 
+  #   geom_point() +
+  #   geom_smooth(method = 'lm', se = F)
+  # 
+  # ggplot(pheno.mod, aes(x = year, y = vsperm.resid)) + 
+  #   geom_point() +
+  #   geom_smooth(method = 'lm', se = F)
+
 #genotype PCA
   eig = read.delim("data/samples-pca.eigenval", header = F)
     eig$perc = eig$V1 / sum(eig$V1)
@@ -43,7 +59,8 @@ pheno = read.csv("data/cleaned_pheno.csv")
   pca.geno = read.delim("data/samples-pca.eigenvec", header = F, sep = "")[,c(1,3:5)]
     colnames(pca.geno) = c("gc_id", "PC1", "PC2", "PC3")
     
-    pca.geno = pca.geno %>% left_join(pheno %>% select(gc_id, loc.fix))
+    pca.geno = pca.geno %>% 
+      left_join(pheno %>% select(gc_id, loc.fix, year, v.Sperm, m.Body))
   
     ggplot(pca.geno, aes(x = PC1, y = PC2, color = loc.fix)) + geom_point()
     
@@ -124,15 +141,21 @@ pheno = read.csv("data/cleaned_pheno.csv")
   
   plot_model(massmod)
   
-  #outliers
-  remove = read.delim("data/GRMremove.txt", header = F)
-  colnames(remove) = "gc_id"
-  remove = remove %>% left_join(admixpheno)
+
+#effects of location and year 
+  pheno2 = pheno
+  pheno2$loc.fix[pheno2$loc.fix %in% c("NCA", "SCA", "CA")] = "CA"
+  pheno2 = pheno2 %>% 
+    mutate(loc.fix = as.factor(loc.fix),
+           loc.fix = relevel(loc.fix, "USA"))
   
-  mean(remove$M)
-  mean(admixpheno$M)
+  summary(lm(v.Sperm ~ year + loc.fix, data = pheno2))
   
-  admixpheno$remove = ifelse(admixpheno$gc_id %in% remove$gc_id, "remove", "ok")
+  summary(lm(m.Body ~ year + loc.fix, data = pheno2))
+
+  #average weight per location
+  
+  
   
   #TODO: try correcting with KING?
   
@@ -158,15 +181,12 @@ pheno = read.csv("data/cleaned_pheno.csv")
   v.mlma$logp = log(v.mlma$padj, base = 10)* -1
   v.mlma$lograwp = log(v.mlma$p, base = 10) * -1
   
-  ggplot(v.mlma, aes(x = bp, y = lograwp)) + 
-    geom_point() + 
-    geom_hline(aes(yintercept = 
-                     (-1 * log(0.05 / nrow(v.mlma), base = 10))),
-                      #(-1 * log(0.05, base = 10))),
-           linetype = 2, col = 'red') +
-    facet_wrap(facets = vars(Chr), scales = "free_x") + 
-    labs(title = "Viability", y = "-log(p)") +
-    scale_x_continuous(labels = function(x) format(x, scientific = TRUE))
+  #pub-friendly plot
+  v.plot = v.mlma %>% 
+    arrange(Chr, bp) %>% 
+    mutate(order = 1:nrow(v.mlma))
+  
+  v.plot$color = ifelse(v.plot$Chr%%2 ==0, "A", "B" )
     
     
   #weight
@@ -175,39 +195,94 @@ pheno = read.csv("data/cleaned_pheno.csv")
   w.mlma$logp = log(w.mlma$padj, base = 10)* -1
   w.mlma$lograwp = log(w.mlma$p, base = 10) * -1
   
-  ggplot(w.mlma, aes(x = bp, y = lograwp)) + 
+  #pub-friendly plot
+  w.plot = w.mlma %>% 
+    arrange(Chr, bp) %>% 
+    mutate(order = 1:nrow(w.mlma))
+  
+  w.plot$color = ifelse(w.plot$Chr%%2 ==0, "A", "B" )
+  
+  #together
+  
+  man.plot = rbind(w.plot %>% mutate(trait = "Body Mass"),
+                   v.plot %>% mutate(trait = "Sperm Viability"))
+  
+  ggplot(man.plot, aes(x = order, y = lograwp, color = color)) + 
     geom_point() + 
     geom_hline(aes(yintercept = 
-                     (-1 * log(0.05 / nrow(v.mlma), base = 10))),
-                      #(-1 * log(0.05, base = 10))),
-           linetype = 2, col = 'red') +
-    facet_wrap(facets = vars(Chr), scales = "free_x") + 
-    labs(title = "Weight", y = "-log(p)") +
-    scale_x_continuous(labels = function(x) format(x, scientific = TRUE))
+                     (-1 * log(0.05 / nrow(w.plot), base = 10))),
+           linetype = 2, col = 'black') +
+    facet_wrap(~trait, nrow = 2) +
+    labs(y = "-log(p)", x = "Position") +
+    scale_color_manual(values = c("black", "darkgray"))+
+    theme(axis.text.x = element_blank(),
+          legend.position = 'none')
   
 #output top hits
-  all.mlma.l = list(l.mlma, w.mlma)
-  traits = c("l.Sperm", "m.Body")
+  all.mlma.l = list(v.mlma, w.mlma)
+  traits = c("v.Sperm", "m.Body")
   
-  all.mlma = data.frame(Chr = NA, 
+  all.mlma = data.frame(SNP = NA,
+                        Chr = NA, 
                         bp = NA, 
                         A1 = NA, 
-                        A2 = NA, 
+                        A2 = NA,
+                        b = NA,
                         p = NA, 
                         padj = NA,
                         trait  = NA)
   
   for(i in 1:length(all.mlma.l)){
     x = all.mlma.l[[i]] %>% filter(padj < 0.05) %>% arrange(padj) %>%
-          select(Chr, bp, A1, A2, p, padj) %>% 
+          select(SNP, Chr, bp, A1, A2, b,p, padj) %>% 
       mutate(trait = traits[i])
     all.mlma = rbind(all.mlma, x)
   }
   all.mlma = all.mlma[-1,] %>% 
     arrange(Chr, bp)
   
-  write.csv(all.mlma, file = "data/gwashits.csv",
-            row.names = F, quote = F)
+  # write.csv(all.mlma, file = "data/gwashits.csv",
+  #           row.names = F, quote = F)
+  # 
+  
+#variance explained by top hits
+  #read allele frequencies
+  af = read.delim("data/samples-filter.frq", sep = "", header = T)
+  varexp = af %>% 
+    select(SNP, MAF) %>% 
+    left_join(all.mlma %>% 
+                select(SNP, b, padj, trait)) %>% 
+    filter(!is.na(b)) %>% 
+    mutate(varexp = abs(( 2 * MAF * (1-MAF))**2 * b / 0.0109))
+  
+#compare against GREML h2 
+  greml = read.delim("data/greml_weight.snp.blp",
+                     header = F, sep = "")
+    colnames(greml) = c("SNP", "alt", "G1", "G2", "G3", "G4", "R")
+    greml = greml %>% 
+      mutate(G = G1 + G2 + G3 + G4)
+    
+    varexp = varexp %>% 
+      left_join(greml %>% select(SNP, G))
+    
+    #format for output
+    varexp.out = varexp %>% 
+      mutate(chr = gsub("([0-9]*)[:][0-9]*", "\\1", SNP),
+             pos = gsub("[0-9]*[:]([0-9]*)", "\\1", SNP)) %>% 
+      mutate(MAF = round(MAF,2),
+             b = round(b,4),
+             padj = paste0("\'", formatC(padj, format = "e", digits = 2)),
+             varexp = round(varexp, 4),
+             G = round(G,4),
+             pos = paste0("\'", pos)) %>% 
+      arrange(desc(varexp)) %>% 
+      select(trait, `Chromosome` = chr, `Position` = pos, 
+             `Allele Frequency` = MAF, `SNP effect` = b,
+             `Pvalue` = padj, `Variance Explained` = varexp,
+             `SNP heritability` = G)
+    
+    write.csv(varexp.out, file = "data/variance_explained.csv",
+              row.names = F)
   
   
 #QQplots 
@@ -278,21 +353,6 @@ pheno = read.csv("data/cleaned_pheno.csv")
 qqPlot(v.mlma$p)
 qqPlot(w.mlma$p)
 
-
-#var explained by top hit(s)
-
-geno = cbind(read.delim("data/test.gen", header = F, sep = "")[,-(1:5)] %>% t(),
-             read.delim("data/test.sample", header = T, sep = "")[-1,2]) %>% 
-  as.data.frame()
-
-varexp = pheno %>% left_join(geno %>% select(id = V2, geno = V1)) %>% 
-  mutate(v.Sperm = as.numeric(v.Sperm),
-         l.Sperm = as.numeric(l.Sperm)) %>% 
-  filter(!is.na(geno))
-
-summary(lm(v.Sperm ~ loc.fix + as.factor(geno), data = varexp))
-
-ggplot(varexp, aes(y = as.numeric(v.Sperm), x = as.factor(geno))) + geom_boxplot()
   
 
   
@@ -354,7 +414,7 @@ colnames(pheno.blup) = c("iid", "locid", "PC1", "PC2", "PC3", "lsperm", "weight"
 #plot against time
   sol.time = sol.long %>% filter(locyear != "USA20XX") %>% 
     mutate(year = as.numeric(year))
-  
+
   ggplot(sol.time, aes(x = year, y = bv)) + 
     geom_point() + 
     geom_smooth(method = 'lm', se = F, color = 'blue', linetype = 1) +
@@ -369,7 +429,19 @@ colnames(pheno.blup) = c("iid", "locid", "PC1", "PC2", "PC3", "lsperm", "weight"
 #TODO: use BVs not phenos
 #estimate genetic gain per generation
   
+  #estimated reliability from blupf90
+    rel = read.delim("data/acc_bf90",
+                     header = F, sep = "")
+    colnames(rel) = c("trait", "effect", "level" ,"bv", "rel")
+    
+    hist(rel$rel[rel$trait == 1])
+    hist(rel$rel[rel$trait == 2])
+    
+      
+  
 params = data.frame(trait = c("weight", "vsperm"),
+                    rel = c(mean(rel$rel[rel$trait == 1]),
+                            mean(rel$rel[rel$trait == 2])),
                     acc = c(0.2, 0.2),
                     sdG = c(sqrt(131), sqrt(109)),
                     sdX = c(sd(sol.time$bv[sol.time$trait == "weight"]),
@@ -382,21 +454,15 @@ params = data.frame(trait = c("weight", "vsperm"),
     select(gc_id, year, trait, bv) %>% 
     pivot_wider(names_from = "trait", values_from = "bv") %>% 
     as.data.frame()
-
-  # pheno.z = pheno %>% 
-  #   mutate(weight = scale(m.Body)[,1],
-  #          vsperm = scale(v.Sperm)[,1]) %>% 
-  #   select(weight, vsperm) %>% 
-  #   filter(!is.na(weight), !is.na(vsperm))
   
   prog = data.frame(prop = rep(c(0.5, 0.1, 0.01, 0.001),2),
                          trait = c(rep("weight", 4), rep("vsperm",4)),
                          intensity = NA,
                          prog = NA)
   
-  for(i in 1:nrow(intensity)){
+  for(i in 1:nrow(prog)){
     #number of individuals for desired %
-    N = ceiling(nrow(sol.time.wide) * intensity$prop[i])
+    N = ceiling(nrow(sol.time.wide) * prog$prop[i])
     #average of top N phenos
     prog$intensity[i] = mean(sort(sol.time.wide[,prog$trait[i]], 
                                   decreasing = T)[1:N])
@@ -419,15 +485,26 @@ params = data.frame(trait = c("weight", "vsperm"),
     pivot_longer(cols = c("a", "b"), names_to = "point", values_to = "bv")
   
     prog.plot$year = ifelse(prog.plot$point == "b", 2026, 2025)
+    prog.plot$trait[prog.plot$trait == "vsperm"] = "Sperm Viability"
+     prog.plot$trait[prog.plot$trait == "weight"] = "Body Mass"
+     
+  
+    sol.time.plot = sol.time
+      
+    sol.time.plot$trait[sol.time.plot$trait == "vsperm"] = "Sperm Viability"
+    sol.time.plot$trait[sol.time.plot$trait == "weight"] = "Body Mass"
   
   
-    ggplot(sol.time, aes(x = year, y = bv)) + 
+  
+    ggplot(sol.time.plot, aes(x = year, y = bv)) + 
     geom_point() + 
     geom_smooth(method = 'lm', se = F, color = 'blue', linetype = 1) +
     geom_line(data = prog.plot,
               aes(x = year, y = bv, linetype = as.factor(prop)),
               color = 'red') +
-    facet_wrap(~trait, scales = "free")
+    facet_wrap(~trait, scales = "free") + 
+    labs(linetype = "Proportion Selected", y = "Breeding Value",
+         x = "Year")
   
   
 

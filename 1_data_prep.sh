@@ -96,6 +96,11 @@ echo "-----------------------"
 #         --mind 0.2 --geno 0.1 --maf 0.01 \
 #         --hwe 1e-8 \
 #         --threads $SLURM_NTASKS --out plink/samples-filter --silent
+
+    #output allele frequencies
+    cd $CLUSTER_SCRATCH/queen-quality/plink
+    plink -bfile samples-filter --freq --out samples-filter
+
 #         
 #     #output sites for ref filter, samples
 #     cd plink
@@ -409,10 +414,64 @@ echo "running GWAS..."
             --autosome-num 16 \
             --out qq_weight --thread-num $SLURM_NTASKS
             
-#         $gcta --mlma --bfile ../plink/samples-filter --grm qq \
-#             --pheno ~/ryals/queen-quality/data/qq_lsperm.pheno \
-#             --autosome-num 16 \
-#             --out qq_lsperm --thread-num $SLURM_NTASKS
+    #TODO: try GREML
+echo "-----------------------"
+echo "running GREML..."
+    #ld scores
+    $gcta --bfile ../plink/samples-filter --ld-score-region 200 --ld-wind 50 --ld-rsq-cutoff 0.1 --out greml
+    
+    
+    R
+    lds_seg = read.table("greml.score.ld",header=T,colClasses=c("character",rep("numeric",8)))
+    quartiles=summary(lds_seg$ldscore_SNP)
+
+    lb1 = which(lds_seg$ldscore_SNP <= quartiles[2])
+    lb2 = which(lds_seg$ldscore_SNP > quartiles[2] & lds_seg$ldscore_SNP <= quartiles[3])
+    lb3 = which(lds_seg$ldscore_SNP > quartiles[3] & lds_seg$ldscore_SNP <= quartiles[5])
+    lb4 = which(lds_seg$ldscore_SNP > quartiles[5])
+
+    lb1_snp = lds_seg$SNP[lb1]
+    lb2_snp = lds_seg$SNP[lb2]
+    lb3_snp = lds_seg$SNP[lb3]
+    lb4_snp = lds_seg$SNP[lb4]
+
+    write.table(lb1_snp, "snp_group1.txt", row.names=F, quote=F, col.names=F)
+    write.table(lb2_snp, "snp_group2.txt", row.names=F, quote=F, col.names=F)
+    write.table(lb3_snp, "snp_group3.txt", row.names=F, quote=F, col.names=F)
+    write.table(lb4_snp, "snp_group4.txt", row.names=F, quote=F, col.names=F)
+    quit("no")
+    
+    #multi GRM
+    $gcta --bfile ../plink/samples-filter --extract snp_group1.txt --make-grm --out greml_group1
+    $gcta --bfile ../plink/samples-filter --extract snp_group2.txt --make-grm --out greml_group2
+    $gcta --bfile ../plink/samples-filter --extract snp_group3.txt --make-grm --out greml_group3
+    $gcta --bfile ../plink/samples-filter --extract snp_group4.txt --make-grm --out greml_group4
+    
+    echo "greml_group1" > multi_grm.txt
+    echo "greml_group2" >> multi_grm.txt
+    echo "greml_group3" >> multi_grm.txt
+    echo "greml_group4" >> multi_grm.txt
+    
+    #GREML
+    for trait in weight vsperm
+    do
+        $gcta --reml --mgrm multi_grm.txt --pheno ~/ryals/queen-quality/data/qq_${trait}.pheno \
+        --reml-pred-rand --out greml_${trait}
+        
+        $gcta --bfile ../plink/samples-filter --blup-snp greml_${trait}.indi.blp --out greml_${trait}
+    done
+    
+    #bivariate reml
+    #does not converge
+    #     cd ~/ryals/queen-quality/data
+    #     awk  '{print $3}' qq_vsperm.pheno > .tmp
+    #     paste qq_weight.pheno .tmp > qq_weight-vsperm.pheno
+    #     
+    #     cd $CLUSTER_SCRATCH/queen-quality/gwas
+    #     $gcta  --reml-bivar --mgrm multi_grm.txt --pheno ~/ryals/queen-quality/data/qq_weight-vsperm.pheno \
+    #     --out greml_weight-vsperm
+#     
+    
 #             
 # 
 # #TODO: estimate variance explained by sig QTL
@@ -451,10 +510,10 @@ echo "running GWAS..."
 # #     sed -n 16,80p file1>patch
 # #     sed -i 18rpatch file2
 #     
-#     cp ../params/${par}.par1 .
-#     ./blupf90+ ${par}.par1
-#     cp solutions ../data/sol-${par}.txt
-#     cp solutions sol-${par}_whole
+    cp ../params/${par}.par1 .
+    ./blupf90+ ${par}.par1
+    cp solutions ../data/sol-${par}.txt
+    cp solutions sol-${par}
 
 # echo "-----------------------"
 #     echo "  CV error: single-trait"
