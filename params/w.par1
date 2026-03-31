@@ -3,16 +3,19 @@ pheno.txt
 NUMBER_OF_TRAITS
 1
 NUMBER_OF_EFFECTS
-2
+5
 OBSERVATION(S)
-4 #weight
+7 #weight, vsperm
 WEIGHT(S)
 
 EFFECTS:
-1 911 cross #queen_id
-2 11 cross #location
+1 908 cross #queen_id
+2 36 cross #location
+3 1 cov #PC1
+4 1 cov #PC2
+5 1 cov #PC3
 RANDOM_RESIDUAL VALUES
-  0.37822  
+253.63
 RANDOM_GROUP
 1 
 RANDOM_TYPE
@@ -20,9 +23,9 @@ user_file_inv
 FILE
 covmat.txt
 (CO)VARIANCES
-  0.18120  
+131.09
 OPTION missing -999
 OPTION sol se
 OPTION conv_crit 1e-10
-#OPTION EM-reml 10
+OPTION EM-REML 5
 #ulimit -s unlimited

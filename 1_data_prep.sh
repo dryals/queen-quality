@@ -341,33 +341,34 @@ echo "running GREML..."
 # echo "-----------------------"  
 # echo "running BLUP..."
 # 
-#     par=wv
-# 
-#     #TODO: single-trait blups
-#     cd ~/ryals/queen-quality/blup
-#         #create links
-#         if [ ! -f  blupf90+ ]; then
-#             echo "    creating links..."
-#             ln -S blupf90+ /depot/bharpur/apps/blupf90/blupf90+
-#             ln -S airemlf90 /depot/bharpur/apps/blupf90/airemlf90 
-#             ln -S validationf90 /depot/bharpur/apps/blupf90/validationf90
-#         fi
-# 
-#     cd ~/ryals/queen-quality
-#     cp params/${par}.par0 blup
-#     cd blup
-#     ./airemlf90 ${par}.par0
+    par=w
+
+    #TODO: single-trait blups
+    cd ~/ryals/queen-quality/blup
+        #create links
+        if [ ! -f  blupf90+ ]; then
+            echo "    creating links..."
+            ln -S blupf90+ /depot/bharpur/apps/blupf90/blupf90+
+            ln -S airemlf90 /depot/bharpur/apps/blupf90/airemlf90 
+            ln -S validationf90 /depot/bharpur/apps/blupf90/validationf90
+        fi
+
+    cd ~/ryals/queen-quality
+    cp params/${par}.par0 blup
+    cd blup
+    ./airemlf90 ${par}.par0
+    
 #     
 #     
-#     #TODO
+#     #TODO this but automatic...
 #     #read G and R matricies into blup.par2
 # #     sed -n 16,80p file1>patch
 # #     sed -i 18rpatch file2
 #     
-#     cp ../params/${par}.par1 .
-#     ./blupf90+ ${par}.par1
-#     cp solutions ../data/sol-${par}.txt
-#     cp solutions sol-${par}
+    cp ../params/${par}.par1 .
+    ./blupf90+ ${par}.par1
+    cp solutions ../data/sol-${par}.txt
+    cp solutions sol-${par}
 
 # echo "-----------------------"
 #     echo "  CV error: single-trait"
