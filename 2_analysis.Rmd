@@ -23,6 +23,8 @@ select = dplyr::select
 rename = dplyr::rename
 theme_set(theme_bw())
 
+se = function(x) sqrt(var(x, na.rm = T)/length(x))
+
 setwd("/home/dylan/Documents/bees/harpurlab/project/gensel/tarpy/queen-quality")
 ```
 
@@ -245,15 +247,25 @@ pheno = read.csv("data/cleaned_pheno.csv")
   #           row.names = F, quote = F)
   # 
   
+  N = nrow(pheno)
+  
 #variance explained by top hits
-  #read allele frequencies
-  af = read.delim("data/samples-filter.frq", sep = "", header = T)
-  varexp = af %>% 
-    select(SNP, MAF) %>% 
-    left_join(all.mlma %>% 
-                select(SNP, b, padj, trait)) %>% 
-    filter(!is.na(b)) %>% 
-    mutate(varexp = abs(( 2 * MAF * (1-MAF))**2 * b / 0.0109))
+  varexp = v.mlma %>% filter(padj < 0.05) %>% 
+    mutate(varexp = (2 * b**2 * Freq * (1-Freq)) / 
+                    (2 * b**2 * Freq * (1-Freq) +
+                     se**2 * 2 * N * Freq * (1-Freq)) 
+           )
+  
+  
+  
+  # #read allele frequencies
+  # af = read.delim("data/samples-filter.frq", sep = "", header = T)
+  # varexp = af %>% 
+  #   select(SNP, MAF) %>% 
+  #   left_join(all.mlma %>% 
+  #               select(SNP, b, padj, trait)) %>% 
+  #   filter(!is.na(b)) %>% 
+  #   mutate(varexp = abs(( 2 * MAF * (1-MAF))**2 * b / 0.0109))
   
 #compare against GREML h2 
   greml = read.delim("data/greml_weight.snp.blp",
@@ -370,6 +382,38 @@ gpca = read.delim(paste0("data/", SET, ".eigenvec"),
   ggplot(preblup, aes(x = PC1, y = PC2, color = Location)) + 
     geom_point()
 
+```
+
+
+# Genomic Selection
+
+CV error
+```{r}
+cv = read.csv("data/CV_summary.csv")
+
+cv.long = cv %>% 
+  pivot_longer(c(cor, slope), names_to = "param", values_to = "value")
+
+  #rename
+  cv.long$param[cv.long$param == "slope"] = "Slope"
+  cv.long$param[cv.long$param == "cor"] = "Correlation"
+  cv.long$tn[cv.long$tn == "w"] = "Body Mass"
+  cv.long$tn[cv.long$tn == "v"] = "Sperm Viability"
+
+cv.mean = cv.long %>% 
+  group_by(tn, param) %>% 
+  summarise(mean = mean(value),
+            se = se(value))
+
+
+ggplot(cv.long, aes(x = tn, y = value)) + 
+  geom_point() + 
+  geom_col(data = cv.mean, aes(x = tn, y = mean), alpha = 0.4) +
+  geom_errorbar(data = cv.mean, 
+                aes(x = tn, y = mean, ymax = mean + se, ymin = mean - se),
+                width = 0.5) +
+  facet_wrap(~param, scales = "free_y") +
+  labs(x = NULL, y = "Value")
 ```
 
 
@@ -531,115 +575,6 @@ params = data.frame(trait = c("weight", "vsperm"),
 #     labs(title = "6c. Selection Candidates")
   
 ```
-
-
-Selection Index ...
-```{r}
-
-```
-
-
-Output for GWAS
-```{r}
-#adjust with lm
-gwas = pheno %>% 
-  left_join(preblup %>% select(PC1, PC2))
-
-  summary(lm(weight ~ source + PC1 + PC2, data = gwas))
-
-  gwas$adj.weight = lm(weight ~ source + PC1 + PC2, data = gwas)$residuals %>% 
-    round(4)
-  gwas$adj.viability = lm(viability ~ source + PC1 + PC2, data = gwas)$residuals %>% 
-    round(4)
-
-  #write out
-  gwas.out = data.frame(fid = gwas$vcf_id, 
-                        iid = gwas$vcf_id, 
-                        weight = gwas$adj.weight, 
-                        viability = gwas$adj.viability)
-  write.table(file = "data/tarpy_weight.pheno",
-              gwas.out %>% select(-viability),
-              col.names = F, row.names = F, quote = F,
-              sep = "\t")
-    write.table(file = "data/tarpy_viability.pheno",
-              gwas.out %>% select(-weight),
-              col.names = F, row.names = F, quote = F,
-              sep = "\t")
-    
-    
-#read results
-  #viability
-  v.mlma = read.delim("data/tarpy_viability.mlma", sep = "")
-  v.mlma$padj = p.adjust(v.mlma$p, method = "bonferroni", n = nrow(v.mlma))
-  v.mlma$logp = log(v.mlma$padj, base = 10)* -1
-  v.mlma$lograwp = log(v.mlma$p, base = 10) * -1
-  
-  hist(v.mlma$p)
-  
-  p7a = ggplot(v.mlma, aes(x = bp, y = lograwp)) + 
-    geom_point() + 
-    geom_hline(aes(yintercept = 
-                     (-1 * log(0.05 / nrow(v.mlma), base = 10))),
-                      #(-1 * log(0.05, base = 10))),
-           linetype = 2, col = 'red') +
-    facet_wrap(facets = vars(Chr), scales = "free") + 
-    labs(title = "7a. GWAS: Viability", y = "-log(p)") +
-    scale_x_continuous(labels = function(x) format(x, scientific = TRUE))
-    
-    
-  #weight
-  w.mlma = read.delim("data/tarpy_weight.mlma", sep = "")
-  w.mlma$padj = p.adjust(w.mlma$p, method = "bonferroni", n = nrow(w.mlma))
-  w.mlma$logp = log(w.mlma$padj, base = 10)* -1
-  w.mlma$lograwp = log(w.mlma$p, base = 10) * -1
-  
-  
-  p7b = ggplot(w.mlma, aes(x = bp, y = lograwp)) + 
-    geom_point() + 
-    geom_hline(aes(yintercept = 
-                     (-1 * log(0.05 / nrow(v.mlma), base = 10))),
-                      #(-1 * log(0.05, base = 10))),
-           linetype = 2, col = 'red') +
-    facet_wrap(facets = vars(Chr), scales = "free") + 
-    labs(title = "7a. GWAS: Weight", y = "-log(p)") +
-    scale_x_continuous(labels = function(x) format(x, scientific = TRUE))
-  
-
-
-```
-
-
-Output all plots to PDF
-```{r}
-#save if everythign looks good
-setwd("/home/dylan/Documents/bees/harpurlab/project/popgen/beekreports")
-SUB = "Bradley Metz & David Tarpy"
-SUB.nospace = gsub(" |[.] |[|]|[&]", "_", SUB)
-system(paste0("mkdir -p ", SUB.nospace))
-
-
-  
-  pdf(paste0(SUB.nospace, "/combined2.pdf"),# File name
-    width = 11, height = 8.5, # Width and height in inches
-    bg = "white",
-    paper = "USr",
-    #paper = c(rep("US"))
-    title = "Purdue Honey Bee Genomics Report")  
-  
-  biplot(pca)
-  title(main = "5. Phenotype PCA", line = 2)
-  p6a
-  p6b
-  p6c
-  p7a
-  p7b
-
-  dev.off()  
-  
-  
-```
-
-
 
 
 
