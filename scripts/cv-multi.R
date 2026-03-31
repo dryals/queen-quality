@@ -114,7 +114,7 @@ for(CVnum in 1:5){
       realpheno$pheno.adj = NA
       
       #TODO: hardcoded, fix later
-      realpheno$trait = ifelse(realpheno$tn == "w", 1, 2)
+      realpheno = realpheno %>% left_join(trait.key.used)
       
       for(i in 1:nrow(realpheno)){
         #location
@@ -171,6 +171,8 @@ for(i in 2:5){
   x$CV = i
   CVdf = rbind(CVdf, x)
 }
+
+CVdf
 
 write.csv(CVdf, file = "data/CV_summary.csv", row.names = F)
 
