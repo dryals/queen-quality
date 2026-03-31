@@ -341,7 +341,7 @@ echo "running GREML..."
 # echo "-----------------------"  
 # echo "running BLUP..."
 # 
-    par=v
+    par=wl
 
     #TODO: single-trait blups
     cd ~/ryals/queen-quality/blup
@@ -373,7 +373,7 @@ echo "running GREML..."
 echo "-----------------------"
     echo "  CV error: multi-trait"
     
-    par=v
+    par=wl
  
      #create -cv version which uses pheno-cv.txt
     cd ~/ryals/queen-quality
