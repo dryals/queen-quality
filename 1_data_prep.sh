@@ -89,7 +89,6 @@ echo "-----------------------"
     plink -bfile samples-filter --freq --out samples-filter
      
     #output sites for ref filter, samples
-    cd plink
     awk '{print $2}' samples-filter.bim | tr ":" "\t" > samples-filter.sites
     awk '{print $1}' samples-filter.fam > samples-filter.names
 # 
@@ -267,6 +266,8 @@ echo "preparing data for GWAS and GS"
 echo "-----------------------"
 echo "running GWAS..."
 
+#TODO pull GA, CA, HI and run separately
+
     echo "    gcta..."
     cd $CLUSTER_SCRATCH/queen-quality
     mkdir -p gwas
@@ -341,7 +342,7 @@ echo "running GREML..."
 # echo "-----------------------"  
 # echo "running BLUP..."
 # 
-    par=wl
+    par=wv
 
     #TODO: single-trait blups
     cd ~/ryals/queen-quality/blup
@@ -373,7 +374,7 @@ echo "running GREML..."
 echo "-----------------------"
     echo "  CV error: multi-trait"
     
-    par=wl
+    par=wv
  
      #create -cv version which uses pheno-cv.txt
     cd ~/ryals/queen-quality

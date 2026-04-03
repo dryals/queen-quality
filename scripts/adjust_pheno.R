@@ -104,26 +104,47 @@ gwas$adj.l.Sperm = lm(l.Sperm ~ loc.year + PC1 + PC2 + PC3, data = gwas)$residua
   round(4)
   
 
-#write out
-gwas.out = data.frame(fid = gwas$gc_id, 
-                      iid = gwas$gc_id, 
-                      weight = gwas$adj.m.Body, 
-                      vsperm = gwas$adj.v.Sperm,
-                      lsperm = gwas$adj.l.Sperm)
-                      
-write.table(file = "data/qq_weight.pheno",
-            gwas.out %>% select(fid, iid, weight),
-            col.names = F, row.names = F, quote = F,
-            sep = "\t")
-write.table(file = "data/qq_vsperm.pheno",
-            gwas.out %>% select(fid, iid, vsperm),
-            col.names = F, row.names = F, quote = F,
-            sep = "\t")
-write.table(file = "data/qq_lsperm.pheno",
-            gwas.out %>% select(fid, iid, lsperm),
-            col.names = F, row.names = F, quote = F,
-            sep = "\t")
+#write out whole data
+  gwas.out = data.frame(fid = gwas$gc_id, 
+                        iid = gwas$gc_id, 
+                        weight = gwas$adj.m.Body, 
+                        vsperm = gwas$adj.v.Sperm,
+                        lsperm = gwas$adj.l.Sperm)
+                        
+  write.table(file = "data/qq_weight.pheno",
+              gwas.out %>% select(fid, iid, weight),
+              col.names = F, row.names = F, quote = F,
+              sep = "\t")
+  write.table(file = "data/qq_vsperm.pheno",
+              gwas.out %>% select(fid, iid, vsperm),
+              col.names = F, row.names = F, quote = F,
+              sep = "\t")
+  write.table(file = "data/qq_lsperm.pheno",
+              gwas.out %>% select(fid, iid, lsperm),
+              col.names = F, row.names = F, quote = F,
+              sep = "\t")
+
+#write out location-specific:
+  gwas.GA = 
+  gwas.out = data.frame(fid = gwas$gc_id, 
+                        iid = gwas$gc_id, 
+                        weight = gwas$adj.m.Body, 
+                        vsperm = gwas$adj.v.Sperm,
+                        lsperm = gwas$adj.l.Sperm)
   
+  write.table(file = "data/qq_weight.pheno",
+              gwas.out %>% select(fid, iid, weight),
+              col.names = F, row.names = F, quote = F,
+              sep = "\t")
+  write.table(file = "data/qq_vsperm.pheno",
+              gwas.out %>% select(fid, iid, vsperm),
+              col.names = F, row.names = F, quote = F,
+              sep = "\t")
+  write.table(file = "data/qq_lsperm.pheno",
+              gwas.out %>% select(fid, iid, lsperm),
+              col.names = F, row.names = F, quote = F,
+              sep = "\t")
+
 
   #read grm
   
