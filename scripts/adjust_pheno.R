@@ -117,28 +117,63 @@ gwas$adj.l.Sperm = lm(l.Sperm ~ loc.year + PC1 + PC2 + PC3, data = gwas)$residua
   write.table(file = "data/qq_lsperm.pheno",
               gwas.out %>% select(fid, iid, lsperm),
               col.names = F, row.names = F, quote = F,
-              sep = "\t")
+              sep = "\t")           
 
-#write out location-specific:
-  for (LOC in c("GA", "CA", "HI")){
-    gwas.loc = gwas[gwas$loc.fix == LOC,]
-    gwas.loc.out = data.frame(fid = gwas.loc$gc_id, 
-                          iid = gwas.loc$gc_id, 
-                          weight = gwas.loc$adj.m.Body, 
-                          vsperm = gwas.loc$adj.v.Sperm,
-                          lsperm = gwas.loc$adj.l.Sperm)
+#adjust within select locations
+  for (LOC in c("HI", "CA", "GA")){
+
+    #correct samples
+    phenotyped.loc = read.csv(paste0("data/phenotyped_", LOC, ".gcnames"),
+                              header = F, sep = "")
+      colnames(phenotyped.loc) = c("gc_id", "fam_id")
+    #read correct PCA
+    pca.loc = read.delim(paste0("/scratch/negishi/dryals/queen-quality/plink/samples-gwas_", 
+                          LOC, ".eigenvec"),
+                       header = F, sep = "")[,c(1, 3:5)]
+    colnames(pca.loc) = c("gc_id", "PC1", "PC2", "PC3")
+    #combine
+    gwas.loc = pheno %>% 
+    filter(gc_id %in% phenotyped.loc$gc_id) %>%
+    left_join(pca.loc %>% select(gc_id, PC1, PC2, PC3), by = 'gc_id')
+    #pool small year levels
+    smallyears = gwas.loc %>%
+    group_by(year) %>%
+    summarise(n = n()) %>%
+    filter(n<5)
     
+    gwas.loc$year.fix = gwas.loc$year
+      gwas.loc$year.fix[gwas.loc$year.fix %in% smallyears$year] = "20XX"
+      
+    #adjust
+    gwas.loc$adj.m.Body = lm(m.Body ~ year.fix + PC1 + PC2 + PC3, data = gwas.loc)$residuals %>% 
+      round(4)
+    gwas.loc$adj.v.Sperm = lm(v.Sperm ~ year.fix + PC1 + PC2 + PC3, data = gwas.loc)$residuals %>% 
+      round(4)
+      
+    #write out
+    gwas.loc.out = data.frame(fid = gwas.loc$gc_id, 
+                      iid = gwas.loc$gc_id, 
+                      weight = gwas.loc$adj.m.Body, 
+                      vsperm = gwas.loc$adj.v.Sperm)
+                      
     write.table(file = paste0("data/qq_weight_", LOC, ".pheno"),
                 gwas.loc.out %>% select(fid, iid, weight),
                 col.names = F, row.names = F, quote = F,
                 sep = "\t")
+                
     write.table(file = paste0("data/qq_vsperm_", LOC, ".pheno"),
                 gwas.loc.out %>% select(fid, iid, vsperm),
                 col.names = F, row.names = F, quote = F,
                 sep = "\t")
- }             
+    
+ }  
+  
 
-  #read grm
+ 
+ 
+ 
+#Prepare GS
+#read grm
   
   G.p = read.delim("/scratch/negishi/dryals/queen-quality/plink/samples-gs.rel", 
   sep = "", header = F) %>% as.matrix()

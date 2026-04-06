@@ -91,7 +91,7 @@ pheno = pheno %>% left_join(loc.trans, by = "Location")
     pheno.fix = pheno.fix[-which(pheno.fix$gc_id == "QC0758"),]
     
     #one leve for california
-    pheno.fix$loc.fix[pheno.fix$loc.fix %in% c("NCA","SCA")] == "CA"
+    pheno.fix$loc.fix[pheno.fix$loc.fix %in% c("NCA","SCA")] = "CA"
     
 #TODO: get a count for how many phenotypes actually exist...
       
@@ -146,12 +146,12 @@ pheno = pheno %>% left_join(loc.trans, by = "Location")
                 col.names = F, row.names = F, quote = F)
                 
       #for each target loc
-          for (LOC in c("HI","CA", "GA"){
-            towrite = pheno.num$gc_id[!is.na(pheno.num$gc_id) & loc.fix == LOC]
+          for (LOC in c("HI","CA", "GA")){
+            towrite = pheno.num$gc_id[!is.na(pheno.num$gc_id) & pheno.num$loc.fix == LOC]
             #format for plink
-            towrite = dataframe(V1 = towrite, V2 = towrite)
+            towrite = data.frame(V1 = towrite, V2 = towrite)
           write.table(file = paste0("data/phenotyped_", LOC, ".gcnames"),
-                towrite
+                towrite,
                 col.names = F, row.names = F, quote = F)
                 }
                 
