@@ -343,7 +343,7 @@ p.samplecom = cowplot::plot_grid(p.a, p.admix, nrow = 2, labels = c(NA, "C"))
 ```
 
 
-GWAS analysis
+GWAS analysis: all locations
 ```{r}
 #GWAS 
   
@@ -539,6 +539,92 @@ dev.off()
 par(mfrow = c(1,1))
 plot.new()
   
+```
+
+# GWAS analysis: select locations
+```{r}
+
+loc.sigsites = data.frame(loc = NA,
+                          trait = NA,
+                          snp = NA,
+                          chr = NA,
+                          bp = NA,
+                          p = NA)
+
+for(LOC in c("HI", "CA", "GA")){
+
+ #viability
+  v.mlma = read.delim(paste0("data/qq_vsperm_", LOC, ".loco.mlma"), sep = "")
+  v.mlma$padj = p.adjust(v.mlma$p, method = "bonferroni", n = nrow(v.mlma))
+  v.mlma$logp = log(v.mlma$padj, base = 10)* -1
+  v.mlma$lograwp = log(v.mlma$p, base = 10) * -1
+  
+  #pub-friendly plot
+  v.plot = v.mlma %>% 
+    arrange(Chr, bp) %>% 
+    mutate(order = 1:nrow(v.mlma))
+  
+  v.plot$color = ifelse(v.plot$Chr%%2 ==0, "A", "B" )
+    
+    
+  #weight
+  w.mlma = read.delim(paste0("data/qq_weight_", LOC, ".loco.mlma"), sep = "")
+  w.mlma$padj = p.adjust(w.mlma$p, method = "bonferroni", n = nrow(w.mlma))
+  w.mlma$logp = log(w.mlma$padj, base = 10)* -1
+  w.mlma$lograwp = log(w.mlma$p, base = 10) * -1
+  
+  #pub-friendly plot
+  w.plot = w.mlma %>% 
+    arrange(Chr, bp) %>% 
+    mutate(order = 1:nrow(w.mlma))
+  
+  w.plot$color = ifelse(w.plot$Chr%%2 ==0, "A", "B" )
+  
+  #together
+  
+  man.plot = rbind(w.plot %>% mutate(trait = "Body Mass"),
+                   v.plot %>% mutate(trait = "Sperm Viability"))
+  
+  # ggplot(man.plot, aes(x = order, y = lograwp, color = color)) + 
+  #   geom_point() + 
+  #   geom_hline(aes(yintercept = 
+  #                    (-1 * log(0.05 / nrow(w.plot), base = 10))),
+  #          linetype = 2, col = 'red', linewidth = 1) +
+  #   facet_wrap(~trait, nrow = 2) +
+  #   labs(y = "-log(p)", x = "Position", title = LOC) +
+  #   scale_color_manual(values = c("black", "darkgray"))+
+  #   theme(axis.text.x = element_blank(),
+  #         legend.position = 'none')
+  
+  site.save = man.plot %>% 
+    filter(padj < 0.05) %>% 
+    mutate(loc = LOC) %>% 
+    select(loc, trait, snp = SNP, chr = Chr, bp, p = padj)
+  
+  loc.sigsites = rbind(loc.sigsites, site.save)
+  
+}
+
+#plot
+  ggplot(loc.sigsites[-1,], aes(x = bp, y = (-1 * log(p, 10)))) +
+    geom_point() +
+    geom_hline(aes(yintercept =
+                     (-1 * log(0.05, base = 10))),
+           linetype = 2, col = 'red', linewidth = 1) +
+    facet_grid(rows = vars(loc), cols = vars(chr), scales = "free_x") +
+    labs(y = "-log(p)", x = "Position") +
+    scale_color_manual(values = c("black", "darkgray"))+
+    theme(axis.text.x = element_blank(),
+          legend.position = 'none')
+
+
+#summarize
+  loc.sum = loc.sigsites %>% 
+    group_by(snp) %>% 
+    summarise(n = n())
+  
+#TODO: clumping ........
+
 ```
 
 

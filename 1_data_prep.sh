@@ -243,6 +243,32 @@ echo "-----------------------"
     module purge
     module load biocontainers bcftools vcftools plink r
     
+    
+    echo "select locations..."
+    for LOC in GA CA HI
+        do
+            echo "    working $LOC ..."
+            cd $CLUSTER_SCRATCH/queen-quality/plink
+            echo "PCA..."
+            plink --bfile samples-filter --pca 500 \
+                --threads $SLURM_NTASKS --out samples-gwas --silent
+            
+            echo "GRM..."
+            module purge
+            module load biocontainers plink2
+            
+            plink2 --bfile samples-filter --keep ~/ryals/queen-quality/data/phenotyped.plink \
+                -maf 0.05 \
+                -make-rel square --out samples-gs
+
+            module purge
+            module load biocontainers bcftools vcftools plink r
+            echo "    finished $loc"
+
+        done
+    
+    
+    
 #     echo "GRM in GCTA..."
 #     cd ~/ryals/queen-quality/data
 #     paste phenotyped.gcnames phenotyped.gcnames > phenotyped.plink
@@ -277,17 +303,35 @@ echo "running GWAS..."
         $gcta --bfile ../plink/samples-filter --make-grm --thread-num $SLURM_NTASKS \
             --autosome-num 16 --out qq
             
-        echo "    mlma..."
+        echo "    mlma: all locations..."
         #adjusted phenotypes generated in R script...
         $gcta --mlma-loco --bfile ../plink/samples-filter --grm qq \
             --pheno ~/ryals/queen-quality/data/qq_vsperm.pheno \
             --autosome-num 16 \
-            --out qq_vsperm --thread-num $SLURM_NTASKS
+            --out qq_vsperm --thread-num $SLURM_NTASKS &> /dev/null
             
         $gcta --mlma-loco --bfile ../plink/samples-filter --grm qq \
             --pheno ~/ryals/queen-quality/data/qq_weight.pheno \
             --autosome-num 16 \
-            --out qq_weight --thread-num $SLURM_NTASKS
+            --out qq_weight --thread-num $SLURM_NTASKS &> /dev/null
+            
+       echo "    mlma: select locations..."
+            for LOC in GA CA HI
+            do
+                echo "    working: ${LOC}..."
+                
+                $gcta --mlma-loco --bfile ../plink/samples-filter --grm qq \
+                    --pheno ~/ryals/queen-quality/data/qq_vsperm_${LOC}.pheno \
+                    --autosome-num 16 \
+                    --out qq_vsperm_${LOC} --thread-num $SLURM_NTASKS &> /dev/null
+                    
+                $gcta --mlma-loco --bfile ../plink/samples-filter --grm qq \
+                    --pheno ~/ryals/queen-quality/data/qq_weight_${LOC}.pheno \
+                    --autosome-num 16 \
+                    --out qq_weight_${LOC} --thread-num $SLURM_NTASKS &> /dev/null
+                echo "        done: ${LOC}"
+
+            done
             
         cp qq_*.loco.mlma ~/ryals/queen-quality/data
             

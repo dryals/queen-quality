@@ -2,7 +2,7 @@ library(dplyr)
 library(readxl)
 library(lubridate)
 library(Matrix)
- library(matrixcalc)
+library(matrixcalc)
 
 select=dplyr::select
 
@@ -28,11 +28,6 @@ filter(gc_id %in% phenotyped$gc_id)
       
       #table(pheno.filter$loc.year)
       
-      #don't split CA into N/S
-      pheno.filter$loc.fix[pheno.filter$loc.fix %in% c("NCA", "SCA", "CA")] = "CA"
-      
-    
-     
       #loc.years with small count become USA.year
       small = pheno.filter %>% group_by(loc.fix, year) %>% 
         summarise(n = n()) %>% 
@@ -125,26 +120,23 @@ gwas$adj.l.Sperm = lm(l.Sperm ~ loc.year + PC1 + PC2 + PC3, data = gwas)$residua
               sep = "\t")
 
 #write out location-specific:
-  gwas.GA = 
-  gwas.out = data.frame(fid = gwas$gc_id, 
-                        iid = gwas$gc_id, 
-                        weight = gwas$adj.m.Body, 
-                        vsperm = gwas$adj.v.Sperm,
-                        lsperm = gwas$adj.l.Sperm)
-  
-  write.table(file = "data/qq_weight.pheno",
-              gwas.out %>% select(fid, iid, weight),
-              col.names = F, row.names = F, quote = F,
-              sep = "\t")
-  write.table(file = "data/qq_vsperm.pheno",
-              gwas.out %>% select(fid, iid, vsperm),
-              col.names = F, row.names = F, quote = F,
-              sep = "\t")
-  write.table(file = "data/qq_lsperm.pheno",
-              gwas.out %>% select(fid, iid, lsperm),
-              col.names = F, row.names = F, quote = F,
-              sep = "\t")
-
+  for (LOC in c("GA", "CA", "HI")){
+    gwas.loc = gwas[gwas$loc.fix == LOC,]
+    gwas.loc.out = data.frame(fid = gwas.loc$gc_id, 
+                          iid = gwas.loc$gc_id, 
+                          weight = gwas.loc$adj.m.Body, 
+                          vsperm = gwas.loc$adj.v.Sperm,
+                          lsperm = gwas.loc$adj.l.Sperm)
+    
+    write.table(file = paste0("data/qq_weight_", LOC, ".pheno"),
+                gwas.loc.out %>% select(fid, iid, weight),
+                col.names = F, row.names = F, quote = F,
+                sep = "\t")
+    write.table(file = paste0("data/qq_vsperm_", LOC, ".pheno"),
+                gwas.loc.out %>% select(fid, iid, vsperm),
+                col.names = F, row.names = F, quote = F,
+                sep = "\t")
+ }             
 
   #read grm
   
