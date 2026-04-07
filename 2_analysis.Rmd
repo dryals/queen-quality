@@ -43,8 +43,6 @@ phenotypes and genomic structure
 pheno = read.csv("data/cleaned_pheno.csv")
   pheno$loc.old = pheno$loc.fix
 
-  pheno$loc.fix[pheno$loc.fix %in% c("NCA", "SCA")] = "CA"
-  
   #pool small factors
     small = pheno %>% group_by(loc.fix) %>% 
       summarise(n = n()) %>% 
@@ -609,7 +607,7 @@ for(LOC in c("HI", "CA", "GA")){
   ggplot(loc.sigsites[-1,], aes(x = bp, y = (-1 * log(p, 10)))) +
     geom_point() +
     geom_hline(aes(yintercept =
-                     (-1 * log(0.05, base = 10))),
+                     (-1 * log(0.05, base = 10) * 3)),
            linetype = 2, col = 'red', linewidth = 1) +
     facet_grid(rows = vars(loc), cols = vars(chr), scales = "free_x") +
     labs(y = "-log(p)", x = "Position") +
