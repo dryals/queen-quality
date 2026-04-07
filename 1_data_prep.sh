@@ -97,9 +97,9 @@ echo "-----------------------"
 #     cd ~/ryals/queen-quality
 #     R --vanilla --no-save --no-echo --silent < scripts/clean_pheno.R     
 #  
-# echo "-----------------------"
-#     echo "ADMIXTURE analysis"
-#     cd ${CLUSTER_SCRATCH}/queen-quality
+echo "-----------------------"
+    echo "ADMIXTURE analysis"
+    cd ${CLUSTER_SCRATCH}/queen-quality
 # #          echo "pulling references..."
 # #         #no multiallelic sites, only snps, keep subset of references, no contigs, rename chromosomes to "1,2,3...16"
 # #         bcftools view $refs -S /home/dryals/ryals/ahb/references/pureRefs.txt \
