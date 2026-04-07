@@ -169,7 +169,7 @@ echo "-----------------------"
             echo "    pulling informative sites..."
             plink --bcf qq-admix.bcf.gz --make-bed --allow-extra-chr --chr-set 16 no-xy -chr $chrsShort \
                 --set-missing-var-ids @:# --silent \
-                --extract aim/bct_aim.ia.txt --threads $SLURM_NTASKS --out plink/topaim
+                --extract aim/plink_aim.ia.txt--threads $SLURM_NTASKS --out plink/topaim
 
             #extract ld data, removing references
             echo "    calculating ld..."
