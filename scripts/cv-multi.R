@@ -148,7 +148,7 @@ for(CVnum in 1:5){
     cv = sol.tmp %>% 
       group_by(tn) %>%
       summarise(cor = cor(pheno.est, pheno.adj),
-                slope = cor * sd(pheno.adj) / sd(pheno.est))
+                slope = cor * sd(pheno.est) / sd(pheno.adj))
     
     CVout[[CVnum]] = cv
   

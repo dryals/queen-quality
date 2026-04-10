@@ -407,15 +407,15 @@ echo "starting supervised admix..."
 # echo "-----------------------"
 #     echo "  CV error: multi-trait"
 #     
-#     par=wv
-#  
-#      #create -cv version which uses pheno-cv.txt
-#     cd ~/ryals/queen-quality
-#     cp params/${par}.par1 blup/${par}-cv.par1
-#     sed -i 's/pheno.txt/pheno-cv.txt/g' blup/${par}-cv.par1
-#     
-#     #run cv script
-#     Rscript --vanilla scripts/cv-multi.R $par
+    par=wv
+ 
+     #create -cv version which uses pheno-cv.txt
+    cd ~/ryals/queen-quality
+    cp params/${par}.par1 blup/${par}-cv.par1
+    sed -i 's/pheno.txt/pheno-cv.txt/g' blup/${par}-cv.par1
+    
+    #run cv script
+    Rscript --vanilla scripts/cv-multi.R $par
 
 echo "-----------------------"
 echo "DONE"
