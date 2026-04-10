@@ -32,5 +32,5 @@ OPTION conv_crit 1e-10
 #OPTION EM-REML 5
 #OPTION store_accuracy 1
 OPTION se_covar_function h2_1 G_1_1_1_1/(G_1_1_1_1+R_1_1)
-OPTION se_covar_function h2_2 G_2_2_1_1/(G_2_2_1_1+R_1_1)
+OPTION se_covar_function h2_2 G_1_1_2_2/(G_1_1_2_2+R_2_2)
 #ulimit -s unlimited
