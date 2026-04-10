@@ -172,4 +172,4 @@ write.csv(CVdf, file = "data/CV_summary.csv", row.names = F)
 
 print(CVdf %>% group_by(tn) %>% 
   summarise(meancor = mean(cor),
-            meanslope = mean(slope))
+            meanslope = mean(slope)))
