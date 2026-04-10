@@ -148,15 +148,9 @@ for(CVnum in 1:5){
     cv = sol.tmp %>% 
       group_by(tn) %>%
       summarise(cor = cor(pheno.est, pheno.adj),
-                slope = cor * sd(pheno.est) / sd(pheno.adj))
+                slope = cor * sd(pheno.adj) / sd(pheno.est))
     
     CVout[[CVnum]] = cv
-  
-#   #plot
-#   pdf(file = "plot.pdf")
-#   plot(sol.tmp$pheno.est, sol.tmp$pheno.real)
-#   dev.off()
-  #TODO: report cv to outdf
   
 }
 
@@ -176,47 +170,6 @@ CVdf
 
 write.csv(CVdf, file = "data/CV_summary.csv", row.names = F)
 
-print(CVdf %>% group_by(tn) %>% summarise(meancor = mean(cor)))
-
-# #plot cor
-# ggplot(CVdf, aes(x = tn, y = cor)) + 
-#   geom_boxplot() + 
-#   geom_point() + 
-#   lims(y = c(0,1))
-# 
-# 
-# # #accuracy
-# #   h = data.frame(tn = trait.key$tn,
-# #                  g = c( 0.26220, 0.10237, 0.12331),
-# #                  p = sapply(pheno.complete[,trait.key$tn], var))
-# #   h$h2 = h$g/h$p
-# #   h$h = sqrt(h$h2)
-# #   
-# #   CVdf$acc = apply(CVdf, 1, function(x){
-# #     as.numeric(x["cor"]) / h$h[h$tn == x["tn"]]
-# #   })
-# #   
-# #plot all
-# CVdf.long = CVdf %>%
-#   pivot_longer(cols = c("cor", "slope"), names_to = "parameter")
-# 
-# CVdf.cols = CVdf.long %>% group_by(tn, parameter) %>% 
-#   summarise(mean = mean(value), se = se(value))
-# 
-# CVdf.long %>% 
-#   #filter(parameter %in% c("acc", "cor")) %>% 
-#   ggplot(aes(x = tn, y = value, color = parameter)) +
-#   geom_col(data = CVdf.cols, 
-#            aes(y = mean, fill = parameter), 
-#            position = "dodge", alpha = 0.5) +
-#   geom_errorbar(data = CVdf.cols,
-#                 aes(y = mean, ymin = mean-se, ymax = mean+se),
-#                 position = position_dodge(width = 0.85),
-#                 width = 0.5) +
-#   geom_point(position = position_dodge(width = 0.85)) + 
-#   labs(x = "trait")
-# 
-# 
-# CVdf.long %>% group_by(tn, parameter) %>% 
-#   summarise(mean = mean(value), se = se(value)) %>% 
-#   arrange(parameter)
+print(CVdf %>% group_by(tn) %>% 
+  summarise(meancor = mean(cor),
+            meanslope = mean(slope))
