@@ -29,6 +29,7 @@ covmat.txt
 OPTION missing -999
 OPTION sol se
 OPTION conv_crit 1e-10
-OPTION EM-REML 5
-OPTION store_accuracy 1
+#OPTION EM-REML 5
+#OPTION store_accuracy 1
+OPTION se_covar_function h2 G_4_4_1_1/(G_4_4_1_1+R_1_1)
 #ulimit -s unlimited

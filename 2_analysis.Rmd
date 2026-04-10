@@ -50,7 +50,7 @@ pheno = read.csv("data/cleaned_pheno.csv")
     
     pheno$loc.fix[pheno$loc.fix %in% small$loc.fix] = "USA"
   
-  loclevels = c(sort(unique(pheno$loc.fix[pheno$loc.fix != "USA"])), "USA")
+  loclevels = c("USA", sort(unique(pheno$loc.fix[pheno$loc.fix != "USA"])) )
   
   pheno$loc.fix = factor(pheno$loc.fix, levels = loclevels)
   
@@ -132,6 +132,35 @@ pheno = read.csv("data/cleaned_pheno.csv")
   
   ggsave(p.phenocomp, filename = "fig/fig2_phenotypes.pdf",
          width = 8, height = 5)
+  
+  
+#output table of summary values
+  ntab = data.frame(table(pheno.rm$loc.fix)) %>% rename(Effect = 1, N = 2)
+  
+  vlm = lm(v.Sperm ~ loc.fix + year, data = pheno.rm)
+  wlm = lm(m.Body ~ loc.fix + year, data = pheno.rm)
+  coef = rbind(
+                data.frame(summary(vlm)$coefficients) %>% 
+                  mutate(trait = "Sperm Viability (prop)"),
+                data.frame(summary(wlm)$coefficients) %>% 
+                  mutate(trait = "Body Mass (mg)")
+              )
+  coef$effect = gsub("1|loc.fix", "", rownames(coef))
+  rownames(coef) = NULL
+  colnames(coef) = c("est", "se", "t", "p", "trait", "Effect")
+  coef = coef %>%
+    mutate(text = paste0(round(est,3), " (", round(se,3), ")")) %>% 
+    filter(Effect != "(Intercept)") %>% 
+    select(trait, Effect, text) %>% 
+    pivot_wider(values_from = text, names_from = trait) %>% 
+    left_join(ntab)
+  
+  coef$N[coef$Effect == 'year'] = nrow(pheno.rm)
+  
+  write.csv(coef, file = "data/effect_sumary.csv", 
+            row.names = F, quote = F)
+  
+
 
 #explore trends across time
   # pheno.mod = pheno %>% 
@@ -164,10 +193,15 @@ pheno = read.csv("data/cleaned_pheno.csv")
       left_join(pheno %>% select(gc_id, loc.fix, year, v.Sperm, m.Body))
     
     pca.geno$loc.fix[is.na(pca.geno$loc.fix)] = "USA"
+    
+    library(colorspace)
+    
+    #hcl_palettes("qualitative", plot = TRUE)
   
     p.genopca = ggplot(pca.geno, aes(x = PC1, y = PC2, color = loc.fix)) + 
       geom_point(size = 1) +
       theme(legend.key.size = unit(0.8,"line")) + 
+      scale_color_manual(values = c("gray", qualitative_hcl(n=10, palette = "Dark3")))+
       labs(color = "Location")
        #guides(fill = guide_legend(override.aes = list(linewidth = 0.8)))
     
@@ -193,6 +227,25 @@ pheno = read.csv("data/cleaned_pheno.csv")
     #rename
     admix = admix %>% rename(A = V4, M = V1, C = V2, O = V3) %>% 
       left_join(pheno %>% select(gc_id, loc.fix))
+    
+    #summary table
+    rangepaste = function(x){
+      y = round(range(x, na.rm = T),3)
+      return(paste0(y[1], ", ", y[2]))
+      }
+    
+    admix.sumtab = admix %>% 
+      pivot_longer(cols = c("A", "M", "C", "O"),
+                   names_to = "lineage") %>% 
+      rename(location = loc.fix) %>% 
+      filter(!is.na(location)) %>% 
+      group_by(location, lineage) %>% 
+      summarise(range = rangepaste(value),
+                mean = round(mean(value),3),
+                se = round(se(value),3))
+    
+    write.table(admix.sumtab, file = "data/admix_summary.tsv",
+              quote = F, row.names = F, sep = "\t")
     
     #admixture bar chart
     admix.bar = admix 
@@ -230,21 +283,71 @@ pheno = read.csv("data/cleaned_pheno.csv")
    admix.sum
 
 #phenotype PCA
+   
   pheno.num = pheno %>% 
     select(m.Body, v.Sperm, l.Sperm, t.Sperm, w.Head, w.Thorax, d.Spermatheca) %>% 
     as.matrix() %>% apply(MARGIN = 2, FUN = as.numeric)
   
-  pheno.num %>% cor(use = 'complete.obs') %>% corrplot()
+  #summary statistics
+  rangen = function(x){range(x, na.rm = T)}
+  apply(pheno.num, 2, rangen)
+  apply(pheno.num, 2, se)
+  
+  p.cor = pheno.num %>% cor(use = 'complete.obs')
+  corrplot(p.cor)
   
   pheno.scale = pheno.num %>% apply(MARGIN = 2, FUN = scale)
   pheno.scale[is.na(pheno.scale)] = 0
   
-
   pca.pheno = pheno.scale %>% 
     prcomp(center = F, scale = F) 
   
-  biplot(pca.pheno)
   
+    pcapoints = as.data.frame(pca.pheno$x)
+      pcapoints$loc.fix = pheno$loc.fix
+      
+    pcaload = as.data.frame(pca.pheno$rotation[,1:2])
+      pcaload$pheno = rownames(pcaload)
+      pcazero = pcaload %>% mutate(PC1 = 0, PC2 = 0)
+      
+      pcaload = rbind(pcaload, pcazero)
+      
+      pcascale = 10
+      
+      pcaload = pcaload %>% 
+        mutate(PC1 = PC1 * pcascale,
+               PC2 = PC2 * pcascale)
+      pcatext = pcaload %>% filter(PC1 != 0)
+      
+  
+  
+  p.ppca = ggplot() + 
+    geom_point(data = pcapoints, aes(x = PC1, y = PC2, color = loc.fix),
+               alpha = 1) + 
+    geom_line(data = pcaload, aes(x = PC1, y = PC2, group = pheno),
+              arrow = arrow(ends = "first", length = unit(10, "pt"))) + 
+    geom_label_repel(data = pcatext, aes(x = PC1, y = PC2, label = pheno)) + 
+    labs(color = "Location")
+  
+  pheno.num.long = as.data.frame(pheno.num) %>% 
+    mutate(gc_id = pheno$gc_id) %>% 
+    pivot_longer(cols = -gc_id)
+  
+  p.distr = ggplot(pheno.num.long, aes(x = name, y = value)) + 
+    geom_violin() + 
+    geom_boxplot(width = 0.5, color= 'red')+
+    facet_wrap(~name, scales = "free") + 
+    labs(x = NULL) + 
+    theme(axis.text.x = element_blank())
+  
+  p.pcomb = plot_grid(p.distr, p.ppca)
+  p.pcomb
+  
+  ggsave(p.pcomb, filename = "fig/figS1_allpheno.pdf",
+       width = 10, height = 5)
+
+  
+
 #correlations b/w admixture and phenotypes
   admixpheno = admix %>% 
     left_join(pheno %>% 
@@ -385,10 +488,13 @@ GWAS analysis: all locations
                      (-1 * log(0.05 / nrow(w.plot), base = 10))),
            linetype = 2, col = 'red', linewidth = 1) +
     facet_wrap(~trait, nrow = 2) +
-    labs(y = "-log(p)", x = "Position") +
+    labs(y = "-log(p)", x = NULL) +
     scale_color_manual(values = c("black", "darkgray"))+
     theme(axis.text.x = element_blank(),
-          legend.position = 'none')
+          axis.ticks.x = element_blank(),
+          legend.position = 'none',
+          panel.grid.major.x = element_blank(),
+          panel.grid.minor.x = element_blank())
   p.man
   
     ggsave(p.man, filename = "fig/fig3a_manhattan.pdf",
@@ -657,10 +763,6 @@ p.cv = ggplot(cv.long, aes(x = tn, y = value)) +
   labs(x = NULL, y = "Value")
 
 p.cv
-
-  ggsave(p.cv, filename = "fig/fig4_cv.pdf",
-         width = 8, height = 5)
-
 ```
 
 
@@ -693,14 +795,34 @@ colnames(pheno.blup) = c("iid", "locid", "PC1", "PC2", "PC3", "lsperm", "weight"
     pivot_wider(values_from = c(se, bv), names_from = trait)
 
   sol.wide %>% select(starts_with("bv")) %>% pairs()
+  
+  #summary
+  sol.long %>% 
+    select(trait, bv) %>% 
+    group_by(trait) %>% 
+    summarise(rangepaste(bv))
+  
 
 #plot against raw pheno
   
   pbv = sol.wide%>% 
     left_join(pheno.blup %>% select(gc_id, weight, vsperm, lsperm))
   
-  ggplot(pbv, aes(x = weight, y = bv_weight)) + geom_point()
-  ggplot(pbv, aes(x = vsperm, y = bv_vsperm)) + geom_point()
+  p.bvweight =ggplot(pbv, aes(x = weight, y = bv_weight)) +
+    geom_point(alpha = 0.5) + 
+    labs(x = "Body Mass (mg)", y = "Breeding Value")
+  p.bvvsperm = ggplot(pbv, aes(x = vsperm, y = bv_vsperm)) + 
+    geom_point(alpha = 0.5) + 
+    labs(x = "Sperm Viability (%)", y = NULL)
+  
+  #combined plot
+  p.bva = plot_grid(p.bvweight, p.bvvsperm)
+  p.bvcomb = plot_grid(p.bva, p.cv, nrow = 2, labels = "AUTO")
+  p.bvcomb
+  
+  ggsave(file = "fig/fig4_BVsummary.pdf",
+         width = 8, height = 8)
+  
   
 #plot against time
   sol.time = sol.long %>% filter(locyear != "USA20XX") %>% 
@@ -715,6 +837,9 @@ colnames(pheno.blup) = c("iid", "locid", "PC1", "PC2", "PC3", "lsperm", "weight"
   #model 
   w.mod = lm(bv~ year, data = sol.time %>% filter(trait == "weight"))
   v.mod = lm(bv~ year, data = sol.time %>% filter(trait == "vsperm"))
+  
+  summary(w.mod)
+  summary(v.mod)
   
   
 #TODO: use BVs not phenos
