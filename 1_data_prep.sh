@@ -60,13 +60,13 @@ echo "main filtering..."
     grep "QC" samples.names > keep.names
         
 
-    #mark low propability as missing 
+    #mark low propability imputed sites as missing data (".")
     echo "    mark missing..."
     bcftools view samples.bcf.gz -S keep.names -Ou | 
         bcftools filter  -S . -i 'GP[:0] > 0.995 | GP[:1] > 0.995 | GP[:2] > 0.995' \
         --threads $SLURM_NTASKS -Ob -o samples.missing.bcf.gz 
      
-    #filter in plink
+    #filter MAF, missingness, and HWE in plink
     echo "    mind, geno, and maf filters..."
     cd $CLUSTER_SCRATCH/queen-quality
     mkdir -p plink
@@ -82,7 +82,7 @@ echo "main filtering..."
     cd $CLUSTER_SCRATCH/queen-quality/plink
     plink -bfile samples-filter --freq --out samples-filter
      
-    #output sites for ref filter, samples
+    #output sample names and sites for downstream filters
     awk '{print $2}' samples-filter.bim | tr ":" "\t" > samples-filter.sites
     awk '{print $1}' samples-filter.fam > samples-filter.names
 
@@ -113,6 +113,7 @@ echo "-----------------------"
      bcftools index -c reference-filter.bcf.gz
      
     echo "launching Ia script...."
+        #rank all sites by Ia
         #count number of samples in each population
         cd ${CLUSTER_SCRATCH}/queen-quality
         mkdir -p aim
@@ -135,7 +136,7 @@ echo "-----------------------"
     
     echo "compiling Ia results..."    
     cd ${CLUSTER_SCRATCH}/queen-quality/aim
-    #this will hold all the aims
+    #ancestrally informative markers
     cat chr*/chr*.ia | grep -v "chr" | sort -k3 -gr > aim.ia.txt
    
         grep -v "NA" aim.ia.txt | awk '$3>0' | awk 'OFS=":" {print$1, $2}' > plink_aim.ia.txt
@@ -146,6 +147,7 @@ echo "-----------------------"
     echo "    Calculated Ia for $count sites"
    
     echo "merging samples and references..."
+    #TODO: ensure the references are correctly filtered!
     cd $CLUSTER_SCRATCH/queen-quality
     bcftools view samples.missing.bcf.gz -T plink/samples-filter.sites -S plink/samples-filter.names \
         --threads $SLURM_NTASKS -Ob -o samples-aim.bcf.gz
@@ -158,6 +160,7 @@ echo "-----------------------"
         bcftools index -c qq-admix.bcf.gz
     
     echo "starting PLINK for supervised data" 
+        #LD pruning, choosing the site with highest Ia
         #aims, maf, and geno
         cd ${CLUSTER_SCRATCH}/queen-quality
             echo "    pulling informative sites..."
@@ -168,7 +171,6 @@ echo "-----------------------"
             #extract ld data, removing references
             echo "    calculating ld..."
             cd plink
-            #TODO: consider maf threshold
             plink --bfile topaim -r2 --ld-window 1000 --ld-window-kb 50 --ld-window-r2 0.2 \
                 --remove /home/dryals/ryals/admixPipeline/references/plink_pureRefs.txt \
                 --silent --threads $SLURM_NTASKS --out sampleAncPrune
@@ -215,7 +217,7 @@ echo "starting supervised admix..."
     mkdir -p supervised
     #supervised
     cd /home/dryals/ryals/queen-quality
-    #create pop file
+    #create "*.pop" file based on "*.fam"
     R --vanilla --no-save --no-echo --silent < scripts/makeAdmixPop.R
     sbatch scripts/supervised_admix_v3.sh
 
@@ -226,17 +228,18 @@ echo "-----------------------"
     plink --bfile samples-filter --pca 500 \
         --threads $SLURM_NTASKS --out samples-gwas --silent
         
-    echo "    select locations..."
-    for LOC in GA CA HI
-        do
-            echo "        working $LOC ..."
-            cd $CLUSTER_SCRATCH/queen-quality/plink
-            plink --bfile samples-filter --pca 500 \
-                --make-bed \
-                --keep ~/ryals/queen-quality/data/phenotyped_${LOC}.gcnames \
-                --threads $SLURM_NTASKS --out samples-gwas_${LOC} --silent
-        done
-     
+#     echo "    select locations..."
+#     for LOC in GA CA HI
+#         do
+#             echo "        working $LOC ..."
+#             cd $CLUSTER_SCRATCH/queen-quality/plink
+#             plink --bfile samples-filter --pca 500 \
+#                 --make-bed \
+#                 --keep ~/ryals/queen-quality/data/phenotyped_${LOC}.gcnames \
+#                 --threads $SLURM_NTASKS --out samples-gwas_${LOC} --silent
+#         done
+#  
+    #create GRM in PLINK2, keeping only sites with MAF > 0.05
     echo "GRM..."
     module purge
     module load biocontainers plink2
@@ -271,51 +274,54 @@ echo "preparing data for GWAS and GS"
 echo "-----------------------"
 echo "running GWAS..."
 
-#TODO pull GA, CA, HI and run separately
-
     echo "    GRM..."
+    
     cd $CLUSTER_SCRATCH/queen-quality
     mkdir -p gwas
     cd gwas
     gcta=/depot/bharpur/apps/gcta/gcta-1.94.1-linux-kernel-3-x86_64/gcta-1.94.1
     
+    #GCTA creates verboose output, so they are mostly sent to a logfile
+    echo date > gcta_all.log
+    
         $gcta --bfile ../plink/samples-filter --make-grm --thread-num $SLURM_NTASKS \
-            --autosome-num 16 --out qq
+            --autosome-num 16 --out qq >> gcta_all.log
             
         echo "    mlma: all locations..."
         #adjusted phenotypes generated in R script...
         $gcta --mlma-loco --bfile ../plink/samples-filter --grm qq \
             --pheno ~/ryals/queen-quality/data/qq_vsperm.pheno \
             --autosome-num 16 \
-            --out qq_vsperm --thread-num $SLURM_NTASKS &> /dev/null
+            --out qq_vsperm --thread-num $SLURM_NTASKS >> gcta_all.log
             
         $gcta --mlma-loco --bfile ../plink/samples-filter --grm qq \
             --pheno ~/ryals/queen-quality/data/qq_weight.pheno \
             --autosome-num 16 \
-            --out qq_weight --thread-num $SLURM_NTASKS &> /dev/null
+            --out qq_weight --thread-num $SLURM_NTASKS >> gcta_all.log
             
-       echo "    mlma: select locations..."
-            for LOC in GA CA HI
-            do
-                echo "    working: ${LOC}..."
-                
-                $gcta --bfile ../plink/samples-gwas_${LOC} --make-grm --thread-num $SLURM_NTASKS \
-                    --autosome-num 16 --out qq_${LOC} &> /dev/null
-                
-                $gcta --mlma-loco --bfile ../plink/samples-gwas_${LOC} --grm qq_${LOC} \
-                    --pheno ~/ryals/queen-quality/data/qq_vsperm_${LOC}.pheno \
-                    --autosome-num 16 \
-                    --out qq_vsperm_${LOC} --thread-num $SLURM_NTASKS &> /dev/null
-                    
-                $gcta --mlma-loco --bfile ../plink/samples-gwas_${LOC} --grm qq_${LOC} \
-                    --pheno ~/ryals/queen-quality/data/qq_weight_${LOC}.pheno \
-                    --autosome-num 16 \
-                    --out qq_weight_${LOC} --thread-num $SLURM_NTASKS &> /dev/null
-                    
-                echo "        done: ${LOC}"
-
-            done
-            
+#        echo "    mlma: select locations..."
+#             for LOC in GA CA HI
+#             do
+#                 echo "    working: ${LOC}..."
+#                 
+#                 $gcta --bfile ../plink/samples-gwas_${LOC} --make-grm --thread-num $SLURM_NTASKS \
+#                     --autosome-num 16 --out qq_${LOC} &> /dev/null
+#                 
+#                 $gcta --mlma-loco --bfile ../plink/samples-gwas_${LOC} --grm qq_${LOC} \
+#                     --pheno ~/ryals/queen-quality/data/qq_vsperm_${LOC}.pheno \
+#                     --autosome-num 16 \
+#                     --out qq_vsperm_${LOC} --thread-num $SLURM_NTASKS &> /dev/null
+#                     
+#                 $gcta --mlma-loco --bfile ../plink/samples-gwas_${LOC} --grm qq_${LOC} \
+#                     --pheno ~/ryals/queen-quality/data/qq_weight_${LOC}.pheno \
+#                     --autosome-num 16 \
+#                     --out qq_weight_${LOC} --thread-num $SLURM_NTASKS &> /dev/null
+#                     
+#                 echo "        done: ${LOC}"
+# 
+#             done
+          
+        #move all outputs to data dir
         cp qq_*.loco.mlma ~/ryals/queen-quality/data
             
 # echo "-----------------------"
@@ -386,16 +392,20 @@ echo "running GWAS..."
     cd ~/ryals/queen-quality
     cp params/${par}.par0 blup
     cd blup
+    #run aireml for variance components and heritabilities
     ./airemlf90 ${par}.par0
-#     
-# #     
-# #     
+    
+    #manually insert variance components estimates into "*.par1" ...
+    
+#      
 # #     #TODO this but automatic...
 # #     #read G and R matricies into blup.par2
 # # #     sed -n 16,80p file1>patch
 # # #     sed -i 18rpatch file2
-# #     
+
+   
     cp ../params/${par}.par1 .
+    #run blupf90 for BV estimates and SE's
     ./blupf90+ ${par}.par1
     cp solutions ../data/sol-${par}.txt
     cp solutions sol-${par}
@@ -405,7 +415,7 @@ echo "-----------------------"
     
     par=wv
  
-     #create -cv version which uses pheno-cv.txt
+     #create -cv version of param file using pheno-cv.txt which contains masked phenotypes
     cd ~/ryals/queen-quality
     cp params/${par}.par1 blup/${par}-cv.par1
     sed -i 's/pheno.txt/pheno-cv.txt/g' blup/${par}-cv.par1

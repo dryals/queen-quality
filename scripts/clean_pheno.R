@@ -9,54 +9,52 @@ select=dplyr::select
 #read phenotypic data
 pheno = read_excel("pheno/phenotypes.xlsx") %>% 
   mutate(pheno_id = gsub(" ", "", QC)) 
-
-#repair dates
-  pheno$date.1 = as_date(NA)
-  pheno$date.1[grepl("^[0-9]*$", pheno$Received)] = 
-    as_date(as.numeric(pheno$Received[grepl("^[0-9]*$", pheno$Received)]), origin = "1899-12-30")
   
-  pheno$date.2 = as_date(NA)
-  pheno$date.2[grepl("Z$", pheno$Received)] = 
-    as_date(pheno$Received[grepl("Z$", pheno$Received)])
-  
-  
-  pheno$date = as_date(NA)
-  for(i in 1:nrow(pheno)){
-    if(is.na(pheno$date.1[i])){
-      pheno$date[i] = pheno$date.2[i]
-    } else{
-      pheno$date[i] = pheno$date.1[i]
-    }
-  }
-  
-  pheno = pheno %>% select(-date.1, -date.2)
-  
-  pheno$year = year(pheno$date)
-  
-
-
-#standardize locations
-loc.trans = data.frame(Location = c("Hawaii", "Georgia", "Southern California", "Minnesota",
-                                    "Northern California", "Washington", "West Virginia",
-                                    "Michigan", "Unknown", "NCA", "NC", "USA", "MN", 
-                                    "GA", "HI", "PA", "CA", "OH", "NY", "WA", "SCA",
-                                    "VA", "AL", "FL", "OR", "Oregon"), 
-                       
-                       loc.fix = c("HI", "GA", "SCA", "MN",
-                                   "NCA", "WA", "WV",
-                                   "MI", "USA", "NCA", "NC", "USA", "MN", 
-                                   "GA", "HI", "PA", "CA", "OH", "NY", "WA", "SCA",
-                                   "VA", "AL", "FL", "OR", "OR"))
-pheno = pheno %>% left_join(loc.trans, by = "Location")
-
-  #remove duplicate entries
-  pheno = pheno[-(which(pheno$pheno_id == "QC2573")[2]),]
-  pheno = pheno[-(which(pheno$pheno_id == "QC2422")[2]),]
-  
-  #print(pheno[,c('Location', 'loc.fix')], n = 500)
-
 #data cleaning and prep
 
+  #repair dates
+    pheno$date.1 = as_date(NA)
+    pheno$date.1[grepl("^[0-9]*$", pheno$Received)] = 
+      as_date(as.numeric(pheno$Received[grepl("^[0-9]*$", pheno$Received)]), origin = "1899-12-30")
+    
+    pheno$date.2 = as_date(NA)
+    pheno$date.2[grepl("Z$", pheno$Received)] = 
+      as_date(pheno$Received[grepl("Z$", pheno$Received)])
+    
+    
+    pheno$date = as_date(NA)
+    for(i in 1:nrow(pheno)){
+      if(is.na(pheno$date.1[i])){
+        pheno$date[i] = pheno$date.2[i]
+      } else{
+        pheno$date[i] = pheno$date.1[i]
+      }
+    }
+    
+    pheno = pheno %>% select(-date.1, -date.2)
+    
+    pheno$year = year(pheno$date)
+    
+
+
+  #standardize locations
+  loc.trans = data.frame(Location = c("Hawaii", "Georgia", "Southern California", "Minnesota",
+                                      "Northern California", "Washington", "West Virginia",
+                                      "Michigan", "Unknown", "NCA", "NC", "USA", "MN", 
+                                      "GA", "HI", "PA", "CA", "OH", "NY", "WA", "SCA",
+                                      "VA", "AL", "FL", "OR", "Oregon"), 
+                        
+                        loc.fix = c("HI", "GA", "SCA", "MN",
+                                    "NCA", "WA", "WV",
+                                    "MI", "USA", "NCA", "NC", "USA", "MN", 
+                                    "GA", "HI", "PA", "CA", "OH", "NY", "WA", "SCA",
+                                    "VA", "AL", "FL", "OR", "OR"))
+  pheno = pheno %>% left_join(loc.trans, by = "Location")
+
+    #remove duplicate entries
+    pheno = pheno[-(which(pheno$pheno_id == "QC2573")[2]),]
+    pheno = pheno[-(which(pheno$pheno_id == "QC2422")[2]),]
+    
     #pull all names from sequencer
     
     allnames = read.delim("/scratch/negishi/dryals/queen-quality/plink/samples-filter.fam", header = F, sep = "") %>% 
@@ -64,7 +62,7 @@ pheno = pheno %>% left_join(loc.trans, by = "Location")
       select(gc_id = V1) %>% 
       filter(grepl("QC", gc_id))
     
-    #attempt bradley fixes
+    #fix some incorrect sample ID's from the sequencer to match phenotype ID's
     bradley = read.csv("pheno/bradley_edits.csv")
     
     allnames = allnames %>% left_join(bradley %>% select(gc_id = manifest_id, new_id), by = 'gc_id')
@@ -90,23 +88,10 @@ pheno = pheno %>% left_join(loc.trans, by = "Location")
     #manually remove this problematic individual
     pheno.fix = pheno.fix[-which(pheno.fix$gc_id == "QC0758"),]
     
-    #one leve for california
+    #one level for california
     pheno.fix$loc.fix[pheno.fix$loc.fix %in% c("NCA","SCA")] = "CA"
     
 #TODO: get a count for how many phenotypes actually exist...
-      
-      
-      #sum(!is.na(pheno$gc_id))
-      #nrow(allnames)
-      
-#     pheno.fix %>% group_by(gc_id) %>%
-#       summarise(n = n()) %>%
-#       filter(n > 1) 
-#     
-#     pheno.fix %>% group_by(pheno_id) %>%
-#       summarise(n = n()) %>%
-#       filter(n > 1) 
-#     
   
   #check for phenotype outliers
       pheno.num = pheno.fix %>% 
@@ -121,20 +106,17 @@ pheno = pheno %>% left_join(loc.trans, by = "Location")
           f.Spermatheca = as.numeric(f.Spermatheca)
         )
       
-      # for(trait in colnames(pheno.num)[5:12]){
-      #   
-      #   hist(pheno.num[,trait] %>% unlist(), main = trait)
-      #   
-      # }
+#       for(trait in colnames(pheno.num)[5:12]){
+#         
+#         hist(pheno.num[,trait] %>% unlist(), main = trait)
+#         
+#       }
       
       #remove outlier phenotypes
       pheno.num = pheno.num[-(which.min(pheno.num$m.Body)),]
       
-      #TODO: problems with thorax and head, ask bradley
-      
     #create loc.year effect
     pheno.num$loc.year = paste0(pheno.num$loc.fix, pheno.num$year)
-    
     
     #write cleaned phenotypes
     write.csv(pheno.num, "data/cleaned_pheno.csv",
@@ -155,30 +137,5 @@ pheno = pheno %>% left_join(loc.trans, by = "Location")
                 col.names = F, row.names = F, quote = F)
                 }
                 
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
   
   
