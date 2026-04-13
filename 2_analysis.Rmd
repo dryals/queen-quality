@@ -409,8 +409,8 @@ p.map
 #compound sampling figure
   
 p.a = cowplot::plot_grid(p.map, p.genopca, labels = c("A", "B"))
-p.a
 p.samplecom = cowplot::plot_grid(p.a, p.admix, nrow = 2, labels = c(NA, "C"))
+p.samplecom
 
   
   ggsave(p.samplecom, filename = "fig/fig1_samples.pdf",
@@ -621,7 +621,7 @@ plot.new()
 ```
 
 ## GWA: select locations (WIP)
-```{r}
+```{r, eval=F}
 
 loc.sigsites = data.frame(loc = NA,
                           trait = NA,
