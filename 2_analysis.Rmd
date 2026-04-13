@@ -31,14 +31,8 @@ se = function(x) sqrt(var(x, na.rm = T)/length(x))
 setwd("/home/dylan/Documents/bees/harpurlab/project/gensel/tarpy/queen-quality")
 ```
 
-
-read in data and manipulate
-
-phenotypes and genomic structure 
+# phenotypes and genomic structure 
 ```{r}
-
-#TODO: use same pooling method for small factors???
-
 #read phenotypic data
 pheno = read.csv("data/cleaned_pheno.csv")
   pheno$loc.old = pheno$loc.fix
@@ -159,24 +153,6 @@ pheno = read.csv("data/cleaned_pheno.csv")
   
   write.csv(coef, file = "data/effect_sumary.csv", 
             row.names = F, quote = F)
-  
-
-
-#explore trends across time
-  # pheno.mod = pheno %>% 
-  #   filter(!is.na(m.Body), !is.na(v.Sperm))
-  # pheno.mod = pheno.mod %>% 
-  #   mutate(weight.resid = lm(m.Body ~ loc.fix, data = pheno.mod)$residuals,
-  #          vsperm.resid = lm(v.Sperm ~ loc.fix, data = pheno.mod)$residuals)
-  # 
-  # #phenotype over time?
-  # ggplot(pheno.mod, aes(x = year, y = weight.resid)) + 
-  #   geom_point() +
-  #   geom_smooth(method = 'lm', se = F)
-  # 
-  # ggplot(pheno.mod, aes(x = year, y = vsperm.resid)) + 
-  #   geom_point() +
-  #   geom_smooth(method = 'lm', se = F)
 
 #genotype PCA
   eig = read.delim("data/samples-pca.eigenval", header = F)
@@ -346,8 +322,6 @@ pheno = read.csv("data/cleaned_pheno.csv")
   ggsave(p.pcomb, filename = "fig/figS1_allpheno.pdf",
        width = 10, height = 5)
 
-  
-
 #correlations b/w admixture and phenotypes
   admixpheno = admix %>% 
     left_join(pheno %>% 
@@ -359,7 +333,10 @@ pheno = read.csv("data/cleaned_pheno.csv")
   
   #models
   
-  summary(lm(m.Body ~ loc.fix + M + A , data = admixpheno))
+  cor(admixpheno$m.Body, admixpheno$C)
+  
+  apmod = lm(m.Body ~ loc.fix + C , data = admixpheno)
+  summary(apmod)
   
   massmod = lmer(m.Body ~ M + C + O + (1|loc.fix) , data = admixpheno)
   AIC(massmod)
@@ -378,17 +355,16 @@ pheno = read.csv("data/cleaned_pheno.csv")
   summary(lm(v.Sperm ~ year + loc.fix, data = pheno2))
   
   summary(lm(m.Body ~ year + loc.fix, data = pheno2))
-
-  #average weight per location
-  
-  
-  
-  #TODO: try correcting with KING?
   
 #Fstat and pheno
   fstat = read.delim("data/samples-filter.het") %>% 
-    select(gc_id = INDV, fstat = `F`) %>% 
+    mutate(het = (N_SITES - O.HOM.) / N_SITES) %>% 
+    select(gc_id = INDV, fstat = `F`, het) %>% 
     left_join(admixpheno)
+  
+  hist(fstat$het)
+  mean(fstat$het)
+  sd(fstat$het)
   
     fcor = fstat %>% select(m.Body, v.Sperm, fstat) %>% as.matrix()
     corrplot(cor(fcor, use = "pairwise.complete.obs"))
@@ -430,8 +406,7 @@ pheno = read.csv("data/cleaned_pheno.csv")
 p.map
   
   
-#compound sampling figure??
-  
+#compound sampling figure
   
 p.a = cowplot::plot_grid(p.map, p.genopca, labels = c("A", "B"))
 p.a
@@ -444,7 +419,7 @@ p.samplecom = cowplot::plot_grid(p.a, p.admix, nrow = 2, labels = c(NA, "C"))
 ```
 
 
-GWAS analysis: all locations
+# GWAS analysis: all locations
 ```{r}
 #GWAS 
   
@@ -645,7 +620,7 @@ plot.new()
   
 ```
 
-# GWAS analysis: select locations
+## GWA: select locations (WIP)
 ```{r}
 
 loc.sigsites = data.frame(loc = NA,
@@ -926,27 +901,6 @@ p.prog
   
   ggsave(p.prog, filename = "fig/fig5_progress.pdf",
          width = 10, height = 5)
-
-  
-# #plotting BVs
-#   p6a = ggplot(pbv, aes(x = weight, y = bv_weight, color = Location,
-#                   ymax = bv_weight + se_weight, ymin = bv_weight - se_weight)) +
-#     geom_pointrange(size = 1) + 
-#     labs(title = "6a. Breeding Values")
-#   
-#   p6b = ggplot(pbv, aes(x = viability, y = bv_viability, color = Location,
-#                   ymax = bv_viability + se_viability, ymin = bv_viability - se_viability)) +
-#     geom_pointrange(size = 1) +
-#     labs(title = "6b. Breeding Values")
-#   
-#   pbv$toplabs = pbv$vcf_id
-#     pbv$toplabs[pbv$bv_viability < 0.25 | pbv$bv_weight < 0.18] = NA
-#   
-#   p6c = ggplot(pbv, aes(x = bv_weight, y = bv_viability, color = Location,
-#                   label = toplabs)) +
-#     geom_point(size = 3) + 
-#     geom_label_repel()+
-#     labs(title = "6c. Selection Candidates")
   
 ```
 
