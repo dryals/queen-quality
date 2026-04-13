@@ -22,11 +22,14 @@ echo "-----------------------"
     module purge
     module load biocontainers bcftools vcftools plink r
     
-    #vcf location
+#define variables
+    #vcf all imputed genotypes
     vcf="/depot/bharpur/data/popgenomes/gencove/NCstate/NCstate_final2.bcf.gz"
+    #translate chr codes to numbers
     rename=/home/dryals/ryals/queen-quality/chrsrename.txt
     chrs=$( awk '{print $1}' $rename | tr '\n' ',' )
     chrsShort=$( awk '{print $2}' $rename | tr '\n' ' ' )
+    #reference sequences
     refs=/depot/bharpur/data/popgenomes/HarpurPNAS/output_snp.vcf.gz
 
 echo "-----------------------"
@@ -35,13 +38,15 @@ echo "-----------------------"
     mkdir -p locks
     mkdir -p $CLUSTER_SCRATCH/queen-quality
     mkdir -p blup 
-    #filter and prepare vcf  
-    cd $CLUSTER_SCRATCH/queen-quality
     
     
 echo "-----------------------"
+
 echo "main filtering..."
+    #filter and prepare vcf  
+    cd $CLUSTER_SCRATCH/queen-quality
     
+    #filter imputed genotypes
     #keep no contigs, only bialleleci snps, remove duplicats (norm), rename chrs
     echo "filtering sample vcf..."
     bcftools view $vcf -v snps -r $chrs -Ou | bcftools norm -m +snps -Ou | \
@@ -50,7 +55,7 @@ echo "main filtering..."
     
     bcftools index -c samples.bcf.gz
     
-    #remove non-QC samples
+    #remove samples not in this dataset (only those named QC...)
     bcftools query samples.bcf.gz -l > samples.names
     grep "QC" samples.names > keep.names
         
@@ -314,6 +319,8 @@ echo "running GWAS..."
         cp qq_*.loco.mlma ~/ryals/queen-quality/data
             
 # echo "-----------------------"
+
+
 # echo "running GREML..."
 #     #ld scores
 #     $gcta --bfile ../plink/samples-filter --ld-score-region 200 --ld-wind 50 --ld-rsq-cutoff 0.1 --out greml

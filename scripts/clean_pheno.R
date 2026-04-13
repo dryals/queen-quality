@@ -7,7 +7,7 @@ select=dplyr::select
 
 
 #read phenotypic data
-pheno = read_excel("data/phenotypes.xlsx") %>% 
+pheno = read_excel("pheno/phenotypes.xlsx") %>% 
   mutate(pheno_id = gsub(" ", "", QC)) 
 
 #repair dates
@@ -65,7 +65,7 @@ pheno = pheno %>% left_join(loc.trans, by = "Location")
       filter(grepl("QC", gc_id))
     
     #attempt bradley fixes
-    bradley = read.csv("data/bradley_edits.csv")
+    bradley = read.csv("pheno/bradley_edits.csv")
     
     allnames = allnames %>% left_join(bradley %>% select(gc_id = manifest_id, new_id), by = 'gc_id')
       allnames$new_id[is.na(allnames$new_id)] = allnames$gc_id[is.na(allnames$new_id)] 
