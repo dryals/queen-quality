@@ -101,8 +101,7 @@ gwas$adj.v.Sperm = lm(v.Sperm ~ loc.year + PC1 + PC2 + PC3, data = gwas)$residua
   gwas.out = data.frame(fid = gwas$gc_id, 
                         iid = gwas$gc_id, 
                         weight = gwas$adj.m.Body, 
-                        vsperm = gwas$adj.v.Sperm,
-                        lsperm = gwas$adj.l.Sperm)
+                        vsperm = gwas$adj.v.Sperm)
                         
   write.table(file = "data/qq_weight.pheno",
               gwas.out %>% select(fid, iid, weight),
