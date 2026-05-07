@@ -52,6 +52,14 @@ filter(gc_id %in% phenotyped$gc_id)
     
     table(pheno.filter$loc.year)
     
+    #write summary table 
+    sum.out = pheno.filter %>%
+      group_by(loc.year) %>%
+      summarise(mean_bm = mean(m.Body),
+                mean_sv = mean(v.Sperm) * 100,
+                n = n())
+    write.csv(sum.out, file = "data/locYearSum.csv",
+              quote = F, row.names = F)
     
 # #read admix components 
 #     #read admix data
