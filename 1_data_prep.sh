@@ -220,6 +220,23 @@ echo "starting supervised admix..."
     #create "*.pop" file based on "*.fam"
     R --vanilla --no-save --no-echo --silent < scripts/makeAdmixPop.R
     sbatch scripts/supervised_admix_v3.sh
+    
+echo "-----------------------"
+    echo "Estimating Ne..."
+    #/depot/bharpur/apps/NeEstimator
+    cd $CLUSTER_SCRATCH/queen-quality/
+    
+    #convert to VCF
+    #bcftools view samples-aim.bcf.gz -Ov samples-aim.vcf
+    
+    
+    mkdir -p Ne
+    cd Ne
+    currentNe=/depot/bharpur/apps/currentNe2/currentne2
+    
+    $currentNe ../
+    
+    
 
 echo "-----------------------"
     #PCA and GRM
