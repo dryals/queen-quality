@@ -50,13 +50,11 @@ filter(gc_id %in% phenotyped$gc_id)
     
     pheno.filter$loc.year[pheno.filter$loc.year %in% small.usa$loc.year] = "USA20XX"
     
-    table(pheno.filter$loc.year)
-    
     #write summary table 
     sum.out = pheno.filter %>%
       group_by(loc.year) %>%
-      summarise(mean_bm = mean(m.Body),
-                mean_sv = mean(v.Sperm) * 100,
+      summarise(mean_bm = round(mean(m.Body), 2),
+                mean_sv = round(mean(v.Sperm) * 100, 2),
                 n = n())
     write.csv(sum.out, file = "data/locYearSum.csv",
               quote = F, row.names = F)
