@@ -141,9 +141,14 @@ pheno = read.csv("data/cleaned_pheno.csv")
   apply(pheno.num, 2, function(x){sd(x, na.rm = T)})
   
   p.cor = pheno.num %>% cor(use = 'complete.obs')
+
+    names2 = c("BM", "SV", "TVS", "TS", "HW", "TW", "SD")
+    colnames(p.cor) = names2
+    rownames(p.cor) = names2
+  
   corrplot(p.cor)
   
-  pdf(file = "fig/supFig2_phenoCor", height = 10, width = 10)
+  pdf(file = "fig/SupplementalFigureS2_PhenotypicCorrelations", height = 10, width = 10)
     corrplot(p.cor)
   dev.off()
   
@@ -169,7 +174,6 @@ pheno = read.csv("data/cleaned_pheno.csv")
       pcaload$pheno = rownames(pcaload)
       
       #name change
-      names2 = c("BM", "SV", "TVS", "TS", "HW", "TW", "SD")
       pcaload = cbind(pcaload, names2)
       
       pcazero = pcaload %>% mutate(PC1 = 0, PC2 = 0)
@@ -213,7 +217,7 @@ pheno = read.csv("data/cleaned_pheno.csv")
   
   p.ppca
   
-    ggsave(p.ppca, filename = "fig/supFig3_all_phenotypes_pca.pdf",
+    ggsave(p.ppca, filename = "fig/SupplementalFigureS3_allPhenotypesPCA.pdf",
          width = 6, height = 5)
   
   pheno.num.long = as.data.frame(pheno.num) %>% 
@@ -225,7 +229,7 @@ pheno = read.csv("data/cleaned_pheno.csv")
                           nrow = 1, rel_widths = c(0.65, 0.65, 1))
   p.phenocomp
   
-  ggsave(p.phenocomp, filename = "fig/fig2_phenotypes.pdf",
+  ggsave(p.phenocomp, filename = "fig/Figure1_Phenotypes.pdf",
          width = 10, height = 5)
   
   
@@ -480,7 +484,7 @@ p.samplecom = cowplot::plot_grid(p.a, p.admix, nrow = 2, labels = c(NA, "C"))
 p.samplecom
 
   
-  ggsave(p.samplecom, filename = "fig/fig1_samples.pdf",
+  ggsave(p.samplecom, filename = "fig/Figure2_Samples.pdf",
          width = 10, height = 7)
   
 ```
@@ -546,9 +550,13 @@ p.samplecom
           panel.grid.minor.x = element_blank())
   p.man
   
-    ggsave(p.man, filename = "fig/fig3a_manhattan.pdf",
+    #save as PNG because PDF is too big
+    # ggsave(p.man, filename = "fig/Figure3_Manhattan.pdf",
+    #      width = 6, height = 7)
+    
+    ggsave(p.man, filename = "fig/Figure3_Manhattan.png",
          width = 6, height = 7)
-  
+    
 #output top hits
   all.mlma.l = list(v.mlma, w.mlma)
   traits = c("v.Sperm", "m.Body")
@@ -682,13 +690,14 @@ p.samplecom
 
 
   
-pdf(file = "fig/supFig1_qq.pdf",
-    height = 7, width = 4)
+png(file = "fig/SupplementalFigureS1_QQ.png",
+    height = 600, width = 500, units = 'px')
   par(mfrow = c(2,1))
   qqPlot(w.mlma$p)
   qqPlot(v.mlma$p)
 dev.off()
-  
+
+dev.off()
 par(mfrow = c(1,1))
 plot.new()
   
@@ -830,9 +839,23 @@ p.cv
 
 read results: quantitative
 ```{r}
+
 #read phenotype file.....
 pheno.blup = read.delim("data/pheno.txt",
                         header = F, sep = "")
+
+#calculate genetic correlation from covariance
+  cov.high = -2.8238 + 18.258
+  cov.low =  -2.8238 - 18.258
+  sd.b = sd(pheno.blup$weight)
+  sd.sv = sd(pheno.blup$vsperm)
+  
+  cor.high = cov.high / (sd.b*sd.sv)
+  cor.low = cov.low / (sd.b*sd.sv)
+  
+  mean(c(cor.high, cor.low))
+  cor.high - mean(c(cor.high, cor.low))
+
 
 colnames(pheno.blup) = c("iid", "locid", "PC1", "PC2", "PC3", "lsperm", "weight", "vsperm", "tsperm", 
                          "locyear", "gc_id", "pheno_id")
@@ -985,7 +1008,7 @@ p.prog
                        scale = 0.9)
   p.bvcomb
   
-  ggsave(p.bvcomb, filename = "fig/fig4_BVsummary.pdf",
+  ggsave(p.bvcomb, filename = "fig/Figure4_GEBVs.pdf",
          width = 8, height = 10)
   
 ```
