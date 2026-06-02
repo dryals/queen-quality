@@ -57,9 +57,8 @@ pheno = read_excel("pheno/phenotypes.xlsx") %>%
     
     #pull all names from sequencer
     
-    allnames = read.delim("/scratch/negishi/dryals/queen-quality/plink/samples-filter.fam", header = F, sep = "") %>% 
-    #allnames = read.delim("data/samples-filter.fam", header = F, sep = "") %>% 
-      select(gc_id = V1) %>% 
+    allnames = read.delim("data/sample.fnames", header = F, sep = "") %>% 
+      select(gc_id = V2) %>% 
       filter(grepl("QC", gc_id))
     
     #fix some incorrect sample ID's from the sequencer to match phenotype ID's
@@ -69,12 +68,13 @@ pheno = read_excel("pheno/phenotypes.xlsx") %>%
       allnames$new_id[is.na(allnames$new_id)] = allnames$gc_id[is.na(allnames$new_id)] 
     
     # #how many fail to match?
-    # allnames$gc_id[!allnames$gc_id %in% pheno$id]
-    # allnames$new_id[!allnames$new_id %in% pheno$id]
+    allnames$gc_id[!allnames$gc_id %in% pheno$pheno_id]
+    allnames$new_id[!allnames$new_id %in% pheno$pheno_id]
       
       
-    #manually drop duplicated genomic sample 
+    #manually drop duplicated genomic samples
       allnames = allnames[-which(allnames$new_id == "QC2573")[1],]
+      allnames = allnames[-which(allnames$new_id == "QC3371")[1],]
   
       
     #amend pheno with genetic ids
@@ -85,38 +85,15 @@ pheno = read_excel("pheno/phenotypes.xlsx") %>%
     #manually drop duplicated pheno id
     pheno.fix = pheno.fix[-which(pheno.fix$pheno_id == "QC2422")[2],]
     
+    #write all phenotypes
+    write.csv(pheno.num, "data/all_pheno.csv",
+              row.names = F, quote= F)
+    
+    #remove outlier phenotypes
+    pheno.num = pheno.num[-(which.min(pheno.num$m.Body)),]
+    
     #manually remove this problematic individual
     pheno.fix = pheno.fix[-which(pheno.fix$gc_id == "QC0758"),]
-    
-    #one level for california
-    pheno.fix$loc.fix[pheno.fix$loc.fix %in% c("NCA","SCA")] = "CA"
-    
-#TODO: get a count for how many phenotypes actually exist...
-  
-  #check for phenotype outliers
-      pheno.num = pheno.fix %>% 
-        mutate(
-          m.Body = as.numeric(m.Body),
-          v.Sperm = as.numeric(v.Sperm),
-          l.Sperm = as.numeric(l.Sperm),
-          t.Sperm = as.numeric(t.Sperm),
-          w.Head = as.numeric(w.Head),
-          w.Thorax = as.numeric(w.Thorax),
-          d.Spermatheca = as.numeric(d.Spermatheca),
-          f.Spermatheca = as.numeric(f.Spermatheca)
-        )
-      
-#       for(trait in colnames(pheno.num)[5:12]){
-#         
-#         hist(pheno.num[,trait] %>% unlist(), main = trait)
-#         
-#       }
-      
-      #remove outlier phenotypes
-      pheno.num = pheno.num[-(which.min(pheno.num$m.Body)),]
-      
-    #create loc.year effect
-    pheno.num$loc.year = paste0(pheno.num$loc.fix, pheno.num$year)
     
     #write cleaned phenotypes
     write.csv(pheno.num, "data/cleaned_pheno.csv",
@@ -127,15 +104,15 @@ pheno = read_excel("pheno/phenotypes.xlsx") %>%
                 pheno.num$gc_id[!is.na(pheno.num$gc_id)],
                 col.names = F, row.names = F, quote = F)
                 
-      #for each target loc
-          for (LOC in c("HI","CA", "GA")){
-            towrite = pheno.num$gc_id[!is.na(pheno.num$gc_id) & pheno.num$loc.fix == LOC]
-            #format for plink
-            towrite = data.frame(V1 = towrite, V2 = towrite)
-          write.table(file = paste0("data/phenotyped_", LOC, ".gcnames"),
-                towrite,
-                col.names = F, row.names = F, quote = F)
-                }
+      # #for each target loc
+      #     for (LOC in c("HI","CA", "GA")){
+      #       towrite = pheno.num$gc_id[!is.na(pheno.num$gc_id) & pheno.num$loc.fix == LOC]
+      #       #format for plink
+      #       towrite = data.frame(V1 = towrite, V2 = towrite)
+      #     write.table(file = paste0("data/phenotyped_", LOC, ".gcnames"),
+      #           towrite,
+      #           col.names = F, row.names = F, quote = F)
+      #           }
                 
   
   

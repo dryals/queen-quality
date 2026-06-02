@@ -10,6 +10,9 @@ editor_options:
 Genomic Selection from skim-seq of queens and phenotypic records
 
 ```{r setup, include=FALSE}
+
+#setwd("/home/dylan/Documents/bees/harpurlab/project/gensel/tarpy/queen-quality")
+
 library(tidyverse)
 library(Matrix)
 library(cowplot)
@@ -28,8 +31,6 @@ plot_grid = cowplot::plot_grid
 theme_set(theme_bw())
 
 se = function(x) sqrt(var(x, na.rm = T)/length(x))
-
-setwd("/home/dylan/Documents/bees/harpurlab/project/gensel/tarpy/queen-quality")
 ```
 
 # phenotypes and genomic structure 
@@ -49,7 +50,7 @@ pheno = read.csv("data/cleaned_pheno.csv")
   
   pheno$loc.fix = factor(pheno$loc.fix, levels = loclevels)
   
-  #pheno trends
+#pheno trends
     pheno.rm = pheno %>% 
     filter(!is.na(m.Body) & !is.na(v.Sperm) & !is.na(year))
     
@@ -700,95 +701,15 @@ dev.off()
 dev.off()
 par(mfrow = c(1,1))
 plot.new()
-  
-```
-
-## GWAS: select locations (WIP)
-```{r, eval=F}
-
-loc.sigsites = data.frame(loc = NA,
-                          trait = NA,
-                          snp = NA,
-                          chr = NA,
-                          bp = NA,
-                          p = NA)
-
-for(LOC in c("HI", "CA", "GA")){
-
- #viability
-  v.mlma = read.delim(paste0("data/qq_vsperm_", LOC, ".loco.mlma"), sep = "")
-  v.mlma$padj = p.adjust(v.mlma$p, method = "bonferroni", n = nrow(v.mlma))
-  v.mlma$logp = log(v.mlma$padj, base = 10)* -1
-  v.mlma$lograwp = log(v.mlma$p, base = 10) * -1
-  
-  #pub-friendly plot
-  v.plot = v.mlma %>% 
-    arrange(Chr, bp) %>% 
-    mutate(order = 1:nrow(v.mlma))
-  
-  v.plot$color = ifelse(v.plot$Chr%%2 ==0, "A", "B" )
-    
-    
-  #weight
-  w.mlma = read.delim(paste0("data/qq_weight_", LOC, ".loco.mlma"), sep = "")
-  w.mlma$padj = p.adjust(w.mlma$p, method = "bonferroni", n = nrow(w.mlma))
-  w.mlma$logp = log(w.mlma$padj, base = 10)* -1
-  w.mlma$lograwp = log(w.mlma$p, base = 10) * -1
-  
-  #pub-friendly plot
-  w.plot = w.mlma %>% 
-    arrange(Chr, bp) %>% 
-    mutate(order = 1:nrow(w.mlma))
-  
-  w.plot$color = ifelse(w.plot$Chr%%2 ==0, "A", "B" )
-  
-  #together
-  
-  man.plot = rbind(w.plot %>% mutate(trait = "Body Mass"),
-                   v.plot %>% mutate(trait = "Sperm Viability"))
-  
-  # ggplot(man.plot, aes(x = order, y = lograwp, color = color)) + 
-  #   geom_point() + 
-  #   geom_hline(aes(yintercept = 
-  #                    (-1 * log(0.05 / nrow(w.plot), base = 10))),
-  #          linetype = 2, col = 'red', linewidth = 1) +
-  #   facet_wrap(~trait, nrow = 2) +
-  #   labs(y = "-log(p)", x = "Position", title = LOC) +
-  #   scale_color_manual(values = c("black", "darkgray"))+
-  #   theme(axis.text.x = element_blank(),
-  #         legend.position = 'none')
-  
-  site.save = man.plot %>% 
-    filter(padj < 0.05) %>% 
-    mutate(loc = LOC) %>% 
-    select(loc, trait, snp = SNP, chr = Chr, bp, p = padj)
-  
-  loc.sigsites = rbind(loc.sigsites, site.save)
-  
-}
-
-#plot
-  ggplot(loc.sigsites[-1,], aes(x = bp, y = (-1 * log(p, 10)))) +
-    geom_point() +
-    geom_hline(aes(yintercept =
-                     (-1 * log(0.05, base = 10) * 3)),
-           linetype = 2, col = 'red', linewidth = 1) +
-    facet_grid(rows = vars(loc), cols = vars(chr), scales = "free_x") +
-    labs(y = bquote(d[subscript]), x = "Position") +
-    scale_color_manual(values = c("black", "darkgray"))+
-    theme(axis.text.x = element_blank(),
-          legend.position = 'none')
 
 
-#summarize
-  loc.sum = loc.sigsites %>% 
-    group_by(snp) %>% 
-    summarise(n = n())
-  
-#TODO: clumping ........
+#hypothetical power
+
+source("../gwas-power/power_calc_functions.R")
+
+power_n_hsq(n = c(913, 3000, 5000), qsq = c(0.01, 0.03, 0.05), pval = 1.4e-7)
 
 ```
-
 
 # Genomic Selection
 
@@ -1011,6 +932,132 @@ p.prog
   ggsave(p.bvcomb, filename = "fig/Figure4_GEBVs.pdf",
          width = 8, height = 10)
   
+```
+
+
+
+Prepare for SRA upload
+```{r}
+gc = read.delim("data/sample.fnames",
+                header = F, sep = "")
+  #choose older sample for duplicated names, this corresponds to the VCF
+  gc = gc[-which.max(gc$V2 == "QC2573"),]
+  gc = gc[-which.max(gc$V2 == "QC3371"),]
+
+
+#reset pheno
+pheno = read.csv("data/all_pheno.csv")
+  pheno$loc.old = pheno$loc.fix
+
+
+#pull sample ids and states
+Biosamp = pheno %>% 
+  select(sample = gc_id, state = loc.old, date) %>% 
+  filter(!is.na(sample))
+
+length(unique(pheno$gc_id))
+
+#attach full state names
+Biosamp = Biosamp %>% left_join(statepop %>% select(state = abbr, full))
+
+#complete biosample
+bs.template = read_excel("data/biosample_template.xlsx")
+
+Biosamp = Biosamp %>% 
+  mutate(`geo_loc_name` = paste0("USA: ", full),
+         `collected_by` = "Bradley M. Metz",
+         `organism` = "Apis mellifera",
+         tissue = "full body",
+         sex = "female",
+         dev_stage = "Adult Queen",
+         `isolation source` = "Managed Colony",
+         breed = "admixed") %>% 
+  rename(sample_name = sample, `collection_date` = date) %>% 
+  select(-full, -state)
+
+Biosamp = Biosamp %>% 
+  left_join(pheno %>% 
+              select(sample_name = gc_id, 
+                    `Body Mass (mg)` = m.Body,
+                    `Sperm Viability (proportion)` = v.Sperm)) %>% 
+  mutate(`Sperm Viability (proportion)` = round(`Sperm Viability (proportion)`, 4))
+
+#remove NA locations
+Biosamp$`geo_loc_name` = gsub(":NA", "", Biosamp$`geo_loc_name`)
+
+Biosamp = Biosamp %>% arrange(collection_date)
+
+SRA = gc %>% 
+  mutate(
+         sample_name = V2,
+         `library_ID` = V2,
+         title = "full genome sequence of Apis mellifera queen from North America",
+         library_strategy = "WGS",
+         library_source = "GENOMIC",
+         library_selection = "other",
+         library_layout = "paired",
+         platform = "ILLUMINA",
+         instrument_model = "Illumina NovaSeq 6000",
+         design_description = "Bead-Linked Transposome using Illumina Nextera DNA Flex Library Preparation kit",
+         filetype = "fastq",
+         filename = paste0(V1, "_R1.fastq.gz"),
+         filename2 = paste0(V1, "_R2.fastq.gz")) %>% 
+  select(-V1, -V2) 
+  
+#fiter and arrange sets to match
+  SRA = SRA %>% filter(sample_name %in% Biosamp$`sample_name`)
+  Biosamp = Biosamp %>% filter(`sample_name` %in% SRA$sample_name)
+  #sort
+  rownames(SRA) = SRA$sample_name
+  SRA = SRA[Biosamp$`sample_name`,]
+  
+#attach accession numbers
+  accession = rbind(read.delim("data/attributes-1000.tsv") %>% 
+                      select(accession, sample_name),
+                    read.delim("data/attributes-59.tsv") %>% 
+                      select(accession, sample_name))
+ SRA = SRA %>% left_join(accession %>% select(sample_name, accession)) %>% 
+   rename(biosample_accession = accession)
+  
+#break SRA into 100 and 59 samples
+  
+  
+  
+#break SRA into two ~equal parts
+  ggplot(Biosamp, aes(x = as_date(collection_date))) + geom_histogram()
+  #sum(year(Biosamp$collection_date) <= 2021 )
+  #sum(year(Biosamp$collection_date) > 2021 )
+  oldyears = Biosamp$`sample_name`[year(Biosamp$collection_date) <= 2021]
+
+  SRAold = SRA %>% filter(sample_name %in% oldyears)
+  SRAnew = SRA %>% filter(!sample_name %in% oldyears)
+#   
+#   BiosampOld = Biosamp %>% filter(sample_name %in% oldyears)
+#   BiosampNew = Biosamp %>% filter(!sample_name %in% oldyears)
+#   
+  
+  
+#export lists
+  write.table(SRAold %>% select(-sample_name), file = "data/SRA-2016-2021.tsv",
+              quote = F, sep = "\t",
+              row.names = F)
+  
+    write.table(SRAnew  %>% select(-sample_name), file = "data/SRA-2022-2026.tsv",
+              quote = F, sep = "\t",
+              row.names = F)
+
+  write.table(BiosampOld, file = "data/biosample-2016-2021.tsv",
+              quote = F, sep = "\t",
+              row.names = F)
+  
+  write.table(BiosampNew, file = "data/biosample-2022-2026.tsv",
+              quote = F, sep = "\t",
+              row.names = F)
+  write.table(Biosamp, file = "data/biosample-full.tsv",
+              quote = F, sep = "\t",
+              row.names = F)
+
+
 ```
 
 
