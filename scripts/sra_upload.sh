@@ -12,13 +12,13 @@
 #SBATCH --error=/home/dryals/ryals/queen-quality/outputs/sra_upload.out
 
 echo "moving..."
-cd /scratch/negishi/dryals/queen-quality/fastq/SRA-2016-2021
+cd /scratch/negishi/dryals/queen-quality/fastq/SRA-2022-2026
 
 echo "lftp..."
 
 lftp -u subftp,Eg8FrojfichDymhadfok ftp-private.ncbi.nlm.nih.gov << EOF
 
-cd uploads/dylan.k.ryals_gmail.com_xQqWLtyf/SUB123456_related_data
+cd uploads/dylan.k.ryals_gmail.com_xQqWLtyf/SUB123456_related_data_2
 mput *
 
 bye
