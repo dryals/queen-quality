@@ -943,6 +943,11 @@ gc = read.delim("data/sample.fnames",
   #choose older sample for duplicated names, this corresponds to the VCF
   gc = gc[-which.max(gc$V2 == "QC2573"),]
   gc = gc[-which.max(gc$V2 == "QC3371"),]
+  
+  #remove samples which failed to sequence
+  failed = read.delim("data/samples.failed", header = F)
+  
+  
 
 
 #reset pheno
@@ -953,7 +958,8 @@ pheno = read.csv("data/all_pheno.csv")
 #pull sample ids and states
 Biosamp = pheno %>% 
   select(sample = gc_id, state = loc.old, date) %>% 
-  filter(!is.na(sample))
+  filter(!is.na(sample)) %>% 
+  filter(!sample %in% failed$V1)
 
 length(unique(pheno$gc_id))
 
