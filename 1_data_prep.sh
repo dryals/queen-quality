@@ -32,68 +32,68 @@ echo "-----------------------"
     #reference sequences
     refs=/depot/bharpur/data/popgenomes/HarpurPNAS/output_snp.vcf.gz
 
-echo "-----------------------"
-    #directory setup
-    mkdir -p outputs
-    mkdir -p locks
-    mkdir -p $CLUSTER_SCRATCH/queen-quality
-    mkdir -p blup 
-    
-    
-echo "-----------------------"
-
-echo "main filtering..."
-    #filter and prepare vcf  
-    cd $CLUSTER_SCRATCH/queen-quality
-    
-    #filter imputed genotypes
-    #keep no contigs, only bialleleci snps, remove duplicats (norm), rename chrs
-    echo "filtering sample vcf..."
-    bcftools view $vcf -v snps -r $chrs -Ou | bcftools norm -m +snps -Ou | \
-        bcftools view -m2 -M2 -Ou | \
-        bcftools annotate --rename-chrs $rename --threads $SLURM_NTASKS -Ob -o samples.bcf.gz
-    
-    bcftools index -c samples.bcf.gz
-    
-    #remove samples not in this dataset (only those named QC...)
-    bcftools query samples.bcf.gz -l > samples.names
-    grep "QC" samples.names > keep.names
-        
-
-    #mark low propability imputed sites as missing data (".")
-    echo "    mark missing..."
-    bcftools view samples.bcf.gz -S keep.names -Ou | 
-        bcftools filter  -S . -i 'GP[:0] > 0.995 | GP[:1] > 0.995 | GP[:2] > 0.995' \
-        --threads $SLURM_NTASKS -Ob -o samples.missing.bcf.gz 
-     
-    #filter MAF, missingness, and HWE in plink
-    echo "    mind, geno, and maf filters..."
-    cd $CLUSTER_SCRATCH/queen-quality
-    mkdir -p plink
-    #takes LONG time
-    plink --bcf samples.missing.bcf.gz --make-bed \
-        --allow-extra-chr --chr-set 16 no-xy -chr $chrsShort \
-        --set-missing-var-ids @:# \
-        --mind 0.2 --geno 0.1 --maf 0.01 \
-        --hwe 1e-8 \
-        --threads $SLURM_NTASKS --out plink/samples-filter --silent
-
-    #output allele frequencies
-    cd $CLUSTER_SCRATCH/queen-quality/plink
-    plink -bfile samples-filter --freq --out samples-filter
-     
-    #output sample names and sites for downstream filters
-    awk '{print $2}' samples-filter.bim | tr ":" "\t" > samples-filter.sites
-    awk '{print $1}' samples-filter.fam > samples-filter.names
-
-echo "-----------------------"
-echo "preparing phenotypic data in R..."
-    cd ~/ryals/queen-quality
-    R --vanilla --no-save --no-echo --silent < scripts/clean_pheno.R     
- 
-echo "-----------------------"
-    echo "ADMIXTURE analysis"
-    cd ${CLUSTER_SCRATCH}/queen-quality
+# echo "-----------------------"
+#     #directory setup
+#     mkdir -p outputs
+#     mkdir -p locks
+#     mkdir -p $CLUSTER_SCRATCH/queen-quality
+#     mkdir -p blup 
+#     
+#     
+# echo "-----------------------"
+# 
+# echo "main filtering..."
+#     #filter and prepare vcf  
+#     cd $CLUSTER_SCRATCH/queen-quality
+#     
+#     #filter imputed genotypes
+#     #keep no contigs, only bialleleci snps, remove duplicats (norm), rename chrs
+#     echo "filtering sample vcf..."
+#     bcftools view $vcf -v snps -r $chrs -Ou | bcftools norm -m +snps -Ou | \
+#         bcftools view -m2 -M2 -Ou | \
+#         bcftools annotate --rename-chrs $rename --threads $SLURM_NTASKS -Ob -o samples.bcf.gz
+#     
+#     bcftools index -c samples.bcf.gz
+#     
+#     #remove samples not in this dataset (only those named QC...)
+#     bcftools query samples.bcf.gz -l > samples.names
+#     grep "QC" samples.names > keep.names
+#         
+# 
+#     #mark low propability imputed sites as missing data (".")
+#     echo "    mark missing..."
+#     bcftools view samples.bcf.gz -S keep.names -Ou | 
+#         bcftools filter  -S . -i 'GP[:0] > 0.995 | GP[:1] > 0.995 | GP[:2] > 0.995' \
+#         --threads $SLURM_NTASKS -Ob -o samples.missing.bcf.gz 
+#      
+#     #filter MAF, missingness, and HWE in plink
+#     echo "    mind, geno, and maf filters..."
+#     cd $CLUSTER_SCRATCH/queen-quality
+#     mkdir -p plink
+#     #takes LONG time
+#     plink --bcf samples.missing.bcf.gz --make-bed \
+#         --allow-extra-chr --chr-set 16 no-xy -chr $chrsShort \
+#         --set-missing-var-ids @:# \
+#         --mind 0.2 --geno 0.1 --maf 0.01 \
+#         --hwe 1e-8 \
+#         --threads $SLURM_NTASKS --out plink/samples-filter --silent
+# 
+#     #output allele frequencies
+#     cd $CLUSTER_SCRATCH/queen-quality/plink
+#     plink -bfile samples-filter --freq --out samples-filter
+#      
+#     #output sample names and sites for downstream filters
+#     awk '{print $2}' samples-filter.bim | tr ":" "\t" > samples-filter.sites
+#     awk '{print $1}' samples-filter.fam > samples-filter.names
+# 
+# echo "-----------------------"
+# echo "preparing phenotypic data in R..."
+#     cd ~/ryals/queen-quality
+#     R --vanilla --no-save --no-echo --silent < scripts/clean_pheno.R     
+#  
+# echo "-----------------------"
+#     echo "ADMIXTURE analysis"
+#     cd ${CLUSTER_SCRATCH}/queen-quality
 # #          echo "pulling references..."
 # #         #no multiallelic sites, only snps, keep subset of references, no contigs, rename chromosomes to "1,2,3...16"
 # #         bcftools view $refs -S /home/dryals/ryals/ahb/references/pureRefs.txt \
@@ -102,148 +102,148 @@ echo "-----------------------"
 # #             -Ob -o reference.bcf.gz
 # #             
 # #         bcftools index -c reference.bcf.gz
-
-    #copy from admix dir
-    cp ../pipeline/reference.bcf.* .
+# 
+#     #copy from admix dir
+#     cp ../pipeline/reference.bcf.* .
+#     
+#     echo "    filtering references ..."
+#         bcftools view reference.bcf.gz -T plink/samples-filter.sites --threads $SLURM_NTASKS \
+#         -Ob -o reference-filter.bcf.gz
+# 
+#      bcftools index -c reference-filter.bcf.gz
+#      
+#     echo "launching Ia script...."
+#         #rank all sites by Ia
+#         #count number of samples in each population
+#         cd ${CLUSTER_SCRATCH}/queen-quality
+#         mkdir -p aim
+#         cd aim
+#         #specify reference file
+#         echo "reference-filter.bcf.gz" > ref_filename.txt
+#         #reset logifle
+#         cd /home/dryals/ryals/queen-quality
+#         echo -n "" > outputs/aim.out
+# 
+#         #launch the Ia script array
+#         sbatch --array=1-16 scripts/AIM_v3.sh
+#         
+#     echo "waiting for Ia results (see aim.out)..."
+#     cd ~/ryals/queen-quality
+#     while [ $(grep "FINISHED" outputs/aim.out | wc -l | awk '{print $1}') -lt 16 ] #wait for all 16 to finish
+#     do
+#         sleep 20 #wait between each check
+#     done
+#     
+#     echo "compiling Ia results..."    
+#     cd ${CLUSTER_SCRATCH}/queen-quality/aim
+#     #ancestrally informative markers
+#     cat chr*/chr*.ia | grep -v "chr" | sort -k3 -gr > aim.ia.txt
+#    
+#         grep -v "NA" aim.ia.txt | awk '$3>0' | awk 'OFS=":" {print$1, $2}' > plink_aim.ia.txt
+#           cat plink_aim.ia.txt | tr ":" "\t" > bct_aim.ia.txt
+#           
+#         
+#     count=$( wc -l plink_aim.ia.txt | awk '{print $1}')
+#     echo "    Calculated Ia for $count sites"
+#    
+#     echo "merging samples and references..."
+#     #TODO: ensure the references are correctly filtered!
+#     cd $CLUSTER_SCRATCH/queen-quality
+#     bcftools view samples.missing.bcf.gz -T plink/samples-filter.sites -S plink/samples-filter.names \
+#         --threads $SLURM_NTASKS -Ob -o samples-aim.bcf.gz
+#         
+#         bcftools index -c samples-aim.bcf.gz
+#         
+#     bcftools merge reference-filter.bcf.gz samples-aim.bcf.gz -m snps -Ou | \
+#         bcftools norm -m +snps -Ou | bcftools view -M2 -m2 --threads $SLURM_NTASKS -Ob -o qq-admix.bcf.gz
+#     echo "  indexing..."
+#         bcftools index -c qq-admix.bcf.gz
+#     
+#     echo "starting PLINK for supervised data" 
+#         #LD pruning, choosing the site with highest Ia
+#         #aims, maf, and geno
+#         cd ${CLUSTER_SCRATCH}/queen-quality
+#             echo "    pulling informative sites..."
+#             plink --bcf qq-admix.bcf.gz --make-bed --allow-extra-chr --chr-set 16 no-xy -chr $chrsShort \
+#                 --set-missing-var-ids @:# --silent \
+#                 --extract aim/plink_aim.ia.txt--threads $SLURM_NTASKS --out plink/topaim
+# 
+#             #extract ld data, removing references
+#             echo "    calculating ld..."
+#             cd plink
+#             plink --bfile topaim -r2 --ld-window 1000 --ld-window-kb 50 --ld-window-r2 0.2 \
+#                 --remove /home/dryals/ryals/admixPipeline/references/plink_pureRefs.txt \
+#                 --silent --threads $SLURM_NTASKS --out sampleAncPrune
+#                 
+#             #run R script to generate best set of sites by Ia
+#                 #reset logfile
+#                 cd /home/dryals/ryals/queen-quality
+#                 echo -n "" > outputs/prune.out
+#                 #start
+#                 sbatch --array=1-16 scripts/prune_array.sh
+#                 #wait
+#                 echo "    waiting for pruning (see prune.out)..."
+#                 while [ $(grep "FINISHED" outputs/prune.out | wc -l | awk '{print $1}') -lt 16 ] #wait for all 16 to finish
+#                 do
+#                     sleep 20 #wait between each check
+#                 done
+#                 #create full output
+#                 echo "    compiling results..."
+#                 cd ${CLUSTER_SCRATCH}/queen-quality/aim
+#                 #this will hold all the aims
+#                 cat chr*/LDremove.txt > allLDremove.txt
+#                 count=$( wc -l allLDremove.txt | awk '{print $1}')
+#                 echo "    marked $count sites"
+#                 
+#             echo "    removing pruned sites..."
+#             cd $CLUSTER_SCRATCH/queen-quality/plink
+#             #create new admix file
+#             plink --bfile topaim --make-bed --exclude ../aim/allLDremove.txt --silent \
+#                 --threads $SLURM_NTASKS --out finaladmix
+#         
+#         #use this plink file basename for admix scripts
+#         echo "finaladmix" > plink_admix_filename.txt
+#         
+#         #kill script if the above fails
+#         if [ ! -f "finaladmix.bed" ]; then
+#             echo -e "\e[30;41m Plink Failed! \e[0m"
+#             exit 1
+#         fi
+#         
+# echo "starting supervised admix..."  
+#     cd $CLUSTER_SCRATCH/queen-quality
+#     mkdir -p admix
+#     cd admix 
+#     mkdir -p supervised
+#     #supervised
+#     cd /home/dryals/ryals/queen-quality
+#     #create "*.pop" file based on "*.fam"
+#     R --vanilla --no-save --no-echo --silent < scripts/makeAdmixPop.R
+#     sbatch scripts/supervised_admix_v3.sh
     
-    echo "    filtering references ..."
-        bcftools view reference.bcf.gz -T plink/samples-filter.sites --threads $SLURM_NTASKS \
-        -Ob -o reference-filter.bcf.gz
-
-     bcftools index -c reference-filter.bcf.gz
-     
-    echo "launching Ia script...."
-        #rank all sites by Ia
-        #count number of samples in each population
-        cd ${CLUSTER_SCRATCH}/queen-quality
-        mkdir -p aim
-        cd aim
-        #specify reference file
-        echo "reference-filter.bcf.gz" > ref_filename.txt
-        #reset logifle
-        cd /home/dryals/ryals/queen-quality
-        echo -n "" > outputs/aim.out
-
-        #launch the Ia script array
-        sbatch --array=1-16 scripts/AIM_v3.sh
-        
-    echo "waiting for Ia results (see aim.out)..."
-    cd ~/ryals/queen-quality
-    while [ $(grep "FINISHED" outputs/aim.out | wc -l | awk '{print $1}') -lt 16 ] #wait for all 16 to finish
-    do
-        sleep 20 #wait between each check
-    done
-    
-    echo "compiling Ia results..."    
-    cd ${CLUSTER_SCRATCH}/queen-quality/aim
-    #ancestrally informative markers
-    cat chr*/chr*.ia | grep -v "chr" | sort -k3 -gr > aim.ia.txt
-   
-        grep -v "NA" aim.ia.txt | awk '$3>0' | awk 'OFS=":" {print$1, $2}' > plink_aim.ia.txt
-          cat plink_aim.ia.txt | tr ":" "\t" > bct_aim.ia.txt
-          
-        
-    count=$( wc -l plink_aim.ia.txt | awk '{print $1}')
-    echo "    Calculated Ia for $count sites"
-   
-    echo "merging samples and references..."
-    #TODO: ensure the references are correctly filtered!
-    cd $CLUSTER_SCRATCH/queen-quality
-    bcftools view samples.missing.bcf.gz -T plink/samples-filter.sites -S plink/samples-filter.names \
-        --threads $SLURM_NTASKS -Ob -o samples-aim.bcf.gz
-        
-        bcftools index -c samples-aim.bcf.gz
-        
-    bcftools merge reference-filter.bcf.gz samples-aim.bcf.gz -m snps -Ou | \
-        bcftools norm -m +snps -Ou | bcftools view -M2 -m2 --threads $SLURM_NTASKS -Ob -o qq-admix.bcf.gz
-    echo "  indexing..."
-        bcftools index -c qq-admix.bcf.gz
-    
-    echo "starting PLINK for supervised data" 
-        #LD pruning, choosing the site with highest Ia
-        #aims, maf, and geno
-        cd ${CLUSTER_SCRATCH}/queen-quality
-            echo "    pulling informative sites..."
-            plink --bcf qq-admix.bcf.gz --make-bed --allow-extra-chr --chr-set 16 no-xy -chr $chrsShort \
-                --set-missing-var-ids @:# --silent \
-                --extract aim/plink_aim.ia.txt--threads $SLURM_NTASKS --out plink/topaim
-
-            #extract ld data, removing references
-            echo "    calculating ld..."
-            cd plink
-            plink --bfile topaim -r2 --ld-window 1000 --ld-window-kb 50 --ld-window-r2 0.2 \
-                --remove /home/dryals/ryals/admixPipeline/references/plink_pureRefs.txt \
-                --silent --threads $SLURM_NTASKS --out sampleAncPrune
-                
-            #run R script to generate best set of sites by Ia
-                #reset logfile
-                cd /home/dryals/ryals/queen-quality
-                echo -n "" > outputs/prune.out
-                #start
-                sbatch --array=1-16 scripts/prune_array.sh
-                #wait
-                echo "    waiting for pruning (see prune.out)..."
-                while [ $(grep "FINISHED" outputs/prune.out | wc -l | awk '{print $1}') -lt 16 ] #wait for all 16 to finish
-                do
-                    sleep 20 #wait between each check
-                done
-                #create full output
-                echo "    compiling results..."
-                cd ${CLUSTER_SCRATCH}/queen-quality/aim
-                #this will hold all the aims
-                cat chr*/LDremove.txt > allLDremove.txt
-                count=$( wc -l allLDremove.txt | awk '{print $1}')
-                echo "    marked $count sites"
-                
-            echo "    removing pruned sites..."
-            cd $CLUSTER_SCRATCH/queen-quality/plink
-            #create new admix file
-            plink --bfile topaim --make-bed --exclude ../aim/allLDremove.txt --silent \
-                --threads $SLURM_NTASKS --out finaladmix
-        
-        #use this plink file basename for admix scripts
-        echo "finaladmix" > plink_admix_filename.txt
-        
-        #kill script if the above fails
-        if [ ! -f "finaladmix.bed" ]; then
-            echo -e "\e[30;41m Plink Failed! \e[0m"
-            exit 1
-        fi
-        
-echo "starting supervised admix..."  
-    cd $CLUSTER_SCRATCH/queen-quality
-    mkdir -p admix
-    cd admix 
-    mkdir -p supervised
-    #supervised
-    cd /home/dryals/ryals/queen-quality
-    #create "*.pop" file based on "*.fam"
-    R --vanilla --no-save --no-echo --silent < scripts/makeAdmixPop.R
-    sbatch scripts/supervised_admix_v3.sh
-    
-echo "-----------------------"
-    echo "Estimating Ne..."
-    #/depot/bharpur/apps/NeEstimator
-    cd $CLUSTER_SCRATCH/queen-quality/
-    
-    #convert to VCF
-    #bcftools view samples-aim.bcf.gz -Ov samples-aim.vcf
+# echo "-----------------------"
+#     echo "Estimating Ne..."
+#     #/depot/bharpur/apps/NeEstimator
+#     cd $CLUSTER_SCRATCH/queen-quality/
+#     
+#     #convert to VCF
+#     #bcftools view samples-aim.bcf.gz -Ov samples-aim.vcf
+#     
+#     
+#     mkdir -p Ne
+#     cd Ne
+#     currentNe=/depot/bharpur/apps/currentNe2/currentne2
+#     
+#     $currentNe ../
     
     
-    mkdir -p Ne
-    cd Ne
-    currentNe=/depot/bharpur/apps/currentNe2/currentne2
-    
-    $currentNe ../
-    
-    
-
-echo "-----------------------"
-    #PCA and GRM
-    cd $CLUSTER_SCRATCH/queen-quality/plink
-    echo "PCA..."
-    plink --bfile samples-filter --pca 500 \
-        --threads $SLURM_NTASKS --out samples-gwas --silent
+# 
+# echo "-----------------------"
+#     #PCA and GRM
+#     cd $CLUSTER_SCRATCH/queen-quality/plink
+#     echo "PCA..."
+#     plink --bfile samples-filter --pca 500 \
+#         --threads $SLURM_NTASKS --out samples-gwas --silent
         
 #     echo "    select locations..."
 #     for LOC in GA CA HI
@@ -256,17 +256,17 @@ echo "-----------------------"
 #                 --threads $SLURM_NTASKS --out samples-gwas_${LOC} --silent
 #         done
 #  
-    #create GRM in PLINK2, keeping only sites with MAF > 0.05
-    echo "GRM..."
-    module purge
-    module load biocontainers plink2
-    
-    plink2 --bfile samples-filter --keep ~/ryals/queen-quality/data/phenotyped.plink \
-        -maf 0.05 \
-        -make-rel square --out samples-gs
-
-    module purge
-    module load biocontainers bcftools vcftools plink r
+#     #create GRM in PLINK2, keeping only sites with MAF > 0.05
+#     echo "GRM..."
+#     module purge
+#     module load biocontainers plink2
+#     
+#     plink2 --bfile samples-filter --keep ~/ryals/queen-quality/data/phenotyped.plink \
+#         -maf 0.05 \
+#         -make-rel square --out samples-gs
+# 
+#     module purge
+#     module load biocontainers bcftools vcftools plink r
     
 # #     echo "GRM in GCTA..."
 # #     cd ~/ryals/queen-quality/data
@@ -283,10 +283,10 @@ echo "-----------------------"
 # #         $gcta --bfile samples-gs --make-grm --thread-num $SLURM_NTASKS \
 # #             --autosome-num 16 --out samples-gs
 #                          
-echo "-----------------------"
-echo "preparing data for GWAS and GS"
-    cd ~/ryals/queen-quality
-    R --vanilla --no-save --no-echo --silent < scripts/adjust_pheno.R
+# echo "-----------------------"
+# echo "preparing data for GWAS and GS"
+#     cd ~/ryals/queen-quality
+#     R --vanilla --no-save --no-echo --silent < scripts/adjust_pheno.R
 
 echo "-----------------------"
 echo "running GWAS..."
@@ -304,7 +304,7 @@ echo "running GWAS..."
         $gcta --bfile ../plink/samples-filter --make-grm --thread-num $SLURM_NTASKS \
             --autosome-num 16 --out qq >> gcta_all.log
             
-        echo "    mlma: all locations..."
+        echo "    mlma: geno adjusted"
         #adjusted phenotypes generated in R script...
         $gcta --mlma-loco --bfile ../plink/samples-filter --grm qq \
             --pheno ~/ryals/queen-quality/data/qq_vsperm.pheno \
@@ -315,6 +315,19 @@ echo "running GWAS..."
             --pheno ~/ryals/queen-quality/data/qq_weight.pheno \
             --autosome-num 16 \
             --out qq_weight --thread-num $SLURM_NTASKS >> gcta_all.log
+            
+            
+        echo "    mlma: not adjusted"
+        #adjusted phenotypes (LYS only) generated in R script...
+        $gcta --mlma-loco --bfile ../plink/samples-filter --grm qq \
+            --pheno ~/ryals/queen-quality/data/qq_vsperm_noadj.pheno \
+            --autosome-num 16 \
+            --out qq_vsperm_noadj --thread-num $SLURM_NTASKS >> gcta_all.log
+            
+        $gcta --mlma-loco --bfile ../plink/samples-filter --grm qq \
+            --pheno ~/ryals/queen-quality/data/qq_weight_noadj.pheno \
+            --autosome-num 16 \
+            --out qq_weight_noadj --thread-num $SLURM_NTASKS >> gcta_all.log
             
 #        echo "    mlma: select locations..."
 #             for LOC in GA CA HI
@@ -394,51 +407,44 @@ echo "running GWAS..."
 # echo "-----------------------"  
 # echo "running BLUP..."
 # 
-    par=wv
-
-    #TODO: single-trait blups
-    cd ~/ryals/queen-quality/blup
-        #create links
-        if [ ! -f  blupf90+ ]; then
-            echo "    creating links..."
-            ln -S blupf90+ /depot/bharpur/apps/blupf90/blupf90+
-            ln -S airemlf90 /depot/bharpur/apps/blupf90/airemlf90 
-            ln -S validationf90 /depot/bharpur/apps/blupf90/validationf90
-        fi
-
-    cd ~/ryals/queen-quality
-    cp params/${par}.par0 blup
-    cd blup
-    #run aireml for variance components and heritabilities
-    ./airemlf90 ${par}.par0
-    
-    #manually insert variance components estimates into "*.par1" ...
-    
-#      
-# #     #TODO this but automatic...
-# #     #read G and R matricies into blup.par2
-# # #     sed -n 16,80p file1>patch
-# # #     sed -i 18rpatch file2
-
-   
-    cp ../params/${par}.par1 .
-    #run blupf90 for BV estimates and SE's
-    ./blupf90+ ${par}.par1
-    cp solutions ../data/sol-${par}.txt
-    cp solutions sol-${par}
-
-echo "-----------------------"
-    echo "  CV error: multi-trait"
-    
-    par=wv
- 
-     #create -cv version of param file using pheno-cv.txt which contains masked phenotypes
-    cd ~/ryals/queen-quality
-    cp params/${par}.par1 blup/${par}-cv.par1
-    sed -i 's/pheno.txt/pheno-cv.txt/g' blup/${par}-cv.par1
-    
-    #run cv script
-    Rscript --vanilla scripts/cv-multi.R $par
+#     par=wv
+# 
+#     #TODO: single-trait blups
+#     cd ~/ryals/queen-quality/blup
+#         #create links
+#         if [ ! -f  blupf90+ ]; then
+#             echo "    creating links..."
+#             ln -S blupf90+ /depot/bharpur/apps/blupf90/blupf90+
+#             ln -S airemlf90 /depot/bharpur/apps/blupf90/airemlf90 
+#             ln -S validationf90 /depot/bharpur/apps/blupf90/validationf90
+#         fi
+# 
+#     cd ~/ryals/queen-quality
+#     cp params/${par}.par0 blup
+#     cd blup
+#     #run aireml for variance components and heritabilities
+#     ./airemlf90 ${par}.par0
+#     
+#     #manually insert variance components estimates into "*.par1" ...
+#    
+#     cp ../params/${par}.par1 .
+#     #run blupf90 for BV estimates and SE's
+#     ./blupf90+ ${par}.par1
+#     cp solutions ../data/sol-${par}.txt
+#     cp solutions sol-${par}
+# 
+# echo "-----------------------"
+#     echo "  CV error: multi-trait"
+#     
+#     par=wv
+#  
+#      #create -cv version of param file using pheno-cv.txt which contains masked phenotypes
+#     cd ~/ryals/queen-quality
+#     cp params/${par}.par1 blup/${par}-cv.par1
+#     sed -i 's/pheno.txt/pheno-cv.txt/g' blup/${par}-cv.par1
+#     
+#     #run cv script
+#     Rscript --vanilla scripts/cv-multi.R $par
 
 echo "-----------------------"
 echo "DONE"

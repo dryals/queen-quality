@@ -36,7 +36,7 @@ filter(gc_id %in% phenotyped$gc_id,
 #       nrow(small)
 #       sum(small$n)/nrow(pheno.filter)
     
-      #consider LYS with small n as USA
+      #consider Location-Year-Season (LYS) with small n as USA
       for(i in 1:nrow(small)){
         pheno.filter$loc.fix[pheno.filter$loc.fix == small$loc.fix[i] &
                           pheno.filter$year == small$year[i] &
@@ -313,3 +313,4 @@ max(covmat[,2])
   
 #print colnames and max values
 sapply(blup, max)
+

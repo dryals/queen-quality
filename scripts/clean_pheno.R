@@ -47,12 +47,12 @@ pheno = read_excel("pheno/phenotypes.xlsx") %>%
     pheno$season[pheno$vernal2 >= szn.cut[3] & pheno$vernal2 < szn.cut[4]] = "fall"
     pheno$season[pheno$vernal2 >= szn.cut[4] | pheno$vernal2 < szn.cut[1]] = "winter"
     
-    #show distribution
-    png(file = "data/season-hist.png")
-    
-      ggplot(pheno, aes(x = vernal2, fill = season)) + geom_histogram(bins=20)
-    
-    dev.off()
+#     #show distribution
+#     png(file = "data/season-hist.png")
+#     
+#       ggplot(pheno, aes(x = vernal2, fill = season)) + geom_histogram(bins=20)
+#     
+#     dev.off()
     
 
   #standardize locations
@@ -62,23 +62,23 @@ pheno = read_excel("pheno/phenotypes.xlsx") %>%
                                       "GA", "HI", "PA", "CA", "OH", "NY", "WA", "SCA",
                                       "VA", "AL", "FL", "OR", "Oregon"), 
                         
-                        loc.fix = c("HI", "GA", "SCA", "MN",
-                                    "NCA", "WA", "WV",
-                                    "MI", "USA", "NCA", "NC", "USA", "MN", 
-                                    "GA", "HI", "PA", "CA", "OH", "NY", "WA", "SCA",
+                        loc.fix = c("HI", "GA", "CA", "MN",
+                                    "CA", "WA", "WV",
+                                    "MI", "USA", "CA", "NC", "USA", "MN", 
+                                    "GA", "HI", "PA", "CA", "OH", "NY", "WA", "CA",
                                     "VA", "AL", "FL", "OR", "OR"))
   pheno = pheno %>% left_join(loc.trans, by = "Location")
   
   
     
-    regions = data.frame(loc.fix = c( "HI", "GA", "SCA", "MN", "NCA", "WA", "WV", "MI",
-                                      "USA", "NC", "PA", "CA", "OH", "NY", "VA", "AL", "FL", "OR"),
-                                      
-                         region = c( "HI", "SE", "CA", "MW", "CA", "NW", "EC", "MW",
-                                      "USA", "EC", "NE", "CA", "MW", "NE", "EC", "SE", "SE", "NW")
-                        )
-                        
-    pheno = pheno %>% left_join(regions)
+#     regions = data.frame(loc.fix = c( "HI", "GA", "SCA", "MN", "NCA", "WA", "WV", "MI",
+#                                       "USA", "NC", "PA", "CA", "OH", "NY", "VA", "AL", "FL", "OR"),
+#                                       
+#                          region = c( "HI", "SE", "CA", "MW", "CA", "NW", "EC", "MW",
+#                                       "USA", "EC", "NE", "CA", "MW", "NE", "EC", "SE", "SE", "NW")
+#                         )
+#                         
+#     pheno = pheno %>% left_join(regions)
     
     
 
@@ -133,9 +133,12 @@ pheno = read_excel("pheno/phenotypes.xlsx") %>%
     #remove outlier phenotypes
     pheno.num = pheno.num[-(which.min(pheno.num$m.Body)),]
     
-    #manually remove this problematic individual
-    pheno.fix = pheno.fix[-which(pheno.fix$gc_id == "QC0758"),]
+    #TODO
+    #is this still needed?
     
+#     #manually remove this problematic individual
+#     pheno.fix = pheno.fix[-which(pheno.fix$gc_id == "QC0758"),]
+#     
     #write cleaned phenotypes
     write.csv(pheno.num, "data/cleaned_pheno.csv",
               row.names = F, quote= F)
