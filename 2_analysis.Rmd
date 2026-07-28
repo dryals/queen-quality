@@ -38,7 +38,9 @@ se = function(x) sqrt(var(x, na.rm = T)/length(x))
 #read phenotypic data
 pheno = read.csv("data/cleaned_pheno.csv")
   pheno$loc.old = pheno$loc.fix
-
+  
+  pheno$season = factor(pheno$season, levels = c("spring", "summer", "fall", "winter"))
+  
   #pool small factors
     small = pheno %>% group_by(loc.fix) %>% 
       summarise(n = n()) %>% 
@@ -58,7 +60,7 @@ pheno = read.csv("data/cleaned_pheno.csv")
     
   #weight
     
-    pheno.rm$m.Body.resid = lm(m.Body ~ as.factor(year), data = pheno.rm)$residual
+    pheno.rm$m.Body.resid = lm(m.Body ~ as.factor(year) * season, data = pheno.rm)$residual
     
     anova.w <- aov(m.Body.resid ~ loc.fix, data = pheno.rm)
   
@@ -69,7 +71,7 @@ pheno = read.csv("data/cleaned_pheno.csv")
     cld.w <- multcompLetters4(anova.w, tukey.w)
     
   #viability
-    pheno.rm$v.Sperm.resid = lm(v.Sperm ~ as.factor(year), data = pheno.rm)$residual
+    pheno.rm$v.Sperm.resid = lm(v.Sperm ~ as.factor(year) * season, data = pheno.rm)$residual
     
     anova.v <- aov(v.Sperm.resid ~ loc.fix, data = pheno.rm)
   
@@ -82,12 +84,13 @@ pheno = read.csv("data/cleaned_pheno.csv")
     cld.all = data.frame(
       sig = as.data.frame.list(cld.w$loc.fix)$Letters,
       loc.fix = rownames(as.data.frame.list(cld.w$loc.fix)),
-      pheno.name = "Body Mass"
+      pheno.name = "Body Mass",
+      season = "summer"
     )
     
   
   pheno.long = pheno.rm %>% 
-    select(gc_id, m.Body, v.Sperm, loc.fix, year) %>% 
+    select(gc_id, m.Body, v.Sperm, loc.fix, year, season) %>% 
     pivot_longer(cols = c("m.Body", "v.Sperm"), names_to = "pheno", values_to = "value")
   
     pheno.trans = data.frame(pheno = c("m.Body", "v.Sperm"),
@@ -100,32 +103,38 @@ pheno = read.csv("data/cleaned_pheno.csv")
       
       state.sum
   
-  
+  #TODO: choose better colors
+  szn.cols = c('palegreen', 'yellow', 'orange', 'lightblue')
+      
   p.phenoLoc = ggplot(pheno.long, aes(x = loc.fix, y = value)) + 
-     geom_boxplot(outliers = F, color = 'red')+
-    # geom_beeswarm(method = "compactswarm", 
-    #               size = 0.5, cex = 0.5, alpha = 0.5) + 
-    geom_jitter(height = 0, width = 0.2, alpha = 0.5, size = 0.8) + 
+    geom_boxplot(outliers = F)+
+    geom_jitter( width = 0.2, height = 0,
+                alpha = 0.5, size = 0.8
+               ) + 
     facet_wrap(~pheno.name, scales = "free_y", nrow = 2) + 
     labs(x = "Location", y = "Phenotypic Value") +
     geom_text(data = cld.all, aes(label = sig, y = 285, 
                                   x = loc.fix),
-              size = 2) +
+              size = 2, color = 'black') +
     theme(axis.text.x = element_text(size = 7))
     
-  #p.phenoLoc
-    #dummy text to align panels A and B for body mass
-    blankdat = data.frame(x = NA, sig = NA, pheno.name = "Body Mass")
+  p.phenoLoc
   
-  p.phenoYear = ggplot(pheno.long, aes(x = year, y = value)) + 
-    geom_jitter(height = 0, width = 0.1, alpha = 0.5, size = 0.8) + 
-    geom_smooth(method = 'lm', color = 'red', linewidth = 0.5) +
+  
+    #dummy text to align panels A and B for body mass
+    blankdat = data.frame(x = NA, sig = NA, pheno.name = "Body Mass", season = "summer")
+  
+  p.phenoYear = ggplot(pheno.long, aes(x = year, y = value, color = season)) + 
+    geom_point(position = position_jitterdodge(jitter.width = 0.25, dodge.width = 0.8), 
+               alpha = 1, size = 0.8) + 
+    geom_smooth(method = 'lm', color = 'black', linewidth = 0.5) +
     scale_x_continuous(breaks = seq(2016, 2026, 2)) +
     facet_wrap(~pheno.name, scales = "free_y", nrow = 2) + 
     geom_text(data = blankdat, aes(label = sig, y = 285, 
                                   x = x),
               size = 2) +
     labs (x = "Year", y = NULL) +
+    scale_color_manual(values = szn.cols) +
     theme(axis.text.x = element_text(size = 7))
   p.phenoYear
   
@@ -424,9 +433,9 @@ pheno = read.csv("data/cleaned_pheno.csv")
     mutate(loc.fix = as.factor(loc.fix),
            loc.fix = relevel(loc.fix, "USA"))
   
-  summary(lm(v.Sperm ~ year + loc.fix, data = pheno2))
+  summary(lm(v.Sperm ~ year + loc.fix + season, data = pheno2))
   
-  summary(lm(m.Body ~ year + loc.fix, data = pheno2))
+  summary(lm(m.Body ~ year + loc.fix + season, data = pheno2))
   
 #Fstat and pheno
   fstat = read.delim("data/samples-filter.het") %>% 

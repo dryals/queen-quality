@@ -47,6 +47,9 @@ pheno = read_excel("pheno/phenotypes.xlsx") %>%
     pheno$season[pheno$vernal2 >= szn.cut[3] & pheno$vernal2 < szn.cut[4]] = "fall"
     pheno$season[pheno$vernal2 >= szn.cut[4] | pheno$vernal2 < szn.cut[1]] = "winter"
     
+    #early winter should be considered part of previous year
+    pheno$year[pheno$vernal2< szn.cut[1]] = pheno$year[pheno$vernal2< szn.cut[1]] - 1
+    
 #     #show distribution
 #     png(file = "data/season-hist.png")
 #     
