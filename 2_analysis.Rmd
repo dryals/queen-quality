@@ -1062,8 +1062,39 @@ SRA = gc %>%
   write.table(Biosamp, file = "data/biosample-full.tsv",
               quote = F, sep = "\t",
               row.names = F)
-
-
+  
+  
+#export for feral paper
+  feraladd = Biosamp %>% 
+    select(individual_id = sample_name,
+           state_full = geo_loc_name,
+           date = collection_date) %>% 
+    mutate(submitter = "Bradley Metz",
+           state_full = gsub("USA: ", "", state_full),
+           gps_level = "state",
+           year = year(date),
+           managed = "managed",
+           commercial = T,
+           mating = 'local',
+           breeder = 'unknown',
+           feral_quality = NA,
+           lat = NA,
+           lon = NA,
+           ancestry = "unknown",
+           beekeeper_id = NA,
+           comment = NA,
+           queen_comment = NA) %>% 
+    left_join(statepop %>% select(state_full = full, state = abbr))
+  
+  feraladd = feraladd %>% 
+    select(individual_id = individual_id, vcf_id = individual_id, colony_id = individual_id,
+           state, lat, lon, gps_level, managed, feral_quality, mating, breeder, ancestry, year, beekeeper_id, submitter, commercial, comment, queen_comment)
+  
+    write.table(feraladd, file = "data/feraladd.tsv",
+              quote = F, sep = "\t",
+              row.names = F)
+  
+  
 ```
 
 

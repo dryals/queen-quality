@@ -35,7 +35,25 @@ pheno = read_excel("pheno/phenotypes.xlsx") %>%
     
     pheno$year = year(pheno$date)
     
-
+    #pull vernal day
+    pheno$vernal = format(pheno$date, "%m-%d")
+    pheno$vernal2 = as.Date(pheno$vernal, format = "%m-%d") 
+    
+    #assign season
+    szn.cut = as.Date(c("2026-03-01", "2026-06-01", "2026-08-15", "2026-10-15"))
+    pheno$season = NA
+    pheno$season[pheno$vernal2 >= szn.cut[1] & pheno$vernal2 < szn.cut[2]] = "spring"
+    pheno$season[pheno$vernal2 >= szn.cut[2] & pheno$vernal2 < szn.cut[3]] = "summer"
+    pheno$season[pheno$vernal2 >= szn.cut[3] & pheno$vernal2 < szn.cut[4]] = "fall"
+    pheno$season[pheno$vernal2 >= szn.cut[4] | pheno$vernal2 < szn.cut[1]] = "winter"
+    
+    #show distribution
+    png(file = "data/season-hist.png")
+    
+      ggplot(pheno, aes(x = vernal2, fill = season)) + geom_histogram(bins=20)
+    
+    dev.off()
+    
 
   #standardize locations
   loc.trans = data.frame(Location = c("Hawaii", "Georgia", "Southern California", "Minnesota",
@@ -50,6 +68,19 @@ pheno = read_excel("pheno/phenotypes.xlsx") %>%
                                     "GA", "HI", "PA", "CA", "OH", "NY", "WA", "SCA",
                                     "VA", "AL", "FL", "OR", "OR"))
   pheno = pheno %>% left_join(loc.trans, by = "Location")
+  
+  
+    
+    regions = data.frame(loc.fix = c( "HI", "GA", "SCA", "MN", "NCA", "WA", "WV", "MI",
+                                      "USA", "NC", "PA", "CA", "OH", "NY", "VA", "AL", "FL", "OR"),
+                                      
+                         region = c( "HI", "SE", "CA", "MW", "CA", "NW", "EC", "MW",
+                                      "USA", "EC", "NE", "CA", "MW", "NE", "EC", "SE", "SE", "NW")
+                        )
+                        
+    pheno = pheno %>% left_join(regions)
+    
+    
 
     #remove duplicate entries
     pheno = pheno[-(which(pheno$pheno_id == "QC2573")[2]),]
@@ -84,6 +115,16 @@ pheno = read_excel("pheno/phenotypes.xlsx") %>%
                     
     #manually drop duplicated pheno id
     pheno.fix = pheno.fix[-which(pheno.fix$pheno_id == "QC2422")[2],]
+    
+    #numeric class for numeric data
+    pheno.num = pheno.fix %>% as.data.frame()
+      
+      for(COL in c("m.Body", "v.Sperm", "l.Sperm", "t.Sperm", "w.Head",
+                   "w.Thorax", "d.Spermatheca", "f.Spermatheca")){
+        pheno.num[,COL] = as.numeric(pheno.num[,COL])
+      }
+    
+      
     
     #write all phenotypes
     write.csv(pheno.num, "data/all_pheno.csv",

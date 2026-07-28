@@ -21,42 +21,53 @@ phenotyped = read.csv("data/phenotyped.gcnames", header = F)
 
 #retain hjust samples which have genomic data
 pheno.filter = pheno %>%
-filter(gc_id %in% phenotyped$gc_id)
+filter(gc_id %in% phenotyped$gc_id,
+        gc_id %in% pca.geno$gc_id)
 
-    #collapse small levels, preserving year over location
-      
-      #loc.years with small count become USA.year
-      small = pheno.filter %>% group_by(loc.fix, year) %>% 
+    #collapse small levels first by location then year
+    
+    nrow(pheno.filter %>% group_by(loc.fix, year, season) %>% slice(1))
+    
+      small = pheno.filter %>% group_by(loc.fix, year, season) %>% 
         summarise(n = n()) %>% 
         filter(n<5) %>% 
         ungroup() 
-      
-      #consider site-years with small n as "USA"
+        
+#       nrow(small)
+#       sum(small$n)/nrow(pheno.filter)
+    
+      #consider LYS with small n as USA
       for(i in 1:nrow(small)){
         pheno.filter$loc.fix[pheno.filter$loc.fix == small$loc.fix[i] &
-                          pheno.filter$year == small$year[i]] = "USA"
+                          pheno.filter$year == small$year[i] &
+                          pheno.filter$season == small$season[i]] = "USA"
       }
 
     
-    #overwrite loc.year
-    pheno.filter$loc.year = paste0(pheno.filter$loc.fix, pheno.filter$year)
+    #create LYS
+    pheno.filter$LYS = paste0(pheno.filter$loc.fix, pheno.filter$year, pheno.filter$season)
     
     #collapse remaining small USA levels
     small.usa = pheno.filter %>% filter(loc.fix == "USA") %>% 
-      group_by(loc.year) %>% 
+      group_by(LYS) %>% 
       summarise(n = n()) %>% 
       filter(n<5) %>% 
       ungroup
     
-    pheno.filter$loc.year[pheno.filter$loc.year %in% small.usa$loc.year] = "USA20XX"
+    pheno.filter$LYS[pheno.filter$LYS %in% small.usa$LYS] = "USA20XX"
+    
+#     table(pheno.filter$LYS)    
+    sum(grepl("USA", pheno.filter$LYS))/nrow(pheno.filter)
+#     sum(grepl("USA", pheno$loc.fix))/nrow(pheno)
+    
     
     #write summary table 
     sum.out = pheno.filter %>%
-      group_by(loc.year) %>%
+      group_by(LYS) %>%
       summarise(mean_bm = round(mean(m.Body), 2),
                 mean_sv = round(mean(v.Sperm) * 100, 2),
                 n = n())
-    write.csv(sum.out, file = "data/locYearSum.csv",
+    write.csv(sum.out, file = "data/locYearSeasonSum.csv",
               quote = F, row.names = F)
     
 # #read admix components 
@@ -82,35 +93,67 @@ filter(gc_id %in% phenotyped$gc_id)
 #       left_join(pheno %>% select(gc_id, loc.year))
     
 
-#prepare gwas  
-gwas = pheno.filter %>% 
-  left_join(pca.geno %>% select(gc_id, PC1, PC2, PC3), by = 'gc_id') #%>%
-  #left_join(admix %>% select(gc_id, A, M, C, O), by = 'gc_id')
+#prepare gwas: genomic adjustment  
+  gwas = pheno.filter %>% 
+    left_join(pca.geno %>% select(gc_id, PC1, PC2, PC3), by = 'gc_id') #%>%
+    #left_join(admix %>% select(gc_id, A, M, C, O), by = 'gc_id')
 
-#sapply(gwas, function(x){sum(is.na(x))})
+  #sapply(gwas, function(x){sum(is.na(x))})
 
-#summary(lm(v.Sperm ~ loc.year + PC1 + PC2, data = gwas))
+  #summary(lm(v.Sperm ~ loc.year + PC1 + PC2, data = gwas))
 
 
-gwas$adj.m.Body = lm(m.Body ~ loc.year + PC1 + PC2 + PC3, data = gwas)$residuals %>% 
-  round(4)
-gwas$adj.v.Sperm = lm(v.Sperm ~ loc.year + PC1 + PC2 + PC3, data = gwas)$residuals %>% 
-  round(4)
-  
-#write out whole data
-  gwas.out = data.frame(fid = gwas$gc_id, 
-                        iid = gwas$gc_id, 
-                        weight = gwas$adj.m.Body, 
-                        vsperm = gwas$adj.v.Sperm)
-                        
-  write.table(file = "data/qq_weight.pheno",
-              gwas.out %>% select(fid, iid, weight),
-              col.names = F, row.names = F, quote = F,
-              sep = "\t")
-  write.table(file = "data/qq_vsperm.pheno",
-              gwas.out %>% select(fid, iid, vsperm),
-              col.names = F, row.names = F, quote = F,
-              sep = "\t")         
+  gwas$adj.m.Body = lm(m.Body ~ LYS + PC1 + PC2 + PC3, data = gwas)$residuals %>% 
+    round(4)
+  gwas$adj.v.Sperm = lm(v.Sperm ~ LYS + PC1 + PC2 + PC3, data = gwas)$residuals %>% 
+    round(4)
+    
+  #write out whole data
+    gwas.out = data.frame(fid = gwas$gc_id, 
+                          iid = gwas$gc_id, 
+                          weight = gwas$adj.m.Body, 
+                          vsperm = gwas$adj.v.Sperm)
+                          
+    write.table(file = "data/qq_weight.pheno",
+                gwas.out %>% select(fid, iid, weight),
+                col.names = F, row.names = F, quote = F,
+                sep = "\t")
+    write.table(file = "data/qq_vsperm.pheno",
+                gwas.out %>% select(fid, iid, vsperm),
+                col.names = F, row.names = F, quote = F,
+                sep = "\t")     
+                
+#prepare gwas: no genomic adjustment  
+  gwas2 = pheno.filter %>% 
+    left_join(pca.geno %>% select(gc_id, PC1, PC2, PC3), by = 'gc_id') #%>%
+    #left_join(admix %>% select(gc_id, A, M, C, O), by = 'gc_id')
+
+  #sapply(gwas, function(x){sum(is.na(x))})
+
+  #summary(lm(v.Sperm ~ loc.year + PC1 + PC2, data = gwas))
+
+
+  gwas2$adj.m.Body = lm(m.Body ~ LYS, data = gwas2)$residuals %>% 
+    round(4)
+  gwas2$adj.v.Sperm = lm(v.Sperm ~ LYS, data = gwas2)$residuals %>% 
+    round(4)
+    
+  #write out whole data
+    gwas2.out = data.frame(fid = gwas2$gc_id, 
+                          iid = gwas2$gc_id, 
+                          weight = gwas2$adj.m.Body, 
+                          vsperm = gwas2$adj.v.Sperm)
+                          
+    write.table(file = "data/qq_weight_noadj.pheno",
+                gwas2.out %>% select(fid, iid, weight),
+                col.names = F, row.names = F, quote = F,
+                sep = "\t")
+    write.table(file = "data/qq_vsperm_noadj.pheno",
+                gwas2.out %>% select(fid, iid, vsperm),
+                col.names = F, row.names = F, quote = F,
+                sep = "\t")     
+                
+                
 
 # #adjust within select locations
 #   for (LOC in c("HI", "CA", "GA")){
@@ -217,7 +260,7 @@ preblup = data.frame(gc_id = colnames(G.p)) %>%
   left_join(gwas %>% select(gc_id, PC1, PC2, PC3))
   
 preblup = preblup %>% 
-  select(gc_id, pheno_id, loc = loc.year, PC1, PC2, PC3,
+  select(gc_id, pheno_id, loc = LYS, PC1, PC2, PC3,
   lsperm = l.Sperm, weight = m.Body, vsperm = v.Sperm,
   tsperm = t.Sperm) %>% 
 
