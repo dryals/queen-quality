@@ -405,33 +405,33 @@ echo "running GWAS..."
 #     cp greml_*.snp.blp ~/ryals/queen-quality/data
 #     
 # echo "-----------------------"  
-# echo "running BLUP..."
-# 
-#     par=wv
-# 
-#     #TODO: single-trait blups
-#     cd ~/ryals/queen-quality/blup
-#         #create links
-#         if [ ! -f  blupf90+ ]; then
-#             echo "    creating links..."
-#             ln -S blupf90+ /depot/bharpur/apps/blupf90/blupf90+
-#             ln -S airemlf90 /depot/bharpur/apps/blupf90/airemlf90 
-#             ln -S validationf90 /depot/bharpur/apps/blupf90/validationf90
-#         fi
-# 
-#     cd ~/ryals/queen-quality
-#     cp params/${par}.par0 blup
-#     cd blup
-#     #run aireml for variance components and heritabilities
-#     ./airemlf90 ${par}.par0
-#     
-#     #manually insert variance components estimates into "*.par1" ...
-#    
-#     cp ../params/${par}.par1 .
-#     #run blupf90 for BV estimates and SE's
-#     ./blupf90+ ${par}.par1
-#     cp solutions ../data/sol-${par}.txt
-#     cp solutions sol-${par}
+echo "running BLUP..."
+
+    par=wv
+
+    #TODO: single-trait blups
+    cd ~/ryals/queen-quality/blup
+        #create links
+        if [ ! -f  blupf90+ ]; then
+            echo "    creating links..."
+            ln -S blupf90+ /depot/bharpur/apps/blupf90/blupf90+
+            ln -S airemlf90 /depot/bharpur/apps/blupf90/airemlf90 
+            ln -S validationf90 /depot/bharpur/apps/blupf90/validationf90
+        fi
+
+    cd ~/ryals/queen-quality
+    cp params/${par}.par0 blup
+    cd blup
+    #run aireml for variance components and heritabilities
+    ./airemlf90 ${par}.par0
+    
+    #manually insert variance components estimates into "*.par1" ...
+   
+    cp ../params/${par}.par1 .
+    #run blupf90 for BV estimates and SE's
+    ./blupf90+ ${par}.par1
+    cp solutions ../data/sol-${par}.txt
+    cp solutions sol-${par}
 # 
 # echo "-----------------------"
 #     echo "  CV error: multi-trait"

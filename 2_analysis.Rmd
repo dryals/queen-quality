@@ -504,8 +504,6 @@ p.samplecom
 ```{r}
 #GWAS 
   
-  #TODO: update with LOCO
-  
   #viability
   v.mlma = read.delim("data/qq_vsperm.loco.mlma", sep = "")
   v.mlma$padj = p.adjust(v.mlma$p, method = "bonferroni", n = nrow(v.mlma))
@@ -712,7 +710,7 @@ par(mfrow = c(1,1))
 plot.new()
 
 
-#hypothetical power
+# #hypothetical power
 
 source("../gwas-power/power_calc_functions.R")
 
