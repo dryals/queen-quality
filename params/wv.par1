@@ -15,8 +15,8 @@ EFFECTS:
 4 4 1 cov #PC2
 5 5 1 cov #PC3
 RANDOM_RESIDUAL VALUES
-250 20
-20 100
+   257.99       20.202    
+   20.202       113.90 
 RANDOM_GROUP
 1 
 RANDOM_TYPE
@@ -24,8 +24,8 @@ user_file_inv
 FILE
 covmat.txt
 (CO)VARIANCES
-100 10
-10 100
+   84.280      0.58182    
+  0.58182       85.886   
 OPTION missing -999
 OPTION sol se
 OPTION conv_crit 1e-10

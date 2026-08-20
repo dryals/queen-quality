@@ -407,7 +407,8 @@ echo "running GWAS..."
 # echo "-----------------------"  
 echo "running BLUP..."
 
-    par=wv-noadj
+    #par=wv-noadj
+    par=wv
 
     #TODO:
         #double check LYS is recorded and coded correctly in param file
@@ -444,7 +445,8 @@ echo "running BLUP..."
 # echo "-----------------------"
 #     echo "  CV error: multi-trait"
 #     
-    par=wv-noadj
+    #par=wv-noadj
+    par=wv
  
      #create -cv version of param file using pheno-cv.txt which contains masked phenotypes
     cd ~/ryals/queen-quality
@@ -452,8 +454,8 @@ echo "running BLUP..."
     sed -i 's/pheno.txt/pheno-cv.txt/g' blup/${par}-cv.par1
     
     #run cv script
-    #Rscript --vanilla scripts/cv-multi.R $par
-    Rscript --vanilla scripts/cv-multi-noadj.R $par
+    Rscript --vanilla scripts/cv-multi.R $par
+    #Rscript --vanilla scripts/cv-multi-noadj.R $par
     
     
 
