@@ -444,15 +444,16 @@ echo "running BLUP..."
 # echo "-----------------------"
 #     echo "  CV error: multi-trait"
 #     
-#     par=wv
-#  
-#      #create -cv version of param file using pheno-cv.txt which contains masked phenotypes
-#     cd ~/ryals/queen-quality
-#     cp params/${par}.par1 blup/${par}-cv.par1
-#     sed -i 's/pheno.txt/pheno-cv.txt/g' blup/${par}-cv.par1
-#     
-#     #run cv script
-#     Rscript --vanilla scripts/cv-multi.R $par
+    par=wv-noadj
+ 
+     #create -cv version of param file using pheno-cv.txt which contains masked phenotypes
+    cd ~/ryals/queen-quality
+    cp params/${par}.par1 blup/${par}-cv.par1
+    sed -i 's/pheno.txt/pheno-cv.txt/g' blup/${par}-cv.par1
+    
+    #run cv script
+    #Rscript --vanilla scripts/cv-multi.R $par
+    Rscript --vanilla scripts/cv-multi-noadj.R $par
 
 echo "-----------------------"
 echo "DONE"
