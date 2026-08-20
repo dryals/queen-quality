@@ -170,7 +170,7 @@ for(i in 2:5){
 
 CVdf
 
-write.csv(CVdf, file = "data/CV_summary.csv", row.names = F)
+write.csv(CVdf, file = "data/CV_summary-noadj.csv", row.names = F)
 
 print(CVdf %>% group_by(tn) %>% 
   summarise(meancor = mean(cor),

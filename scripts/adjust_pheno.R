@@ -257,17 +257,14 @@ filter(gc_id %in% phenotyped$gc_id,
 preblup = data.frame(gc_id = colnames(G.p)) %>%
   left_join(pheno.filter) %>%
   #join pc's 
-  left_join(gwas %>% select(gc_id, PC1, PC2, PC3))
+  left_join(gwas %>% select(gc_id, PC1, PC2, PC3)) %>%
+  #just keep good samples
+  filter(gc_id %in% pheno.filter$gc_id)
   
 preblup = preblup %>% 
   select(gc_id, pheno_id, loc = LYS, PC1, PC2, PC3,
   lsperm = l.Sperm, weight = m.Body, vsperm = v.Sperm,
   tsperm = t.Sperm) %>% 
-
-  
-  #TODO: this but earlier in the pipeline!!
-  #output phenotypes in correct units
-  
     mutate(
          locid = blup_rename(loc),
          PC1 = round(PC1, 4),
@@ -282,7 +279,7 @@ preblup = preblup %>%
   
       
 #output phenotypes
-  blup = preblup
+  blup = preblup %>% filter(gc_id %in% pheno.filter$gc_id)
   
     blup = blup %>%
     mutate(iid = 1:nrow(blup)) %>%
