@@ -123,22 +123,7 @@ for(CVnum in 1:5){
         X = fixed.eff$solution[fixed.eff$trait == realpheno$trait[i] &
                                fixed.eff$effect == 2 &
                                fixed.eff$level == realpheno$locid[i]]
-#         #PC1
-#         X = X + (fixed.eff$solution[fixed.eff$effect == 3 &
-#                                    fixed.eff$level == 1 &
-#                                    fixed.eff$trait == realpheno$trait[i] ] *
-#                  realpheno$PC1[i])
-#         #PC2
-#         X = X + (fixed.eff$solution[fixed.eff$effect == 4 &
-#                                    fixed.eff$level == 1 &
-#                                    fixed.eff$trait == realpheno$trait[i] ] *
-#                  realpheno$PC2[i])
-#         #PC3
-#         X = X + (fixed.eff$solution[fixed.eff$effect == 5 &
-#                                    fixed.eff$level == 1 &
-#                                    fixed.eff$trait == realpheno$trait[i] ] *
-#                  realpheno$PC3[i])
-#                  
+                  
       realpheno$pheno.adj[i] = realpheno$pheno.raw[i] - X
 
       }
