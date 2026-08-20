@@ -285,8 +285,8 @@ echo "-----------------------"
 #                          
 # echo "-----------------------"
 # echo "preparing data for GWAS and GS"
-#     cd ~/ryals/queen-quality
-#     R --vanilla --no-save --no-echo --silent < scripts/adjust_pheno.R
+    cd ~/ryals/queen-quality
+    R --vanilla --no-save --no-echo --silent < scripts/adjust_pheno.R
 
 echo "-----------------------"
 echo "running GWAS..."
@@ -407,9 +407,17 @@ echo "running GWAS..."
 # echo "-----------------------"  
 echo "running BLUP..."
 
-    par=wv
+    par=wv-noadj
 
-    #TODO: single-trait blups
+    #TODO:
+        #double check LYS is recorded and coded correctly in param file
+        #all traits missing in some records?
+        #filtering steps, is this the correct number of samples?
+        #run cv
+        #test cv when pcs not fit... (heritabilities are better)...
+    
+    
+    
     cd ~/ryals/queen-quality/blup
         #create links
         if [ ! -f  blupf90+ ]; then
