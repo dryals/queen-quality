@@ -1,0 +1,32 @@
+DATAFILE
+pheno.txt
+NUMBER_OF_TRAITS
+2
+NUMBER_OF_EFFECTS
+2
+OBSERVATION(S)
+7 8 #weight, vsperm
+WEIGHT(S)
+
+EFFECTS:
+1 1 908 cross #queen_id
+2 2 48 cross #location
+RANDOM_RESIDUAL VALUES
+   217.95       22.230    
+   22.230       115.83   
+RANDOM_GROUP
+1 
+RANDOM_TYPE
+user_file_inv
+FILE
+covmat.txt
+(CO)VARIANCES
+   143.91      -1.7382    
+  -1.7382       82.923    
+OPTION missing -999
+OPTION sol se
+OPTION conv_crit 1e-10
+#OPTION EM-REML 5
+OPTION se_covar_function h2_1 G_1_1_1_1/(G_1_1_1_1+R_1_1)
+OPTION se_covar_function h2_2 G_1_1_2_2/(G_1_1_2_2+R_2_2)
+#ulimit -s unlimited
