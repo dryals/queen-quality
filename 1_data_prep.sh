@@ -256,18 +256,24 @@ echo "-----------------------"
 #                 --threads $SLURM_NTASKS --out samples-gwas_${LOC} --silent
 #         done
 #  
-#     #create GRM in PLINK2, keeping only sites with MAF > 0.05
-#     echo "GRM..."
-#     module purge
-#     module load biocontainers plink2
-#     
-#     plink2 --bfile samples-filter --keep ~/ryals/queen-quality/data/phenotyped.plink \
-#         -maf 0.05 \
-#         -make-rel square --out samples-gs
-# 
-#     module purge
-#     module load biocontainers bcftools vcftools plink r
+    #create GRM in PLINK2, keeping only sites with MAF > 0.05
+    echo "GRM..."
+    module purge
+    module load biocontainers plink2
+
+    cd ~/ryals/queen-quality/data
+    paste phenotyped.gcnames phenotyped.gcnames > phenotyped.plink
+
+    cd $CLUSTER_SCRATCH/queen-quality/plink
     
+    plink2 --bfile samples-filter --keep ~/ryals/queen-quality/data/phenotyped.plink \
+        -maf 0.05 \
+        -make-rel square --out samples-gs
+
+    module purge
+    module load biocontainers bcftools vcftools plink r
+   
+   
 # #     echo "GRM in GCTA..."
 # #     cd ~/ryals/queen-quality/data
 # #     paste phenotyped.gcnames phenotyped.gcnames > phenotyped.plink

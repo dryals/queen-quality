@@ -66,7 +66,15 @@ filter(gc_id %in% phenotyped$gc_id,
       group_by(LYS) %>%
       summarise(mean_bm = round(mean(m.Body), 2),
                 mean_sv = round(mean(v.Sperm) * 100, 2),
-                n = n())
+                n = n()) %>%
+      mutate(state = gsub("(^[A-Z]{2,3}).*","\\1",LYS),
+             year = gsub("^[A-Z]{2,3}([0-9]{2}[^a-z]{2})[a-z]*$","\\1",LYS),
+             season = gsub("^[^a-z]*([a-z]*$)","\\1",LYS)
+      ) %>%
+      arrange(state, year, season) %>%
+      select(state, year, season, mean_bm, mean_sv, n, LYS)
+                
+                
     write.csv(sum.out, file = "data/locYearSeasonSum.csv",
               quote = F, row.names = F)
     

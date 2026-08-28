@@ -41,6 +41,14 @@ pheno = read.csv("data/cleaned_pheno.csv")
   
   pheno$season = factor(pheno$season, levels = c("spring", "summer", "fall", "winter"))
   
+  
+  
+#effects of season, year, location
+  summary(lm(m.Body ~ season + year + loc.fix, data = pheno))
+  summary(lm(m.Body ~ season + as.factor(year) * loc.fix, data = pheno))
+  
+  summary(lm(v.Sperm ~ year + season * loc.fix, data = pheno))
+  
   #pool small factors
     small = pheno %>% group_by(loc.fix) %>% 
       summarise(n = n()) %>% 
@@ -52,41 +60,66 @@ pheno = read.csv("data/cleaned_pheno.csv")
   
   pheno$loc.fix = factor(pheno$loc.fix, levels = loclevels)
   
+  
 #pheno trends
     pheno.rm = pheno %>% 
     filter(!is.na(m.Body) & !is.na(v.Sperm) & !is.na(year))
     
   #tukey test and comp letters
     
-  #weight
-    
-    pheno.rm$m.Body.resid = lm(m.Body ~ as.factor(year) * season, data = pheno.rm)$residual
-    
-    anova.w <- aov(m.Body.resid ~ loc.fix, data = pheno.rm)
-  
-    # Tukey's test
-    tukey.w <- TukeyHSD(anova.w, "loc.fix")
-    
-    # compact letter display
-    cld.w <- multcompLetters4(anova.w, tukey.w)
+  #queen weight
+    #location
+      pheno.rm$m.Body.resid.l = lm(m.Body ~ as.factor(year) * season, data = pheno.rm)$residual
+      anova.wl <- aov(m.Body.resid.l ~ loc.fix, data = pheno.rm)
+      # Tukey's test
+      tukey.wl <- TukeyHSD(anova.wl, "loc.fix")
+      # compact letter display
+      cld.wl <- multcompLetters4(anova.wl, tukey.wl)
+    #season
+      pheno.rm$m.Body.resid.s = lm(m.Body ~ as.factor(year) + loc.fix, data = pheno.rm)$residual
+      anova.ws <- aov(m.Body.resid.s ~ season, data = pheno.rm)
+      # Tukey's test
+      tukey.ws <- TukeyHSD(anova.ws, "season")
+      # compact letter display
+      cld.ws <- multcompLetters4(anova.ws, tukey.ws)
+      
     
   #viability
-    pheno.rm$v.Sperm.resid = lm(v.Sperm ~ as.factor(year) * season, data = pheno.rm)$residual
+    #location
+      pheno.rm$v.Sperm.resid.l = lm(v.Sperm ~ as.factor(year) * season, data = pheno.rm)$residual
+      anova.vl <- aov(v.Sperm.resid.l ~ loc.fix, data = pheno.rm)
+      # Tukey's test
+      tukey.vl <- TukeyHSD(anova.vl, "loc.fix")
+      # compact letter display
+      cld.vl <- multcompLetters4(anova.vl, tukey.vl)
+    #season
+      pheno.rm$v.Sperm.resid.s = lm(v.Sperm ~ as.factor(year) * loc.fix, data = pheno.rm)$residual
+      anova.vs <- aov(v.Sperm.resid.s ~ season, data = pheno.rm)
+      # Tukey's test
+      tukey.vs <- TukeyHSD(anova.vs, "season")
+      # compact letter display
+      cld.vs <- multcompLetters4(anova.vs, tukey.vs)
+      
     
-    anova.v <- aov(v.Sperm.resid ~ loc.fix, data = pheno.rm)
-  
-    # Tukey's test
-    tukey.v <- TukeyHSD(anova.v, "loc.fix")
     
-    # compact letter display
-    cld.v <- multcompLetters4(anova.v, tukey.v)
-    
-    cld.all = data.frame(
-      sig = as.data.frame.list(cld.w$loc.fix)$Letters,
-      loc.fix = rownames(as.data.frame.list(cld.w$loc.fix)),
+    cld.all.l = data.frame(
+      sig = as.data.frame.list(cld.wl$loc.fix)$Letters,
+      loc.fix = rownames(as.data.frame.list(cld.wl$loc.fix)),
       pheno.name = "Body Mass",
-      season = "summer"
+      season = "summer",
+      y = 285
     )
+    
+    cld.all.s = data.frame(
+      sig = as.data.frame.list(cld.vs$season)$Letters,
+      loc.fix = rownames(as.data.frame.list(cld.vs$season)),
+      pheno.name = "Sperm Viability",
+      y = 1.1
+    )
+  
+    #dummy text to align panels A and B for body mass
+    blankdat.l = data.frame(x = NA, sig = NA, pheno.name = "Body Mass", season = "summer")
+    blankdat.s = data.frame(x = NA, sig = NA, pheno.name = "Sperm Viability", loc.fix = "USA", season = "summer")
     
   
   pheno.long = pheno.rm %>% 
@@ -103,8 +136,8 @@ pheno = read.csv("data/cleaned_pheno.csv")
       
       state.sum
   
-  #TODO: choose better colors
-  szn.cols = c('palegreen', 'yellow', 'orange', 'lightblue')
+#differences by location
+  szn.cols = c('#2E7D32', '#FBC02D', '#EF6C00', '#1565C0')
       
   p.phenoLoc = ggplot(pheno.long, aes(x = loc.fix, y = value)) + 
     geom_boxplot(outliers = F)+
@@ -113,30 +146,57 @@ pheno = read.csv("data/cleaned_pheno.csv")
                ) + 
     facet_wrap(~pheno.name, scales = "free_y", nrow = 2) + 
     labs(x = "Location", y = "Phenotypic Value") +
-    geom_text(data = cld.all, aes(label = sig, y = 285, 
+    geom_text(data = cld.all.l, aes(label = sig, y = y, 
                                   x = loc.fix),
-              size = 2, color = 'black') +
-    theme(axis.text.x = element_text(size = 7))
+              size = 3, color = 'black') +
+    theme(axis.text.x = element_text(size = 7)) +
+    geom_text(data = blankdat.s, aes(label = sig, y = 1.1 , x = loc.fix))
     
   p.phenoLoc
   
+#differences by season
+   p.phenoSeason = ggplot(pheno.long, aes(x = season, y = value)) + 
+    geom_boxplot(outliers = F)+
+    geom_jitter( width = 0.2, height = 0,
+                alpha = 0.5, size = 0.8
+               ) + 
+    facet_wrap(~pheno.name, scales = "free_y", nrow = 2) + 
+    labs(x = "Season", y = NULL) +
+    geom_text(data = cld.all.s, aes(label = sig, y = 1.1,
+                                  x = loc.fix),
+              size = 3, color = 'black') +
+         geom_text(data = blankdat.l, aes(label = sig, y = 285, 
+                                  x = season),
+              size = 2) +
+    theme(axis.text.x = element_text(size = 8))
+  p.phenoSeason
   
-    #dummy text to align panels A and B for body mass
-    blankdat = data.frame(x = NA, sig = NA, pheno.name = "Body Mass", season = "summer")
-  
-  p.phenoYear = ggplot(pheno.long, aes(x = year, y = value, color = season)) + 
-    geom_point(position = position_jitterdodge(jitter.width = 0.25, dodge.width = 0.8), 
-               alpha = 1, size = 0.8) + 
-    geom_smooth(method = 'lm', color = 'black', linewidth = 0.5) +
+#differences by year
+  p.phenoYear = ggplot(pheno.long, aes(x = year, y = value)) + 
+    geom_point(position = position_jitterdodge(jitter.width = 0.4, dodge.width = 0.8), 
+               alpha = 0.5, size = 0.8) + 
+    geom_smooth(method = 'lm', color = 'black', linewidth = 0.5, se = F) +
     scale_x_continuous(breaks = seq(2016, 2026, 2)) +
     facet_wrap(~pheno.name, scales = "free_y", nrow = 2) + 
-    geom_text(data = blankdat, aes(label = sig, y = 285, 
-                                  x = x),
-              size = 2) +
+    geom_text(data = blankdat.l, aes(label = sig, y = 285, 
+                                  x = 2020),
+              show.legend = F) +
+    geom_text(data = blankdat.s, aes(label = sig, y = 1.1, 
+                                  x = 2020,),
+              show.legend = F) +
     labs (x = "Year", y = NULL) +
-    scale_color_manual(values = szn.cols) +
+    #scale_color_manual(values = szn.cols) +
     theme(axis.text.x = element_text(size = 7))
   p.phenoYear
+  
+#compound plot
+  p.phenocomp = plot_grid(p.phenoLoc, p.phenoSeason, p.phenoYear, labels = "AUTO",
+                          nrow = 1, rel_widths = c(1.1, 1, 1.4))
+  p.phenocomp
+  
+  ggsave(p.phenocomp, filename = "fig/Figure1_Phenotypes.pdf",
+         width = 10, height = 5)
+  
   
   
 #phenotype PCA
@@ -163,6 +223,7 @@ pheno = read.csv("data/cleaned_pheno.csv")
   dev.off()
   
   #correlation b/w body mass and sperm viability
+  #TODO: move to supplemental
     p.MScor = ggplot(pheno, aes(x = v.Sperm * 100, y = m.Body)) +
       geom_point(alpha = 0.5) +
       geom_smooth(method = 'lm', color = 'red') + 
@@ -235,14 +296,7 @@ pheno = read.csv("data/cleaned_pheno.csv")
     pivot_longer(cols = -gc_id)
   
   
-  p.phenocomp = plot_grid(p.phenoLoc, p.phenoYear, p.MScor, labels = "AUTO",
-                          nrow = 1, rel_widths = c(0.65, 0.65, 1))
-  p.phenocomp
-  
-  ggsave(p.phenocomp, filename = "fig/Figure1_Phenotypes.pdf",
-         width = 10, height = 5)
-  
-  
+#TODO: does this need to be fixed new version?
 #output table of summary values
   ntab = data.frame(table(pheno.rm$loc.fix)) %>% rename(Effect = 1, N = 2)
   
@@ -269,6 +323,7 @@ pheno = read.csv("data/cleaned_pheno.csv")
   write.csv(coef, file = "data/effect_sumary.csv", 
             row.names = F, quote = F)
 
+  
 #genotype PCA
   eig = read.delim("data/samples-pca.eigenval", header = F)
     eig$perc = eig$V1 / sum(eig$V1)
@@ -425,33 +480,107 @@ pheno = read.csv("data/cleaned_pheno.csv")
   
   plot_model(massmod)
   
-
-#effects of location and year 
-  pheno2 = pheno
-  pheno2$loc.fix[pheno2$loc.fix %in% c("NCA", "SCA", "CA")] = "CA"
-  pheno2 = pheno2 %>% 
-    mutate(loc.fix = as.factor(loc.fix),
-           loc.fix = relevel(loc.fix, "USA"))
+#decrease in sperm viability across lineage and location
+  svdec = admixpheno %>%
+    left_join(pheno %>% select(year, gc_id, season))
   
-  summary(lm(v.Sperm ~ year + loc.fix + season, data = pheno2))
+  #only locations with data in >3 years
+  goodloc = svdec %>% 
+    group_by(loc.fix) %>% 
+    summarise(nyear = length(unique(year))) %>% 
+    filter(nyear > 3)
   
-  summary(lm(m.Body ~ year + loc.fix + season, data = pheno2))
+  #location
+  p.locint = svdec %>% 
+    filter(loc.fix %in% goodloc$loc.fix) %>% 
+    ggplot(aes(x = year, y = v.Sperm)) + 
+    geom_point() + geom_smooth(method = 'lm', se = F) +
+    facet_wrap(~loc.fix) +
+    labs(y = "Sperm Viability (proportion)") +
+    scale_x_continuous(breaks = seq(2016, 2028,4))
   
-#Fstat and pheno
-  fstat = read.delim("data/samples-filter.het") %>% 
-    mutate(het = (N_SITES - O.HOM.) / N_SITES) %>% 
-    select(gc_id = INDV, fstat = `F`, het) %>% 
-    left_join(admixpheno)
+  #ancestry
+  svdec$majlin = NA
+  for(ml in c('A','M','C','O')){
+    svdec$majlin[
+      sort.int(svdec[,ml], index.return = T, decreasing = T)$ix[1:100]
+    ] = ml
+    
+  }
   
-  hist(fstat$het)
-  mean(fstat$het)
-  sd(fstat$het)
+  p.ancint = svdec %>% filter(!is.na(majlin)) %>% 
+    ggplot(aes(x = year, y = v.Sperm)) + 
+    geom_point() + geom_smooth(method = 'lm', se = F) +
+    facet_wrap(~majlin) +
+    labs(y = "") +
+    scale_x_continuous(breaks = seq(2016, 2026,2))
   
-    fcor = fstat %>% select(m.Body, v.Sperm, fstat) %>% as.matrix()
-    corrplot(cor(fcor, use = "pairwise.complete.obs"))
+  #a quick and dirty model
+  summary(lm(v.Sperm ~ loc.fix * year + season, data = svdec %>% filter(loc.fix %in% goodloc$loc.fix)))
   
-  ggplot(fstat, aes(x = fstat, y = v.Sperm)) + 
-    geom_point(alpha = 0.5)
+  summary(lm(v.Sperm ~ majlin * year + season, data = svdec))
+  
+  #visualize
+  p.svdec = cowplot::plot_grid(p.locint, p.ancint, ncol = 2, rel_widths = c(1.05, 1),
+                     labels = "AUTO")
+  p.svdec
+    ggsave(p.svdec, filename = 
+             "fig/Supplemental_FigureS4_viabilityInteraction.pdf",
+         width = 10, height = 7)
+  
+  
+  
+#correlations between genomic/ancestry components and allometry/phenotypes
+  #allometry 
+    allo = pheno.scale[,c(1,5,6,7)] %>% 
+    prcomp(center = F, scale = F) 
+    
+    allopoints = as.data.frame(allo$x)
+    allopoints$gc_id = pheno$gc_id
+  
+  totalpheno = admixpheno %>% 
+    left_join(allopoints %>% 
+                select(gc_id, p.PC1 = PC1, p.PC2 = PC2, p.PC3 = PC3)) %>% 
+    left_join(pca.geno %>% 
+                select(gc_id, g.PC1 = PC1, g.PC2 = PC2, g.PC3 = PC3))
+  
+  #model fit: genomic vs allometric
+    summary(lm(p.PC1 ~ g.PC1 + g.PC2 + g.PC3, data = totalpheno))
+  #model fit: genomic vs phenotypic
+    summary(lm(m.Body ~ g.PC1 + g.PC2 + g.PC3, data = totalpheno))
+    
+  #model fit: ancestry vs allometric
+    summary(lm(p.PC1 ~ A + M + O, data = totalpheno))
+  #model fit: ancestry vs phenotypic
+    summary(lm(m.Body ~ A + M + O, data = totalpheno))
+  
+# 
+# #effects of location and year 
+#   pheno2 = pheno
+#   pheno2$loc.fix[pheno2$loc.fix %in% c("NCA", "SCA", "CA")] = "CA"
+#   pheno2 = pheno2 %>% 
+#     mutate(loc.fix = as.factor(loc.fix),
+#            loc.fix = relevel(loc.fix, "USA"))
+#   
+#   summary(lm(v.Sperm ~ year + loc.fix + season, data = pheno2))
+#   
+#   summary(lm(m.Body ~ year + loc.fix + season, data = pheno2))
+  
+# #Fstat and pheno
+#   fstat = read.delim("data/samples-filter.het") %>% 
+#     mutate(het = (N_SITES - O.HOM.) / N_SITES) %>% 
+#     select(gc_id = INDV, fstat = `F`, het) %>% 
+#     left_join(admixpheno)
+#   
+#   hist(fstat$het)
+#   mean(fstat$het)
+#   sd(fstat$het)
+#   
+#     fcor = fstat %>% select(m.Body, v.Sperm, fstat) %>% as.matrix()
+#     corrplot(cor(fcor, use = "pairwise.complete.obs"))
+#   
+#   ggplot(fstat, aes(x = fstat, y = v.Sperm)) + 
+#     geom_point(alpha = 0.5)
   
 
 #collection locations
@@ -592,7 +721,7 @@ p.samplecom
   #           row.names = F, quote = F)
   # 
   
-  N = nrow(pheno)
+  N = 908
   
 #variance explained by top hits
   varexp = v.mlma %>% filter(padj < 0.05) %>% 
