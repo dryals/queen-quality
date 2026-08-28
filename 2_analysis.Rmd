@@ -24,6 +24,7 @@ library(sjPlot)
 library(usmap)
 library(multcompView)
 library(colorspace)
+library(sf)
 
 select = dplyr::select
 rename = dplyr::rename
@@ -76,7 +77,7 @@ pheno = read.csv("data/cleaned_pheno.csv")
       # compact letter display
       cld.wl <- multcompLetters4(anova.wl, tukey.wl)
     #season
-      pheno.rm$m.Body.resid.s = lm(m.Body ~ as.factor(year) + loc.fix, data = pheno.rm)$residual
+      pheno.rm$m.Body.resid.s = lm(m.Body ~ as.factor(year) * loc.fix, data = pheno.rm)$residual
       anova.ws <- aov(m.Body.resid.s ~ season, data = pheno.rm)
       # Tukey's test
       tukey.ws <- TukeyHSD(anova.ws, "season")
@@ -171,6 +172,12 @@ pheno = read.csv("data/cleaned_pheno.csv")
     theme(axis.text.x = element_text(size = 8))
   p.phenoSeason
   
+  #stats
+  seasonstats = pheno.long %>%
+    group_by(season, pheno.name) %>% 
+    summarise(mean = mean(value),
+              se = se(value))
+  
 #differences by year
   p.phenoYear = ggplot(pheno.long, aes(x = year, y = value)) + 
     geom_point(position = position_jitterdodge(jitter.width = 0.4, dodge.width = 0.8), 
@@ -194,7 +201,7 @@ pheno = read.csv("data/cleaned_pheno.csv")
                           nrow = 1, rel_widths = c(1.1, 1, 1.4))
   p.phenocomp
   
-  ggsave(p.phenocomp, filename = "fig/Figure1_Phenotypes.pdf",
+  ggsave(p.phenocomp, filename = "fig/Figure2_Phenotypes.pdf",
          width = 10, height = 5)
   
   
@@ -584,33 +591,56 @@ pheno = read.csv("data/cleaned_pheno.csv")
   
 
 #collection locations
-  sampling = pheno %>% select(loc.old) %>% 
+  table(pheno$loc.old)
+    
+  sampling = pheno.rm %>% select(loc.old) %>% 
     filter(loc.old != "USA")
-    sampling$loc.old[sampling$loc.old %in% c("NCA", "SCA")] = "CA"    
+    sampling$loc.old[sampling$loc.old %in% c("NCA", "SCA")] = "CA"  
+    
+  statectr = data.frame(state.abb, state.center$x, state.center$y)
+    names(statectr) = c("state", "lon", "lat")
+    
+    #fix ak hi
+    statectr[statectr$state == "AK", c('lon','lat')] = c(-152, 63.83)
+    statectr[statectr$state == "HI", c('lon','lat')] = c(-156.33, 20.25)
+    
     
     sampling = sampling %>% 
       rename(state = loc.old) %>% 
       group_by(state) %>% 
-      summarise(N = n())
+      summarise(N = n()) %>% 
+      left_join(statectr)
+    
+    geomdat = usmap_transform(as.data.frame(sampling %>% select(lon, lat, state)))
+    
+    sampling = sampling %>% left_join(geomdat) %>% 
+      mutate(x = st_coordinates(geometry)[,1],
+             y = st_coordinates(geometry)[,2])
+    
+    
     
     state2 = sort(c(state.abb, "DC"))
     
-    labcol = ifelse(state2 %in% sampling$state, "white", NA)
-      labcol[state2 %in% c("GA", "HI")] = "black"
+    labcol = ifelse(state2 %in% sampling$state, "black", NA)
   
   p.map = plot_usmap(
     #include = unique(sampling$states),
     color = 'gray',
     data = sampling,
     values = "N",
-    labels = T,
-    label_color = labcol,
+    labels = F,
   ) +
-  scale_fill_viridis_b(
-    trans = 'log',
-    breaks = c(1, 5, 20, 180),
-    option = "G"
+  scale_fill_gradient2(
+    low = 'blue',
+    mid = 'white',
+    high = 'red',
+    midpoint = 35,
+    transform = "log10"
   )  + 
+    geom_text(data = sampling,
+              aes(x = x, y = y - 7.5e4, label = N)) +
+        geom_text(data = sampling,
+              aes(x = x, y = y + 5e4, label = state)) +
   theme(text = element_text(size = 10))
   
 p.map
@@ -619,11 +649,12 @@ p.map
 #compound sampling figure
   
 p.a = cowplot::plot_grid(p.map, p.genopca, labels = c("A", "B"))
-p.samplecom = cowplot::plot_grid(p.a, p.admix, nrow = 2, labels = c(NA, "C"))
+p.samplecom = cowplot::plot_grid(p.a, p.admix, nrow = 2, labels = c(NA, "C"),
+                                 rel_heights = c(1, 0.8))
 p.samplecom
 
   
-  ggsave(p.samplecom, filename = "fig/Figure2_Samples.pdf",
+  ggsave(p.samplecom, filename = "fig/Figure1_Samples.pdf",
          width = 10, height = 7)
   
 ```
@@ -721,7 +752,7 @@ p.samplecom
   #           row.names = F, quote = F)
   # 
   
-  N = 908
+  N = 910
   
 #variance explained by top hits
   varexp = v.mlma %>% filter(padj < 0.05) %>% 
@@ -906,8 +937,8 @@ colnames(pheno.blup) = c("iid", "locid", "PC1", "PC2", "PC3", "lsperm", "weight"
 
 
 #calculate genetic correlation from covariance
-  cov.high = -1.74 + 16.15
-  cov.low =  -1.74 - 16.15
+  cov.high = -2.82 + 16.44
+  cov.low =  -2.82 - 16.44
   sd.b = sd(pheno.blup$weight)
   sd.sv = sd(pheno.blup$vsperm)
   
@@ -953,9 +984,11 @@ colnames(pheno.blup) = c("iid", "locid", "PC1", "PC2", "PC3", "lsperm", "weight"
   
   p.bvweight =ggplot(pbv, aes(x = weight, y = bv_weight)) +
     geom_point(alpha = 0.5) + 
+    geom_smooth(method = 'lm', se = F, color = 'red')+
     labs(x = "Body Mass (mg)", y = "Breeding Value")
   p.bvvsperm = ggplot(pbv, aes(x = vsperm, y = bv_vsperm)) + 
     geom_point(alpha = 0.5) + 
+    geom_smooth(method = 'lm', se = F, color = 'red')+
     labs(x = "Sperm Viability (%)", y = NULL)
   
   
@@ -978,22 +1011,12 @@ colnames(pheno.blup) = c("iid", "locid", "PC1", "PC2", "PC3", "lsperm", "weight"
   
   
 #estimate genetic gain per generation
-  
-  #estimated reliability from blupf90
-    rel = read.delim("data/acc_bf90",
-                     header = F, sep = "")
-    colnames(rel) = c("trait", "effect", "level" ,"bv", "rel")
-    
-    hist(rel$rel[rel$trait == 1])
-    hist(rel$rel[rel$trait == 2])
     
       
   
 params = data.frame(trait = c("weight", "vsperm"),
-                    rel = c(mean(rel$rel[rel$trait == 1]),
-                            mean(rel$rel[rel$trait == 2])),
-                    acc = c(0.398, 0.427),
-                    sdG = c(sqrt(143.91), sqrt(82.92)),
+                    acc = c(0.485, 0.25),
+                    sdG = c(sqrt(144.01), sqrt(88.04)),
                     sdX = c(sd(sol.time$bv[sol.time$trait == "weight"]),
                             sd(sol.time$bv[sol.time$trait == "vsperm"])))
 
